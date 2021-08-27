@@ -1,0 +1,674 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1C0D06DD-99E6-4054-9A52-21A8EA49477F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AgencyDispatchFramework</RootNamespace>
+    <AssemblyName>AgencyDispatchFramework</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ComputerPlus">
+      <HintPath>..\..\__Dependencies\v1868\ComputerPlus.dll</HintPath>
+    </Reference>
+    <Reference Include="Gwen">
+      <HintPath>..\..\ComputerPlus\ComputerPlus\Dependencies\Gwen.dll</HintPath>
+    </Reference>
+    <Reference Include="LSPD First Response, Version=0.4.7297.8062, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\__Dependencies\v2020\LSPD First Response.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="RAGENativeUI, Version=1.6.3.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\__Dependencies\v2020\RAGENativeUI.dll</HintPath>
+    </Reference>
+    <Reference Include="RagePluginHookSDK, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\__Dependencies\v2020\RagePluginHookSDK.dll</HintPath>
+    </Reference>
+    <Reference Include="StopThePed">
+      <HintPath>..\..\__Dependencies\v1868\StopThePed.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Entity" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UltimateBackup">
+      <HintPath>..\..\__Dependencies\v2020\UltimateBackup.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="API\BackupType.cs" />
+    <Compile Include="API\PersistantBackup.cs" />
+    <Compile Include="API\VoiceCommands.cs" />
+    <Compile Include="Conversation\CommunicationElement.cs" />
+    <Compile Include="Conversation\SequenceCollection.cs" />
+    <Compile Include="Conversation\PedResponseEventHandler.cs" />
+    <Compile Include="Conversation\Question.cs" />
+    <Compile Include="Game\Enums\PedDescriptionPropertyType.cs" />
+    <Compile Include="Simulation\Agency\EmsAgency.cs" />
+    <Compile Include="Simulation\Agency\FireAgency.cs" />
+    <Compile Include="Simulation\Agency\SheriffAgency.cs" />
+    <Compile Include="Dispatching\Enums\CallSignStyle.cs" />
+    <Compile Include="Dispatching\NumberStyleCallsign.cs" />
+    <Compile Include="Dispatching\Assignments\BusinessCheck.cs" />
+    <Compile Include="Dispatching\Assignments\FelonyTrafficStop.cs" />
+    <Compile Include="Dispatching\Assignments\PrisonerTransport.cs" />
+    <Compile Include="Dispatching\Assignments\PropertyCheck.cs" />
+    <Compile Include="Dispatching\Assignments\TrafficEnforcement.cs" />
+    <Compile Include="Dispatching\CallSign.cs" />
+    <Compile Include="Dispatching\Delegates\BeforeRadioPlayedHandler.cs" />
+    <Compile Include="Dispatching\Delegates\CallEndedHandler.cs" />
+    <Compile Include="Dispatching\Delegates\CallListUpdateHandler.cs" />
+    <Compile Include="Dispatching\Delegates\CalloutListUpdateHandler.cs" />
+    <Compile Include="Dispatching\Delegates\CalloutPackLoadedHandler.cs" />
+    <Compile Include="Dispatching\Delegates\CallRaisedHandler.cs" />
+    <Compile Include="Dispatching\Delegates\RadioCancelEventArgs.cs" />
+    <Compile Include="Dispatching\Delegates\RadioMessageEventHandler.cs" />
+    <Compile Include="Dispatching\Dispatchers\Dispatcher.cs" />
+    <Compile Include="Dispatching\Enums\CallTarget.cs" />
+    <Compile Include="Dispatching\Enums\DispatchPriority.cs" />
+    <Compile Include="Dispatching\Enums\UnitType.cs" />
+    <Compile Include="Dispatching\Dispatchers\PoliceDispatcher.cs" />
+    <Compile Include="Dispatching\LAPDStyleCallsign.cs" />
+    <Compile Include="Dispatching\RadioMessage.cs" />
+    <Compile Include="Dispatching\Delegates\ScenarioListUpdateHandler.cs" />
+    <Compile Include="Dispatching\Enums\ResponseCode.cs" />
+    <Compile Include="Dispatching\Scanner.cs" />
+    <Compile Include="ScenarioPool.cs" />
+    <Compile Include="Dispatching\Assignments\AssignedToCall.cs" />
+    <Compile Include="Dispatching\Assignments\CivilDisturbance.cs" />
+    <Compile Include="Dispatching\Assignments\CrimeInProgress.cs" />
+    <Compile Include="Dispatching\Assignments\InvestigatingCrime.cs" />
+    <Compile Include="Dispatching\Assignments\OutOfService.cs" />
+    <Compile Include="Dispatching\Assignments\BaseAssignment.cs" />
+    <Compile Include="Dispatching\Assignments\Pursuit.cs" />
+    <Compile Include="Dispatching\Assignments\TrafficAccident.cs" />
+    <Compile Include="Dispatching\Assignments\StandardTrafficStop.cs" />
+    <Compile Include="Simulation\ShiftRotation.cs" />
+    <Compile Include="Scripting\Events\AiOfficerEvent.cs" />
+    <Compile Include="Scripting\Events\AmbientEventHandler.cs" />
+    <Compile Include="Scripting\Events\Ambient\DrunkDriver.cs" />
+    <Compile Include="Scripting\Events\TrafficStop\BackupRequested.cs" />
+    <Compile Include="Scripting\Events\TrafficStop\K9RequestEvent.cs" />
+    <Compile Include="Scripting\Events\TrafficStop\ShotsFiredEvent.cs" />
+    <Compile Include="Scripting\Events\TrafficStop\SupervisorRequestEvent.cs" />
+    <Compile Include="Scripting\Events\AmbientEvent.cs" />
+    <Compile Include="Scripting\Events\Ambient\CarAccidentEvent.cs" />
+    <Compile Include="Scripting\Events\Ambient\PeopleFightingEvent.cs" />
+    <Compile Include="Scripting\Events\Ambient\RecklessDriverEvent.cs" />
+    <Compile Include="Scripting\Events\Ambient\SuspiciousVehicleEvent.cs" />
+    <Compile Include="Game\AnimationMeta.cs" />
+    <Compile Include="Game\AnimationSequence.cs" />
+    <Compile Include="Game\AnimationData.cs" />
+    <Compile Include="Simulation\WorldStateCrimeReport.cs" />
+    <Compile Include="Game\Enums\PedComponent.cs" />
+    <Compile Include="Game\Enums\PedPropIndex.cs" />
+    <Compile Include="Game\Locations\Road.cs" />
+    <Compile Include="Integration\UltimateBackupAPI.cs" />
+    <Compile Include="Linq\ExpressionResult.cs" />
+    <Compile Include="Extensions\CharExtensions.cs" />
+    <Compile Include="Extensions\Enums\LogicOperator.cs" />
+    <Compile Include="Extensions\Enums\SelectionOperator.cs" />
+    <Compile Include="Extensions\IEnumerableExtensions.cs" />
+    <Compile Include="Extensions\ListExtensions.cs" />
+    <Compile Include="Extensions\StringBuilderExtensions.cs" />
+    <Compile Include="Game\ContrabandItem.cs" />
+    <Compile Include="Game\Delegates\TimePeriodChangedEventHandler.cs" />
+    <Compile Include="Game\Delegates\WeatherChangedEventHandler.cs" />
+    <Compile Include="Game\Enums\County.cs" />
+    <Compile Include="Game\Enums\RelativeDirection.cs" />
+    <Compile Include="Game\Enums\PedGender.cs" />
+    <Compile Include="Game\Locations\Enums\IntersectionFlags.cs" />
+    <Compile Include="Game\Locations\Postal.cs" />
+    <Compile Include="Game\Locations\Requirement.cs" />
+    <Compile Include="Game\Locations\FlagFilterGroup.cs" />
+    <Compile Include="Game\Locations\Enums\ResidenceFlags.cs" />
+    <Compile Include="Game\Locations\Enums\RoadFlags.cs" />
+    <Compile Include="Game\Enums\PedDemeanor.cs" />
+    <Compile Include="Game\Enums\PedVariantGroup.cs" />
+    <Compile Include="Game\Enums\Weather.cs" />
+    <Compile Include="Game\GameWorld.cs" />
+    <Compile Include="Game\Delegates\SubtitleEventHandler.cs" />
+    <Compile Include="Game\Locations\Enums\RoadShoulderPosition.cs" />
+    <Compile Include="Game\Delegates\TimeScaleChangedEventHandler.cs" />
+    <Compile Include="LogLevel.cs" />
+    <Compile Include="NativeUI\Example.cs" />
+    <Compile Include="NativeUI\PluginMenuPartials\ResidenceUIMenu.cs" />
+    <Compile Include="NativeUI\PluginMenuPartials\RoadShouldersUIMenu.cs" />
+    <Compile Include="NativeUI\CadTabs\CallListTabPage.cs" />
+    <Compile Include="NativeUI\MyUIMenuItem.cs" />
+    <Compile Include="NativeUI\CadTabs\SubTabs\PriorityCallTabItem.cs" />
+    <Compile Include="Game\PedDescriptionProperty.cs" />
+    <Compile Include="Game\PedModelMeta.cs" />
+    <Compile Include="Game\WeatherSnapshot.cs" />
+    <Compile Include="Conversation\Circumstance.cs" />
+    <Compile Include="Extensions\ColorExtensions.cs" />
+    <Compile Include="Extensions\RegexExtensions.cs" />
+    <Compile Include="Linq\DynamicLinq.cs" />
+    <Compile Include="Extensions\IntExtensions.cs" />
+    <Compile Include="Extensions\XmlExtensions.cs" />
+    <Compile Include="Integration\StopThePedAPI.cs" />
+    <Compile Include="Scripting\Callouts\AgencyCallout.cs" />
+    <Compile Include="Simulation\Agency\PoliceAgency.cs" />
+    <Compile Include="Simulation\Agency\HighwayPatrolAgency.cs" />
+    <Compile Include="Dispatching\PriorityCallDescription.cs" />
+    <Compile Include="Dispatching\Enums\CallCloseFlag.cs" />
+    <Compile Include="Dispatching\Enums\CallStatus.cs" />
+    <Compile Include="Dispatching\Enums\CallCategory.cs" />
+    <Compile Include="Simulation\Enums\CrimeLevel.cs" />
+    <Compile Include="Simulation\Enums\AgencyType.cs" />
+    <Compile Include="Game\Locations\Enums\ResidencePosition.cs" />
+    <Compile Include="Dispatching\Enums\PatrolType.cs" />
+    <Compile Include="Game\Enums\ZoneType.cs" />
+    <Compile Include="ProbableItem.cs" />
+    <Compile Include="RandomName.cs" />
+    <Compile Include="RandomNameGenerator.cs" />
+    <Compile Include="Simulation\AISceneSimulation.cs" />
+    <Compile Include="Game\Locations\WorldLocation.cs" />
+    <Compile Include="Game\Locations\Residence.cs" />
+    <Compile Include="Game\Enums\Population.cs" />
+    <Compile Include="Dispatching\Enums\OfficerStatus.cs" />
+    <Compile Include="Dispatching\Enums\OfficerStatusColor.cs" />
+    <Compile Include="Dispatching\OfficerUnit.cs" />
+    <Compile Include="Dispatching\PlayerOfficerUnit.cs" />
+    <Compile Include="Simulation\OfficerModelMeta.cs" />
+    <Compile Include="Simulation\PersistentAIOfficerUnit.cs" />
+    <Compile Include="Dispatching\PriorityCall.cs" />
+    <Compile Include="Game\Enums\SocialClass.cs" />
+    <Compile Include="Dispatching\Enums\CallPriority.cs" />
+    <Compile Include="Simulation\SpecializedUnit.cs" />
+    <Compile Include="Simulation\VehicleModelMeta.cs" />
+    <Compile Include="Simulation\VehicleSet.cs" />
+    <Compile Include="Simulation\AIOfficerUnit.cs" />
+    <Compile Include="Scripting\Callouts\DomesticViolence\Controller.cs" />
+    <Compile Include="Scripting\Callouts\DomesticViolence\ReportsOfArguingThreats.cs" />
+    <Compile Include="Game\Enums\TimePeriod.cs" />
+    <Compile Include="Linq\ExpressionParser.cs" />
+    <Compile Include="NativeUI\CadTabs\AssignmentTabPage.cs" />
+    <Compile Include="Simulation\RegionCrimeInfo.cs" />
+    <Compile Include="Game\Locations\RoadShoulder.cs" />
+    <Compile Include="Game\SubtitleQueue.cs" />
+    <Compile Include="Conversation\PedResponse.cs" />
+    <Compile Include="Game\GamePed.cs" />
+    <Compile Include="Simulation\RegionCrimeGenerator.cs" />
+    <Compile Include="Extensions\EntityExtensions.cs" />
+    <Compile Include="Extensions\Enums\ENeonLights.cs" />
+    <Compile Include="Extensions\Enums\EPaint.cs" />
+    <Compile Include="Extensions\GwenFormExtension.cs" />
+    <Compile Include="Extensions\Vector3Extensions.cs" />
+    <Compile Include="Game\VehicleColor.cs" />
+    <Compile Include="Integration\C+Interfaces\CallDetailsGwenFormTemplate.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Integration\C+Interfaces\CallDetailsGwenFormTemplate.Designer.cs">
+      <DependentUpon>CallDetailsGwenFormTemplate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Integration\C+Interfaces\CallDetailsGwenForm.cs" />
+    <Compile Include="Integration\C+Interfaces\CADMainGwenForm.cs" />
+    <Compile Include="Integration\C+Interfaces\CADMainGwenFormTemplate.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Integration\C+Interfaces\CADMainGwenFormTemplate.Designer.cs">
+      <DependentUpon>CADMainGwenFormTemplate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Log.cs" />
+    <Compile Include="Simulation\WeaponMeta.cs" />
+    <Compile Include="Spawnable.cs" />
+    <Compile Include="Game\Locations\SpawnPoint.cs" />
+    <Compile Include="Simulation\Enums\StaffLevel.cs" />
+    <Compile Include="Game\WorldZone.cs" />
+    <Compile Include="Game\VehicleInfo.cs" />
+    <Compile Include="Game\Enums\ZoneSize.cs" />
+    <Compile Include="Scripting\CalloutScenarioInfo.cs" />
+    <Compile Include="Scripting\Callouts\CalloutScenario.cs" />
+    <Compile Include="Scripting\Callouts\TrafficAccident\RearEndNoInjuries.cs" />
+    <Compile Include="Scripting\Callouts\TrafficAccident\Controller.cs" />
+    <Compile Include="Dependency.cs" />
+    <Compile Include="Extensions\PedExtensions.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Extensions\VehicleExtensions.cs" />
+    <Compile Include="Integration\ComputerPlusAPI.cs" />
+    <Compile Include="Dispatching\Dispatch.cs" />
+    <Compile Include="CryptoRandom.cs" />
+    <Compile Include="Simulation\Agency\Agency.cs" />
+    <Compile Include="Game\Locations\Enums\LocationTypeCode.cs" />
+    <Compile Include="Extensions\AttributeExtensions.cs" />
+    <Compile Include="Keyboard.cs" />
+    <Compile Include="ISpawnable.cs" />
+    <Compile Include="Main.cs" />
+    <Compile Include="Conversation\Dialogue.cs" />
+    <Compile Include="Game\Subtitle.cs" />
+    <Compile Include="Conversation\CommunicationSequence.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="NativeUI\PluginMenu.cs" />
+    <Compile Include="NativeUI\CalloutInteractionMenu.cs" />
+    <Compile Include="NativeUI\ComputerAidedDispatchMenu.cs" />
+    <Compile Include="Range.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="ProbabilityGenerator.cs" />
+    <Compile Include="Game\Enums\WeatherCatagory.cs" />
+    <Compile Include="WorldStateMultipliers.cs" />
+    <Compile Include="WorldStateProbabilityGenerator.cs" />
+    <Compile Include="Game\TimeScale.cs" />
+    <Compile Include="WorldStateSpawnable.cs" />
+    <Compile Include="Xml\AgenciesFile.cs" />
+    <Compile Include="Xml\CalloutMetaFile.cs" />
+    <Compile Include="Xml\DialogueFile.cs" />
+    <Compile Include="Xml\PedModelMetaFile.cs" />
+    <Compile Include="Xml\PedVariantsFile.cs" />
+    <Compile Include="Xml\WorldZoneFile.cs" />
+    <Compile Include="Xml\XmlExtractor.cs" />
+    <Compile Include="Xml\XmlFileBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Integration\C+Interfaces\CallDetailsGwenFormTemplate.resx">
+      <DependentUpon>CallDetailsGwenFormTemplate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Integration\C+Interfaces\CADMainGwenFormTemplate.resx">
+      <DependentUpon>CADMainGwenFormTemplate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AgencyDispatchFramework\Agencies.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\BaseProbabilities.xml" />
+    <Content Include="AgencyDispatchFramework\Callouts\DomesticViolence\CalloutMeta.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Callouts\DomesticViolence\ReportsOfArguingThreats\Suspect.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Callouts\DomesticViolence\ReportsOfArguingThreats\Victim.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Districts.xml" />
+    <Content Include="AgencyDispatchFramework\Examples\Dialogue.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Callouts\TrafficAccident\CalloutMeta.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Callouts\TrafficAccident\RearEndNoInjuries\Victim.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Callouts\TrafficAccident\RearEndNoInjuries\Suspect.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\AIRP.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ALAMO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ALTA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ARMYB.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BANHAMC.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BANHAMCA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BANNING.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BAYTRE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BEACH.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BRADP.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BRADT.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\BURTON.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CALAFB.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CANNY.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CCREAK.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CHAMH.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CHIL.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CHU.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CMSW.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\CYPRE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\DAVIS.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\DELBE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\DELPE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\DELSOL.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\DESRT.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\DOWNT.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\DTVINE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\EAST_V.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\EBURO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ELGORL.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ELYSIAN.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\GALFISH.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\GALLI.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\GOLF.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\GRAPES.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\GREATC.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\HARMO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\HAWICK.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\HIGHWAY.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\HORS.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\HUMLAB.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\JAIL.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\KOREAT.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\LACT.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\LAGO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\LDAM.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\LEGSQU.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\LMESA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\LOSPUER.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\MIRR.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\MORN.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\MOVIE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\MTCHIL.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\MTGORDO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\MTJOSE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\MURRI.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\NCHU.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\NOOSE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\OCEANA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PALCOV.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PALETO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PALFOR.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PALHIGH.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PALMPOW.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PBLUFF.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PBOX.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\PROCOB.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\RANCHO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\RGLEN.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\RICHM.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ROCKF.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\RTRAK.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\SanAnd.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\SANCHIA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\SANDY.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\SKID.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\SLAB.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\STAD.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\STRAW.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\TATAMO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\TERMINA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\TEXTI.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\TONGVAH.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\TONGVAV.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\VCANA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\VESP.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\VINE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\WINDF.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\WVINE.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ZANCUDO.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ZP_ORT.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Locations\ZQ_UAR.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Names.xml" />
+    <Content Include="AgencyDispatchFramework\PedModelMeta.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Peds.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Postals\new-postals.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Postals\ocrp-postals.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Postals\old-postals.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Vehicles.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Documentation\AiOfficerEvents.txt" />
+    <Content Include="Documentation\GameFibers.txt" />
+    <Content Include="Documentation\Namespaces.txt" />
+    <Content Include="Documentation\Scenarios.txt" />
+    <Content Include="Documentation\GameScenarios.txt" />
+    <Content Include="Documentation\StopThePed.txt" />
+    <Content Include="Documentation\PedMetadata.txt" />
+    <Content Include="Documentation\Todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="AgencyDispatchFramework.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Include="AgencyDispatchFramework\Game.log">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

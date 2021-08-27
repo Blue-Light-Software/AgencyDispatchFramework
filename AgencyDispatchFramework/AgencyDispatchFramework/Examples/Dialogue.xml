@@ -1,0 +1,261 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!-- 
+  Here is an example Dialogue file. I have provided detailed explainations on how to design your 
+  own Dialogues, and what each node does.
+  
+  A Dialogue represents a conversation flow between a Ped and the Player during a Callout Scenario.
+  
+  The "id" attribute must be defined, and must be unique to each Callout Scenario,
+  because other loaded dialogues can reference the Menus in this dialogue by the ID.
+-->
+<Dialogue id="Suspect">
+
+  <!-- The Menus node builds a RageNativeUI questioning menu in which to interact with a Ped -->
+  <Menus>
+    
+    <!-- Initial RageNativeUI Questioning Menu should always be named "main" -->
+    <Menu id="main">
+      
+      <!-- 
+        A Question node describes a question that can be asked, and is displayed as a RageNativeUI button 
+        
+        The "id" attribute defines a question ID, that the code uses to find an answer from a Circumstance.
+        
+        NOTE: The "id" attribute must be unique for THIS entire file, not just this "Menu"!
+      -->
+      <Question id="ok" buttonText="Do you need medical?">
+        
+        <!--
+          A <Sequence> node defines one or more Subtitle elements. Each Subtitle element will be played in
+          the order defined below. Each <Question> and <Response> node can contain multiple <Sequence> nodes.
+          One <Sequence> node will be chosen at random when the <Quesion[id]> is chosen, based on the 
+          "probability" attribute value.
+          
+          Each <Sequence> should contain a similar response, statement or question but worded differently from eachother.
+          Example: 1 <Sequence> could be a "Hello, how are you?", while the second <Sequence> could be "Hi, how have you been?".  
+                   Both <Sequence> nodes portray the same message, but are just worded differently.
+          
+          The probability is the likelihood of an item being chosen over other probable items, based on the cumulative probability.
+          Example: If 3 <Sequence> nodes all have a probability of "10", then each <Sequence> node has a 33% chance of being selected.
+                   If one <Sequence> node has a probability of 20, now it has double the chance of being chosed over a <Sequence>
+                   element with a probability of 10.
+        -->
+        <Sequence probability="10">
+          <!-- 
+            A subtitle is just that, a single line displayed on screen for the "time" in milliseconds.
+            Multiple Subtitle nodes can be present, and each one will be displayed in order (sequence).
+          -->
+          <Subtitle time="2000">Do you require any medical attention?</Subtitle>
+        </Sequence>
+      </Question>
+      
+      <!-- Another question with the unique id of "how", displaying for 2 seconds -->
+      <Question id="how" buttonText="How did this happen?">
+        <Sequence probability="10">
+          <Subtitle time="2000">How did this happen?</Subtitle>
+        </Sequence>
+        
+        <!-- Example of a second <Sequence> element, asking the same question just worded differently -->
+        <Sequence probability="10">
+          <Subtitle time="2000">Can you explain how this happened?</Subtitle>
+        </Sequence>
+      </Question>
+      
+      <!-- 
+        As you can see, the Question below has an attribute : visible="false"
+        This means the button to ask this question is hidden until from the player until
+        shown later by a subtitle
+      -->
+      <Question id="tailgate" buttonText="Tailgating?" visible="false">
+        <Sequence probability="10">
+          <!-- 
+            As you can see we have a variable in the text labeled "$...$".
+            These variables are set in the callout file using an the Dialogue.SetVariable() method
+          -->
+          <Subtitle time="3000">$VictimName$ stated that you were tailgating. Is this a true statement?</Subtitle>
+        </Sequence>
+      </Question>
+    </Menu>
+  </Menus>
+
+  <!-- 
+    The Circumstances node has a set of different "response sequences" to Questions asked by the player 
+    
+    These Circumstances can be used to change the "story" within the callout scenario
+  -->
+  <Circumstances>
+    
+    <!-- 
+      A Circumstance is essentially an organized set of responses to the questions defined in the Menus node, which
+      sets up the official statement for the Ped. 
+      
+      A CalloutMeta file defines all the posible Circumstances, with the probability to select each one.
+      
+      A Circumstance node must define an initialMenu to display, and must have a unique ID from other Circumstance nodes
+    -->
+    <Circumstance id="uniqueIdHere" initialMenu="main">
+      
+      <!-- 
+        The <Ped> node is used as a config to set the chances of the Ped being drunk,
+        high, thier demeanor and items in thier inventory.
+        
+        Attributes:
+          - drunkChance : sets the chance of making the Ped drunk. This is a percentage chance (0 - 100)
+          - highChance : sets the chance of making the Ped High on drugs. This is a percentage chance (0 - 100)
+      -->
+      <Ped drunkChance="5" highChance="5">
+        
+        <!-- 
+          The Inventory node is used to add contraband and/or weapons into the Peds inventory. You may add as many
+          items as you with under this node.
+          
+          There are 2 accepted node names for each item: 
+            - Contraband : Indicates that the item is added as contraband which can be discoverd when searching the ped
+            - Weapon : Adds the item as contraband to the Ped, but also adds the weapon to the ped's inventory
+            
+          Attributes:
+            - clearContraband : If true, the Peds inventory will be cleared of all contraband added by 
+                                LSPDFR and StopThePed prior to the items added below.
+            - clearWeapons : If true, all weapons in the Peds invetory proir to the items being added
+                              below will be removed
+        -->
+        <Inventory clearContraband="false" clearWeapons="false">
+          <!-- 
+            Here we are adding narcotics to the ped with a 25% chance, but only if the Victim ped is High on drugs 
+            If the program rolls lower than a 25, one of the <Item> nodes will be selected based on probability, and
+            added to the peds inventory as contraband.
+            
+            Accepted values for the attribute "type":
+              - Narcotics : Highlighted in red on the ped search screen
+              - Contraband : Highlighted in yellow on the ped search screen
+              - Misc : Highlighted in green on the ped search screen
+          -->
+          <Contraband type="Narcotics" chance="25" if="Victim.IsHigh">
+            <Item probability="10">A gram of weed</Item>
+          </Contraband>
+          
+          <!--
+            Below we are adding a weapon to the ped with a 10% chance, but only if they are not drunk.
+            Like Contraband, if the program rolls less than the "chance" value, the weapon will be added
+            as contraband to the ped, as well as thier inventory for use in the game.
+          -->
+          <Weapon chance="10" if="Victim.IsDrunk == false">
+            <!-- See Also: https://wiki.rage.mp/index.php?title=Weapons -->
+            <Item probability="10" id="weapon_pistol" ammo="30">A 9mm Pistol</Item>
+          </Weapon>
+        </Inventory>
+        
+        <!--
+          The presentation node is used to randomly select a demeanor for the Ped based on set probability.
+          Each <Demeanor> node can support an "if" attribute also.
+          
+          The presentaion node is loaded after the <Inventory> node, therfore the "if" attribute supported
+          lookup of the Peds inventory.
+        -->
+        <Presentation>
+          <Demeanor probability="10">Calm</Demeanor>
+          <Demeanor probability="25" if="Victim.HasNarcotics or Victim.HasLoadedWeapon">Worried</Demeanor>
+          <Demeanor probability="25" if="Victim.IsHigh or Victim.IsDrunk">Nervous</Demeanor>
+          <Demeanor probability="5">Angry</Demeanor>
+        </Presentation>
+      </Ped>
+      
+      <!-- The Responses node contains responses to each and every question asked by all the "Menu"s -->
+      <Responses>
+        
+        <!-- 
+          Each response must specific a "to" attribute, which tells the program which question ID we are answering from the "MenuItem[id]".
+          We must also define which menu to return to once the question is asked. The returnMenu attribute allows us
+          to display menu's that are not otherwise accessible from the initial menu
+        -->
+        <Response to="ok" returnMenu="main">
+          
+          <!-- 
+            In this initial Sequence (if selected at random based on the "probability"), we have 3 callbacks we can hook into
+            within the CalloutScenario using the following method: Dialogue.RegisterCallback(name, Action);
+            
+            For all intents and purposes, a callback is basically just an event created dynamically, and calls on the Action
+            supplied when the callback is registered in the CalloutScenario. Callbacks are not required to be defined.
+            
+            The "onFirstShown" callback gets fired when the first <Subtitle> node is displayed in game, calling the action
+            registered as "First_Shown" ( Dialogue.RegisterCallback("First_Shown", Action) ) 
+            
+            The "onLastShown" callback gets fired when the last <Subtitle> node is displayed in game, calling the action
+            registered as "Last_Shown" ( Dialogue.RegisterCallback("Last_Shown", Action) ) 
+            
+            The "elapsed" callback gets fired when the last <Subtitle> node has finished displaying in game, calling the action
+            registered as "Elapsed_Shown" ( Dialogue.RegisterCallback("Elapsed_Shown", Action) )  
+            
+            A good use of callbacks would be to initiate a gun fight with the player after a subtitle is displayed, or run away
+            from the officer, or making the ped preform a scenario. Really the posibilities are endless here.
+          -->
+          <Sequence probability="100" onFirstShown="First_Shown" onLastShown="Last_Shown" elapsed="Elapsed_Shown">
+            <Subtitle time="3000">No, I seem to be ok...</Subtitle>
+          </Sequence>
+          
+          <!--
+            In this Sequence, we see an example of a condition statement (this "if" attribute).
+            In this example, if the Victim ped is a female, this dialog will not be
+            selected as a potential statement for the ped.
+            
+            This statements are compiled as C# expressions, and therfor only support C# syntax.
+            
+            In this example, the "Victim" object is defined in the CalloutScenario as so:
+            ExpressionParser.SetParamater("Victim", (AgencyDispatchFramework.Game.GamePed)Rage.Ped);
+          -->
+          <Sequence probability="100" if="Victim.Ped.IsMale == true">
+            
+            <Subtitle time="3000">
+              <!-- 
+                Animations can be played on the speaker, on a line by line basis, and in a sequence
+                
+                Attributes:
+                  - repeat (optional, default: false)   : A bool indicating whether to loop the animation sequence or play it just once
+                  - terminate (optional, default: true) : A bool indicating whether to cancel the animation being played currently by 
+                                                          the Ped when this subtitle has expired.
+                
+              -->
+              <AnimationSequence repeat="true" terminate="true">
+
+                <!-- 
+                Animations can be played on the speaker, on a line by line basis, and in a sequence
+                
+                Attributes:
+                  - dictionary : Defines the AnimationDictionary name
+                
+                The name of the actual animation to be played is the inner text value of the animation node.
+              -->
+                <Animation dictionary="amb@world_human_cheering@female_a">base</Animation>
+              </AnimationSequence>
+              
+              <!-- 
+                If using an Animation node, the sub title text needs to be placed into its own <Text> node.
+                
+                When not using an animation, the text does not need its own node, as seen in above examples.
+              -->
+              <Text>I am ok officer</Text>
+            </Subtitle>
+            
+          </Sequence>
+        </Response>
+        
+        <!-- Response when the MenuItem with id "how" is selected by the player -->
+        <Response to="how" returnMenu="main">
+          
+          <!-- 
+            Here we can see the attribute show="Dialogue[id].Question[id]"
+            When this statement is shown, it un-hides that menu's button for the 
+            player to then ask a new question. The format is always as follows:
+            
+            "Dialogue ID" (then a period) "." (then) "Question id"
+          -->
+          <Sequence probability="100" if="Suspect.Ped.IsMale == true" show="DialogueID.QuestionID">
+            <Subtitle time="4000">I noticed that this dude was tailgating me before he rear-ended me.</Subtitle>
+          </Sequence>
+          <!-- More Statements to the question ID of "how" -->
+        </Response>
+      </Responses>
+    </Circumstance>
+
+  </Circumstances>
+</Dialogue>

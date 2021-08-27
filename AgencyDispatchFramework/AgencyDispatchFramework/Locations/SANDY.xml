@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  Reference: https://gta.fandom.com/wiki/Sandy_Shores
+  
+  Sandy Shores does not have many house numbers, so many addresses only have street names!
+-->
+<SANDY>
+  <Name>Sandy Shores</Name>
+  <Size>Large</Size>
+  <Type>Mixed</Type>
+  <Class>Lower</Class>
+  <Population>Moderate</Population>
+  <Crime>
+    <AverageCalls morning="4" day="6" evening="10" night="5" />
+    <Probabilities>
+      <Robbery possible="false">
+        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Robbery>
+      <Property possible="false">
+        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Property>
+      <Drugs possible="false">
+        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Drugs>
+      <Gang possible="false">
+        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Gang>
+      <Disturbance possible="true">
+        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Disturbance>
+      <Traffic possible="true">
+        <Morning clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <Day clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <Evening clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <Night clear="10" overcast="10" rain="15" snow="18" storm="12" />
+      </Traffic>
+      <Violent possible="false">
+        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Violent>
+      <Other possible="false">
+        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Other>
+    </Probabilities>
+  </Crime>
+  <Locations>
+    <Residences>
+      
+    </Residences>
+    <Businesses>
+      
+    </Businesses>
+    <RoadShoulders>
+      <Location coordinates="1744.697, 3668.555, 33.64974" heading="118.858">
+        <Street>Zancudo Ave</Street>
+        <Hint>near Lolita Ave</Hint>
+        <Speed>25</Speed>
+        <Flags>
+          <Road>AfterNoStopIntersection, TwoLaneRoad, DrivewaysLeft, DrivewaysRight</Road>
+          <BeforeIntersection />
+          <AfterIntersection>CrossIntersection, RightOfWayYield</AfterIntersection>
+        </Flags>
+        <Positions>
+          <SpawnPoint id="SidewalkGroup1" coordinates="1741.578, 3672.83, 33.61052" heading="298.858" />
+          <SpawnPoint id="SidewalkGroup2" coordinates="1747.21, 3675.891, 33.55115" heading="125.5519" />
+        </Positions>
+      </Location>
+    </RoadShoulders>
+    <Roads>
+      <Location coordinates="1744.697, 3668.555, 33.64974" heading="118.858" nodeId="1230">
+        <Street>Zancudo Ave</Street>
+        <Hint>near Lolita Ave</Hint>
+        <Speed>25</Speed>
+        <Flags>TwoLaneRoad</Flags>
+      </Location>
+    </Roads>
+  </Locations>
+</SANDY>

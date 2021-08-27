@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<CalloutMeta>
+  <Author>Wilson212</Author>
+  <Controller>AgencyDispatchFramework.Scripting.Callouts.TrafficAccident.Controller</Controller>
+  <Scenarios>
+    
+    <RearEndNoInjuries>
+      <!-- Emergency Type -->
+      <Category>Traffic</Category>
+      <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
+      <Probabilities>
+        <Morning clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <Day clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <Evening clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <Night clear="10" overcast="10" rain="15" snow="18" storm="12" />
+      </Probabilities>
+      <!-- Location requirements for scenario -->
+      <Location>
+        <Type>RoadShoulder</Type>
+        <RequiredFlags mode="Any">
+          <!-- <Requirement mode="All" inverse="false"></Requirement> -->
+        </RequiredFlags>
+      </Location>
+      <Dispatch>
+        <!-- Initial dispatched agency to call -->
+        <Target>Police</Target>
+        <!-- Agencies that handle this callout scenario -->
+        <Agencies>
+          <Agency>CityPolice</Agency>
+          <Agency>CountySheriff</Agency>
+          <Agency>HighwayPatrol</Agency>
+        </Agencies>
+        <!-- Number of units that dispatch should send to this call -->
+        <UnitCount>1</UnitCount>
+        <Priority>Expedited</Priority>
+        <Response>Code2</Response>
+        <!-- Scanner Audio data for call -->
+        <Scanner>
+          <AudioString>WE_HAVE_01 CRIME_TRAFFIC_ALERT IN_OR_ON_POSITION</AudioString>
+          <PrefixCallSign>True</PrefixCallSign>
+          <UsePosition>True</UsePosition>
+        </Scanner>
+        <CAD>
+          <!-- CAD texture for this call in call details -->
+          <Texture dictionary="char_chat_call">char_chat_call</Texture>
+          <IncidentType abbreviation="MVA">Motor Vehicle Accident</IncidentType>
+          <!-- Callout Details are for ComputerPlus / CAD -->
+          <Descriptions>
+            <Description probability="10">
+              <Source>Citizen</Source>
+              <Text>RP SAYS THEY WERE INVLOVED IN A VEHICLE COLLISION NEAR $LOCATION$. NO INJURIES REPORTED AT THIS TIME. ~n~~n~RP STATED THAT OTHER INVOLED PED IS BEING AGRESSIVE. RESPOND CODE 2</Text>
+            </Description>
+          </Descriptions>
+        </CAD>
+      </Dispatch>
+      <Simulation>
+        <!-- In game minutes -->
+        <CallTime min="20" max="45" />
+        <!-- Chance that a ped gets arrested -->
+        <Arrests></Arrests>
+        <Escalation chance="0" />
+      </Simulation>
+      <Circumstances>
+        <Circumstance id="distracted" probability="10" />
+        <Circumstance id="eating" probability="3" />
+        <Circumstance id="tailgating" probability="50000" /> <!-- Testing purposes -->
+        <Circumstance id="wetRoads" probability="7" if="Weather.RoadsAreWet == true and Weather.IsSnowing == false"/>
+        <Circumstance id="snowing" probability="15" if="Weather.IsSnowing == true"/>
+        <!-- 
+        <Circumstance id="drunkDriver" probability="2" />
+        <Circumstance id="impaired" probability="2" />
+        <Circumstance id="speeding" probability="5" />
+        <Circumstance id="mechanicalFailure" probability="2" />
+        -->
+      </Circumstances>
+    </RearEndNoInjuries>
+    
+  </Scenarios>
+</CalloutMeta>

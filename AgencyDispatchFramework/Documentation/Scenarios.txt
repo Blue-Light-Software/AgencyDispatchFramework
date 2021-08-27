@@ -1,0 +1,125 @@
+﻿Agency Dispatch Framework Scenario List
+
+Description:
+	Each callout will have multiple scenarios. Each scenario is essentially
+	a full callout all in itself. Each scenario will have multiple dialogs
+	that are chosen at random, so playing the same scenario multiple times
+	will still feel different each time (ex: different reasons for crime, 
+	different attitude and responses).
+
+File Format:
+ - Callout Name
+	- Scenario Name [type] [locationType {?flags}]
+
+Callouts:
+- TrafficAccident 
+	- RearEndNoInjuries						[Traffic] [RoadShoulder]
+	- RearEndInjuries						[Traffic] [Road]
+	- RearEndDeath							[Traffic] [Road]
+	- MultiCarCollision						[Traffic] [Road{Highway,2+Lanes}]
+	- HitAndRunParking						[Traffic] [ParkingLot]
+	- HitAndRunHome							[Traffic] [Residence]
+	- RanRedLightTBoned						[Traffic] [Intersection]
+	- RanOffTheRoad							[Traffic] [Road{Bends}]
+- ReportedTrafficViolation
+	- RecklessDriver						[Traffic] [Road]
+	- ExcessiveSpeeding						[Traffic] [Road]
+	- StreetRacing							[Traffic] [Road{Highway,2+Lanes}]
+	- CarBlockingTraffic					[Traffic] [Road]
+	- AbandonedVehicleOnHighway				[Traffic] [RoadShoulder]
+	- BikersHarrasingCar					[Traffic] [Road]
+	- UnRoadWorthyVehicle					[Traffic] [Road]
+	- VehicleOnFire							[Traffic] [RoadShoulder]
+	- DrivingUnderInfluence					[Traffic] [Road]
+	- DrivingWithOpenContainers				[Traffic] [Road]
+- StolenVehicleSpotted
+	- ByCop: Begins Pursuit					[Traffic] [Road]
+	- ALPR Hit								[Traffic] [Intersection{PotentialALPR}]
+	- ByOwner								[Traffic] [Road]
+- DomesticViolence
+	- DomesticRefusingToLeave				[Disturbance] [Residence]
+	- DomesticArguingThreats				[Violent] [Residence]
+	- DomesticDenial						[Disturbance] [Residence]
+	- DomesticAssault						[Violent] [Residence]
+	- DomesticAssaultWithKnife				[Violent] [Residence]
+	- DomesticHoldUp						[Violent] [Residence]
+	- AnimalAbuse							[Disturbance]
+	- AnimalNeglect							[Disturbance]
+	- DisobeyRestrainingOrder				[Disturbance] 
+	- AssaultInPublic						[Violent]
+- Disturbance
+	- NoiseComplaintParty					[Disturbance] [Residence]
+	- NoiseComplaintEngineReving			[Disturbance] [Residence]
+	- NoiseComplaintLoudMusicAfterDark		[Disturbance] [Residence]
+	- ShoutingProfanityInPublic				[Disturbance] [Business]
+	- RefusingToLeaveProperty				[Disturbance] [Business]
+	- PedWavingAWeapon						[Violent] [Residence]
+	- UnstableIndividual					[Disturbance] [Residence]
+	- PublicIntoxication					[Disturbance] [Business{Store}]
+- GangActivity
+	- GangHasseling							[Gang]
+	- GangStolenCar							[Gang]
+	- GangShootout							[Gang]
+	- GangDriveBy							[Gang]
+- DrugActivity 
+	- TipOffDrugDealer						[Drugs]
+	- Trafficking							[Drugs]
+	- PublicDrugUse							[Drugs]
+- Robbery
+	- Mugging								[Robbery] [Business{HasSidewalk}]
+	- HoldUpAtStore							[Robbery] [Business]
+	- GrandTheftAuto						[Robbery] [Road]
+	- ATMHoldUp								[Robbery] [Business{HasATM}]
+	- BankHiestPursuit						[Robbery] [Road]
+- Burglary 
+	- ResidentBreakInAftermath				[Property] [Residence]
+	- ResidentAlarmTriggered	(Ring)		[Property] [Residence] (80% false positive)
+	- StoreBreakInAftermath					[Property] [Business]
+	- StoreSilentAlarmTriggered				[Property] [Business{HasSilentAlarm}]
+	- ShopLifting							[Property] [Business]
+	- VehicleStolenDriveway					[Property] [Residence]
+	- VehicleStolenBusiness					[Property] [Business]
+	- VehicleBrokeIntoDriveway				[Property] [Residence]
+	- VehicleBrokeIntoBusiness				[Property] [Business]
+- Vandalism 
+	- VandalisedVehicle						[Property] [Residence]
+	- VandalisedHome						[Property] [Residence]
+	- VandalisedStore						[Property] [Business]
+	- ActiveVandalism						[Property] [Business]
+- Statutory 
+	- SellingAndSupplyingAlcoholToMinors	[Other] [Residence]
+	- BuyingAlcoholFakeID					[Other] [Business{SellsAlcohol}]
+- AssaultAndBattery 
+	- BarFight								[Disturbance] [Business{Bar}]
+	- BarFightShotsFired					[Voilent] [Business{Bar}]
+	- AltercationBetweenNeighbors			[Disturbance] [Residence]
+	- AltercationBetweenNeighborsShotsFired		[Violent] [Residence]
+	- PublicPhysicalAltercationFriends		[Disturbance] [Residence]
+	- PhyisicalAltercationCheating			[Disturbance] [Residence]
+	- BeingHeldAtGunpoint					[Violent] [Business]
+- SexualAssault
+	- Rape									[Violent] [Residence]
+	- AttemptedRape							[Violent] [Public]
+	- UnWelcomeGroping						[Other] [Business{Bar || Store}]
+- Homocide
+	- DeadBodyFound							[Violent]
+	- DriveByShooting						[Violent] [Residence{HasFrontYard}]
+	- HitAndRun								[Violent]
+- SuspiciousActivity
+	- Tresspassing							[Property] [Residence, Business]
+	- Loitering								[Disturbance] [Residence, Business]
+	- Prowler								[Disturbance] [Residence]
+	- Prositution							[Disturbance] [Business{HasSidewalk}]
+	- SuspiciousVehicleEmpty				[Disturbance] [Residence]
+	- SuspiciousVehicleIndicentExposure		[Disturbance] 
+	- SuspiciousVehicleSpying				[Disturbance] [Residence]
+- MissingPerson
+	- DemensiaPatientMissing				[Other] [Residence]
+	- MissingPersonReport					[Other] [Residence]
+	- Kidnapping							[Violent] [Residence]
+	- LostHiker								[Other] [Residence]
+- Routine
+	- ServingArrestWarrant					[Other] [Residence]
+	- WelfareCheck							[Other]	[Residence]
+	- CivilStandby							[Other] [Residence]
+	- RequestedSecurityCheck				[Other] [Residence, Business]
