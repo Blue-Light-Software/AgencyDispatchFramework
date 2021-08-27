@@ -55,10 +55,13 @@ namespace AgencyDispatchFramework.Simulation
             // Lazy load!
             OptimumPatrols = new Dictionary<TimePeriod, int>()
             {
-                { TimePeriod.Morning, 0 },
-                { TimePeriod.Day, 0 },
-                { TimePeriod.Evening, 0 },
-                { TimePeriod.Night, 0 }
+                { TimePeriod.Night, 0 },
+                { TimePeriod.EarlyMorning, 0 },
+                { TimePeriod.LateMorning, 0 },
+                { TimePeriod.Afternoon, 0 },
+                { TimePeriod.EarlyEvening, 0 },
+                { TimePeriod.LateEvening, 0 }
+
             };
             Roster = new List<AIOfficerUnit>();
         }

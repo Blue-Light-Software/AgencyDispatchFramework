@@ -9,10 +9,12 @@
       <Category>Traffic</Category>
       <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
       <Probabilities>
-        <Morning clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Day clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Evening clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Night clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Probabilities>
       <!-- Location requirements for scenario -->
       <Location>

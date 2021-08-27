@@ -4,6 +4,7 @@ using AgencyDispatchFramework.Game.Locations;
 using AgencyDispatchFramework.Integration;
 using AgencyDispatchFramework.NativeUI;
 using AgencyDispatchFramework.Simulation;
+using AgencyDispatchFramework.Xml;
 using LSPD_First_Response.Mod.API;
 using Rage;
 using RAGENativeUI;
@@ -112,6 +113,9 @@ namespace AgencyDispatchFramework
 
             // Load settings
             Settings.Initialize();
+
+            // Load base probabilities
+            BaseProbabilitiesXmlFile.Load();
 
             // Set logging level to config value
             Log.SetLogLevel(Settings.LogLevel);
@@ -266,7 +270,7 @@ namespace AgencyDispatchFramework
                 // Close loading spinner
                 Rage.Game.HideHelp();
 
-                PauseMenuExample.RunPauseMenuExample();
+                //PauseMenuExample.RunPauseMenuExample();
             });
         }
 

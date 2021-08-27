@@ -9,9 +9,11 @@
       <Category>Disturbance</Category>
       <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
       <Probabilities>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
         <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Probabilities>
       <!-- Location requirements for scenario -->

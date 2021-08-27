@@ -56,15 +56,8 @@ Callouts:
 	- PedWavingAWeapon						[Violent] [Residence]
 	- UnstableIndividual					[Disturbance] [Residence]
 	- PublicIntoxication					[Disturbance] [Business{Store}]
-- GangActivity
-	- GangHasseling							[Gang]
-	- GangStolenCar							[Gang]
-	- GangShootout							[Gang]
-	- GangDriveBy							[Gang]
 - DrugActivity 
-	- TipOffDrugDealer						[Drugs]
-	- Trafficking							[Drugs]
-	- PublicDrugUse							[Drugs]
+	- PublicDrugUse							[Disturbance]
 - Robbery
 	- Mugging								[Robbery] [Business{HasSidewalk}]
 	- HoldUpAtStore							[Robbery] [Business]

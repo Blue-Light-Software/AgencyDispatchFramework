@@ -310,6 +310,7 @@
     <Compile Include="Game\TimeScale.cs" />
     <Compile Include="WorldStateSpawnable.cs" />
     <Compile Include="Xml\AgenciesFile.cs" />
+    <Compile Include="Xml\BaseProbabilitiesXmlFile.cs" />
     <Compile Include="Xml\CalloutMetaFile.cs" />
     <Compile Include="Xml\DialogueFile.cs" />
     <Compile Include="Xml\PedModelMetaFile.cs" />

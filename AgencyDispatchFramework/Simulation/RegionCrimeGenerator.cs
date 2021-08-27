@@ -24,6 +24,11 @@ namespace AgencyDispatchFramework.Simulation
         protected static CryptoRandom Randomizer { get; set; }
 
         /// <summary>
+        /// Contains the <see cref="WorldStateMultipliers"/> from the BaseProbabilities.xml file
+        /// </summary>
+        internal static WorldStateMultipliers BaseCrimeMultipliers { get; set; }
+
+        /// <summary>
         /// Indicates whether this CrimeGenerator is currently creating calls
         /// </summary>
         public bool IsRunning { get; protected set; }
@@ -377,13 +382,13 @@ namespace AgencyDispatchFramework.Simulation
             var target = TimeSpan.Zero;
             switch (GameWorld.CurrentTimePeriod)
             {
-                case TimePeriod.Morning:
+                case TimePeriod.EarlyMorning:
                     target = TimeSpan.FromHours(12);
                     break;
-                case TimePeriod.Day:
+                case TimePeriod.Afternoon:
                     target = TimeSpan.FromHours(18);
                     break;
-                case TimePeriod.Evening:
+                case TimePeriod.EarlyEvening:
                     target = TimeSpan.FromSeconds(86399);
                     break;
                 case TimePeriod.Night:

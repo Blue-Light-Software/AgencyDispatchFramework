@@ -2,15 +2,11 @@
 {
     public enum CallCategory
     {
-        Robbery,
+        Disturbance,
 
         Property,
 
-        Drugs,
-
-        Gang,
-
-        Disturbance,
+        Robbery,
 
         Traffic,
 

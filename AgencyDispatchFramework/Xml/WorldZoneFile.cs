@@ -2,6 +2,7 @@
 using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
+using AgencyDispatchFramework.Simulation;
 using Rage;
 using System;
 using System.Collections.Generic;
@@ -94,7 +95,7 @@ namespace AgencyDispatchFramework.Xml
 
             // Get average calls by time of day
             var subNode = catagoryNode.SelectSingleNode("AverageCalls");
-            Zone.AverageCalls = GetTimeOfDayProbabilities(subNode);
+            Zone.AverageCalls = GetTimePeriodAverageCalls(subNode);
             int maxCalls = Zone.AverageCalls.Values.Sum();
 
             // Does this zone get any calls?
@@ -125,8 +126,11 @@ namespace AgencyDispatchFramework.Xml
                         if (!possible) continue;
                     }
 
-                    // Try and parse the probability levels by Time of Day
-                    var multipliers = XmlExtractor.GetWorldStateMultipliers(n);
+                    // Try and parse the probability levels, cloning from the base settings
+                    var multipliers = (WorldStateMultipliers)RegionCrimeGenerator.BaseCrimeMultipliers.Clone();
+
+                    // Override settings
+                    XmlExtractor.UpdateWorldStateMultipliers(n, multipliers);
                     Zone.CallCategoryGenerator.Add(calloutType, multipliers);
                 }
             }
@@ -150,54 +154,31 @@ namespace AgencyDispatchFramework.Xml
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="subNode"></param>
+        /// <param name="node">The AverageCalls node</param>
         /// <returns></returns>
-        private Dictionary<TimePeriod, int> GetTimeOfDayProbabilities(XmlNode subNode)
+        private Dictionary<TimePeriod, int> GetTimePeriodAverageCalls(XmlNode node)
         {
             // If attributes is null, we know... we know...
-            if (subNode?.Attributes == null)
+            if (!node?.HasChildNodes ?? false)
             {
-                throw new ArgumentNullException(subNode.Name);
+                throw new ArgumentNullException(node.Name);
             }
 
-            // Create our dictionary
-            var item = new Dictionary<TimePeriod, int>(4)
+            // Itterate through each time of day
+            var calls = new Dictionary<TimePeriod, int>(6);
+            foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
             {
-                { TimePeriod.Morning, 0 },
-                { TimePeriod.Day, 0 },
-                { TimePeriod.Evening, 0 },
-                { TimePeriod.Night, 0 }
-            };
+                var name = Enum.GetName(typeof(TimePeriod), period);
+                var todNode = node.SelectSingleNode(name);
+                if (todNode == null || !Int32.TryParse(todNode.GetAttribute("value"), out int val))
+                {
+                    throw new Exception($"[{node.GetFullPath()}]: Unable to extract value attribute from XmlNode '{name}'");
+                }
 
-            // Extract and parse morning value
-            if (!Int32.TryParse(subNode.Attributes["morning"]?.Value, out int m))
-            {
-                Log.Error($"ZoneInfo.ctor [{subNode.GetFullPath()}]: Unable to extract 'morning' attribute on XmlNode");
+                calls.Add(period, val);
             }
-            item[TimePeriod.Morning] = m;
 
-            // Extract and parse morning value
-            if (!Int32.TryParse(subNode.Attributes["day"]?.Value, out m))
-            {
-                Log.Error($"ZoneInfo.ctor [{subNode.GetFullPath()}]: Unable to extract 'day' attribute on XmlNode");
-            }
-            item[TimePeriod.Day] = m;
-
-            // Extract and parse morning value
-            if (!Int32.TryParse(subNode.Attributes["evening"]?.Value, out m))
-            {
-                Log.Error($"ZoneInfo.ctor [{subNode.GetFullPath()}]: Unable to extract 'evening' attribute on XmlNode");
-            }
-            item[TimePeriod.Evening] = m;
-
-            // Extract and parse morning value
-            if (!Int32.TryParse(subNode.Attributes["night"]?.Value, out m))
-            {
-                Log.Error($"ZoneInfo.ctor [{subNode.GetFullPath()}]: Unable to extract 'night' attribute on XmlNode");
-            }
-            item[TimePeriod.Night] = m;
-
-            return item;
+            return calls;
         }
 
         /// <summary>

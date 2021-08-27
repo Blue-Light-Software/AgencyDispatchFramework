@@ -69,10 +69,6 @@ namespace AgencyDispatchFramework.Simulation
             if (Units.ContainsKey(UnitType.Traffic))
                 patrolHandlingCalls.Remove(CallCategory.Traffic);
 
-            // If we have a gang unit, remove gang responsibilities from patrol
-            if (Units.ContainsKey(UnitType.Gang))
-                patrolHandlingCalls.Remove(CallCategory.Gang);
-
             // Calculate each TimePeriod of the day
             foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
             {

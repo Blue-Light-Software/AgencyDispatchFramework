@@ -196,10 +196,12 @@ namespace AgencyDispatchFramework.Game
             // Local function
             TimePeriod Parse(int hour)
             {
-                if (hour < 6) return TimePeriod.Night;
-                else if (hour < 12) return TimePeriod.Morning;
-                else if (hour < 18) return TimePeriod.Day;
-                else return TimePeriod.Evening;
+                if (hour < 4) return TimePeriod.Night;
+                else if (hour < 8) return TimePeriod.LateMorning;
+                else if (hour < 12) return TimePeriod.LateMorning;
+                else if (hour < 16) return TimePeriod.Afternoon;
+                else if (hour < 20) return TimePeriod.EarlyEvening;
+                else return TimePeriod.LateEvening;
             }
         }
 
@@ -222,36 +224,6 @@ namespace AgencyDispatchFramework.Game
         }
 
         /// <summary>
-        /// Gets the next time of day based on the current <see cref="TimePeriod"/>
-        /// </summary>
-        /// <returns></returns>
-        public static TimePeriod GetNextTimePeriod()
-        {
-            switch (CurrentTimePeriod)
-            {
-                case TimePeriod.Day: return TimePeriod.Evening;
-                case TimePeriod.Morning: return TimePeriod.Day;
-                case TimePeriod.Night: return TimePeriod.Morning;
-                default: return TimePeriod.Night;
-            }
-        }
-
-        /// <summary>
-        /// Gets the previous time of day based on the current <see cref="TimePeriod"/>
-        /// </summary>
-        /// <returns></returns>
-        public static TimePeriod GetPreviousTimePeriod()
-        {
-            switch (CurrentTimePeriod)
-            {
-                case TimePeriod.Day: return TimePeriod.Morning;
-                case TimePeriod.Morning: return TimePeriod.Night;
-                case TimePeriod.Night: return TimePeriod.Evening;
-                default: return TimePeriod.Day;
-            }
-        }
-
-        /// <summary>
         /// Gets the remaining time until the next <see cref="TimePeriod"/> change (GameTime)
         /// </summary>
         /// <returns></returns>
@@ -262,14 +234,18 @@ namespace AgencyDispatchFramework.Game
 
             switch (CurrentTimePeriod)
             {
-                case TimePeriod.Day:
-                    return TimeSpan.FromHours(18).Subtract(todaysTime);
-                case TimePeriod.Evening:
-                    return TimeSpan.FromHours(24).Subtract(todaysTime);
-                case TimePeriod.Morning:
+                case TimePeriod.Night:
+                    return TimeSpan.FromHours(4).Subtract(todaysTime);
+                case TimePeriod.EarlyMorning:
+                    return TimeSpan.FromHours(8).Subtract(todaysTime);
+                case TimePeriod.LateMorning:
                     return TimeSpan.FromHours(12).Subtract(todaysTime);
+                case TimePeriod.Afternoon:
+                    return TimeSpan.FromHours(16).Subtract(todaysTime);
+                case TimePeriod.EarlyEvening:
+                    return TimeSpan.FromHours(25).Subtract(todaysTime);
                 default:
-                    return TimeSpan.FromHours(6).Subtract(todaysTime);
+                    return TimeSpan.FromHours(24).Subtract(todaysTime);
             }
         }
 

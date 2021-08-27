@@ -5,9 +5,10 @@ using System.Collections.Generic;
 namespace AgencyDispatchFramework
 {
     /// <summary>
-    /// 
+    /// Represents a set of probabilities for a <see cref="WorldStateSpawnable{U}"/> item, where the
+    /// probability changes based on the current or provided <see cref="TimePeriod"/> and <see cref="Weather"/>
     /// </summary>
-    public class WorldStateMultipliers
+    public class WorldStateMultipliers : ICloneable
     {
         /// <summary>
         /// Gets or sets the base probability
@@ -25,7 +26,7 @@ namespace AgencyDispatchFramework
         public WorldStateMultipliers(int baseProbability = 1)
         {
             BaseProbability = Math.Max(baseProbability, 1);
-            Probabilities = new Dictionary<Tuple<TimePeriod, WeatherCatagory>, int>(20);
+            Probabilities = new Dictionary<Tuple<TimePeriod, WeatherCatagory>, int>(30);
             foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
             {
                 foreach (WeatherCatagory catagory in Enum.GetValues(typeof(WeatherCatagory)))
@@ -114,6 +115,21 @@ namespace AgencyDispatchFramework
                 case Weather.ThunderStorm:
                     return WeatherCatagory.Storm;
             }
+        }
+
+        /// <summary>
+        /// Clones this instance
+        /// </summary>
+        /// <returns></returns>
+        public object Clone()
+        {
+            var obj = new WorldStateMultipliers(BaseProbability);
+            foreach (var probs in Probabilities)
+            {
+                obj.SetProbability(probs.Key.Item1, probs.Key.Item2, probs.Value);
+            }
+
+            return obj;
         }
     }
 }

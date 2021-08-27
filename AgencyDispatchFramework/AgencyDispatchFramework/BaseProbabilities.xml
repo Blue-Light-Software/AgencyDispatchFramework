@@ -3,7 +3,7 @@
   <Crime>
     <!-- 
       Defines the probabilities of the following crime levels.
-      Every 6 hours in game, the Crime level has the opportunity
+      Every 4 hours in game, the Crime level has the opportunity
       to change to a different level.
     -->
     <CrimeLevels>
@@ -21,53 +21,107 @@
       overwrite any values defined here.
     -->
     <Probabilities>
-      <Robbery>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Robbery>
-      <Property>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Property>
-      <Drugs>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Drugs>
-      <Gang>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Gang>
+      <!--
+        Disturbance crimes include:
+          - Noise complaints
+          - Disrupting the peace
+          - Public intoxication
+          - Suspicious activity
+      -->
       <Disturbance>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
         <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Disturbance>
+
+      <!--
+        Property crimes include:
+          - Burglary
+          - Petty theft
+          - Alarm triggered
+          - Vandalism
+      -->
+      <Property>
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Property>
+      
+      <!--
+        Robbery crimes include:
+          - Armed robbery
+          - Grand theft auto at gun point
+      -->
+      <Robbery>
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Robbery>
+      
+      <!-- 
+        Traffic crimes include:
+          - Hit and Runs 
+          - Traffic Accidents 
+          - Reckless driving 
+          - Low jack or ALPR hits
+          
+          Does NOT include (These are calculated internally):
+            - Speeding
+            - Failure to Obey a Traffic Control Devices (stop signs, lights etc)
+            - Driving Uninsured or Unlicensed
+        -->
       <Traffic>
-        <Morning clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Day clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Evening clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Night clear="10" overcast="10" rain="15" snow="18" storm="12" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Traffic>
+      
+      <!--
+        Violent crimes include:
+          - Rape or attempted rape
+          - Aggravated Assault
+          - Domestic violence
+          - Shootings
+          - Kidnapping
+          - Threats where a weapon is most likely present
+      -->
       <Violent>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
         <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Violent>
+      
+      <!--
+        Other or Misc crimes:
+          - Routine / Proactive policing
+          - Welfare Checks
+          - Security Checks
+          - Missing persons reports / investigations
+          - Civil Stand bys
+          - Anything else that doesnt fit into any other categories
+      -->
       <Other>
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
         <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Other>
     </Probabilities>
   </Crime>

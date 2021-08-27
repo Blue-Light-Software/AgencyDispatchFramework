@@ -11,56 +11,21 @@
   <Class>Lower</Class>
   <Population>Moderate</Population>
   <Crime>
-    <AverageCalls morning="4" day="6" evening="10" night="5" />
+    <AverageCalls>
+      <Night value="1" />
+      <EarlyMorning value="2" />
+      <LateMorning value="3" />
+      <Afternoon value="4" />
+      <EarlyEvening value="5" />
+      <LateEvening value="6" />
+    </AverageCalls>
     <Probabilities>
-      <Robbery possible="false">
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Robbery>
-      <Property possible="false">
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Property>
-      <Drugs possible="false">
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Drugs>
-      <Gang possible="false">
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Gang>
-      <Disturbance possible="true">
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Disturbance>
-      <Traffic possible="true">
-        <Morning clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Day clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Evening clear="10" overcast="10" rain="15" snow="18" storm="12" />
-        <Night clear="10" overcast="10" rain="15" snow="18" storm="12" />
-      </Traffic>
-      <Violent possible="false">
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Violent>
-      <Other possible="false">
-        <Morning clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Day clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Evening clear="10" overcast="10" rain="10" snow="10" storm="10" />
-        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
-      </Other>
+      <Disturbance possible="true" />
+      <Robbery possible="false" />
+      <Property possible="false" />
+      <Traffic possible="true" />
+      <Violent possible="false" />
+      <Other possible="false" />
     </Probabilities>
   </Crime>
   <Locations>
