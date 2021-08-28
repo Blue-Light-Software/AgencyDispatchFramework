@@ -82,6 +82,11 @@ namespace AgencyDispatchFramework.Simulation
         internal Dictionary<ShiftRotation, List<OfficerUnit>> OfficersByShift { get; set; }
 
         /// <summary>
+        /// Contains a list of all <see cref="AIOfficerUnit"/>s currently on duty
+        /// </summary>
+        internal HashSet<AIOfficerUnit> OnDutyOfficers { get; set; }
+
+        /// <summary>
         /// Gets or sets the <see cref="Dispatching.Dispatcher"/> for this <see cref="Agency"/>
         /// </summary>
         internal Dispatcher Dispatcher { get; set; }
@@ -253,6 +258,7 @@ namespace AgencyDispatchFramework.Simulation
 
             // Initiate vars
             Units = new Dictionary<UnitType, SpecializedUnit>();
+            OnDutyOfficers = new HashSet<AIOfficerUnit>();
         }
 
         /// <summary>
@@ -301,7 +307,7 @@ namespace AgencyDispatchFramework.Simulation
             CreateOfficerUnits();
 
             // Register for TimeOfDay changes!
-            GameWorld.OnTimePeriodChanged += GameWorld_OnTimeOfDayChanged;
+            Dispatch.OnShiftStart += Dispatch_OnShiftStart;
 
             // Finally, flag
             IsActive = true;
@@ -313,7 +319,7 @@ namespace AgencyDispatchFramework.Simulation
         internal virtual void Disable()
         {
             // Un-Register for TimeOfDay changes!
-            GameWorld.OnTimePeriodChanged -= GameWorld_OnTimeOfDayChanged;
+            Dispatch.OnShiftStart -= Dispatch_OnShiftStart;
 
             // Dispose the dispatcher
             Dispatcher?.Dispose();
@@ -396,7 +402,7 @@ namespace AgencyDispatchFramework.Simulation
         {
             // @toto
             CallSign.TryParse("1L-18", out CallSign callSign);
-            var playerUnit = new PlayerOfficerUnit(Rage.Game.LocalPlayer, this, callSign);
+            var playerUnit = new PlayerOfficerUnit(Rage.Game.LocalPlayer, this, callSign, ShiftRotation.Day);
 
             return playerUnit;
         }
@@ -416,15 +422,12 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Method called when <see cref="GameWorld.OnTimePeriodChanged"/> is called. Manages the
-        /// shifts of all the <see cref="OfficerUnit"/>s
+        /// Method called when a <see cref="ShiftRotation"/> starts
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        protected void GameWorld_OnTimeOfDayChanged(TimePeriod oldPeriod, TimePeriod period)
+        private void Dispatch_OnShiftStart(ShiftRotation shift)
         {
             // Ensure we have enough locations to spawn patrols at
-            int aiPatrolCount = OfficersByShift[period].Count;
+            int aiPatrolCount = OfficersByShift[shift].Count;
             var locations = GetRandomShoulderLocations(aiPatrolCount);
             if (locations.Length < aiPatrolCount)
             {
@@ -435,7 +438,7 @@ namespace AgencyDispatchFramework.Simulation
                 b.Append(") for '");
                 b.Append(FullName);
                 b.Append("' on ");
-                b.Append(Enum.GetName(typeof(TimePeriod), period));
+                b.Append(Enum.GetName(typeof(ShiftRotation), shift));
                 b.Append(" shift.");
                 Log.Warning(b.ToString());
 
@@ -445,16 +448,10 @@ namespace AgencyDispatchFramework.Simulation
 
             // Tell new units they are on duty
             int i = 0;
-            foreach (var unit in OfficersByShift[period])
+            foreach (var unit in OfficersByShift[shift])
             {
                 unit.StartDuty(locations[i]);
                 i++;
-            }
-
-            // Tell old units they are off duty last!
-            foreach (var unit in OfficersByShift[oldPeriod])
-            {
-                unit.EndDuty();
             }
         }
 

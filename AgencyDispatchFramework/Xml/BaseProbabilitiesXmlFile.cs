@@ -1,4 +1,4 @@
-﻿using AgencyDispatchFramework.Game;
+﻿using AgencyDispatchFramework.Simulation;
 using System;
 using System.IO;
 
@@ -24,7 +24,7 @@ namespace AgencyDispatchFramework.Xml
 
             // Grab base crime probabilities
             var node = rootElement.SelectSingleNode("Crime/Probabilities");
-            WorldZone.BaseCrimeMultipliers = XmlExtractor.GetWorldStateMultipliers(node);
+            RegionCrimeGenerator.BaseCrimeMultipliers = XmlExtractor.GetWorldStateMultipliers(node);
         }
 
         public static void Load()

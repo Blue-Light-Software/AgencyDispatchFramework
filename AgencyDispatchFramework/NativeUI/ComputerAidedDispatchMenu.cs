@@ -244,10 +244,9 @@ namespace AgencyDispatchFramework.NativeUI
                     foreach (var agency in Dispatch.GetEnabledAgencies())
                     {
                         var items = new List<UIMenuItem>();
-                        var period = GameWorld.CurrentTimePeriod;
 
                         // Add each unit
-                        foreach (var unit in agency.OfficersByShift[period])
+                        foreach (var unit in agency.OnDutyOfficers)
                         {
                             items.Add(new UIMenuListScrollerItem<string>(unit.CallSign.Value, "", new[] { unit.Status.ToString() }) { ScrollingEnabled = false });
                         }

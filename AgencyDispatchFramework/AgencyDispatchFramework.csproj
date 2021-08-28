@@ -97,6 +97,7 @@
     <Compile Include="Conversation\SequenceCollection.cs" />
     <Compile Include="Conversation\PedResponseEventHandler.cs" />
     <Compile Include="Conversation\Question.cs" />
+    <Compile Include="Dispatching\Delegates\ShiftUpdateHandler.cs" />
     <Compile Include="Game\Enums\PedDescriptionPropertyType.cs" />
     <Compile Include="Simulation\Agency\EmsAgency.cs" />
     <Compile Include="Simulation\Agency\FireAgency.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="Dispatching\Assignments\Pursuit.cs" />
     <Compile Include="Dispatching\Assignments\TrafficAccident.cs" />
     <Compile Include="Dispatching\Assignments\StandardTrafficStop.cs" />
+    <Compile Include="Simulation\CrimeProjection.cs" />
     <Compile Include="Simulation\ShiftRotation.cs" />
     <Compile Include="Scripting\Events\AiOfficerEvent.cs" />
     <Compile Include="Scripting\Events\AmbientEventHandler.cs" />
@@ -153,7 +155,7 @@
     <Compile Include="Game\AnimationMeta.cs" />
     <Compile Include="Game\AnimationSequence.cs" />
     <Compile Include="Game\AnimationData.cs" />
-    <Compile Include="Simulation\WorldStateCrimeReport.cs" />
+    <Compile Include="Simulation\WorldStateCrimeProjection.cs" />
     <Compile Include="Game\Enums\PedComponent.cs" />
     <Compile Include="Game\Enums\PedPropIndex.cs" />
     <Compile Include="Game\Locations\Road.cs" />

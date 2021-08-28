@@ -94,7 +94,8 @@ namespace AgencyDispatchFramework.Simulation
             // Come up with a unique callsign for this unit
             try
             {
-                // Create
+                // Create @TODO
+                CallSign.TryParse("1A-1", out CallSign callSign);
                 var officer = new AIOfficerUnit(vehicleSet, AssignedAgency, callSign, shift, supervisor);
 
                 // Add to roster

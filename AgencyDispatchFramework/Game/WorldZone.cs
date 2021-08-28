@@ -27,12 +27,22 @@ namespace AgencyDispatchFramework.Game
         private static Dictionary<string, List<string>> RegionZones { get; set; } = new Dictionary<string, List<string>>(16);
 
         /// <summary>
-        /// Gets the Zone name
+        /// Gets the crime level probability of this zone based on current time of day
+        /// </summary>
+        public int Probability => CrimeInfo.AverageCalls * CrimeInfo.CrimeProbability[GameWorld.CurrentTimePeriod] ;
+
+        /// <summary>
+        /// Gets the average daily crime calls
+        /// </summary>
+        public CrimeProjection CrimeInfo { get; internal set; }
+
+        /// <summary>
+        /// Gets the Zone script name (ex: SANDY)
         /// </summary>
         public string ScriptName { get; internal set; }
 
         /// <summary>
-        /// Gets the Zone name
+        /// Gets the full Zone name (Ex: Sandy Shores)
         /// </summary>
         public string FullName { get; internal set; }
 
@@ -57,11 +67,6 @@ namespace AgencyDispatchFramework.Game
         public SocialClass SocialClass { get; internal set; }
 
         /// <summary>
-        /// Contains a dictionary of the average number of calls per time of day in this zone
-        /// </summary>
-        public IReadOnlyDictionary<TimePeriod, int> AverageCalls { get; internal set; }
-
-        /// <summary>
         /// Containts a list <see cref="Residence"/>(s) in this zone
         /// </summary>
         public Residence[] Residences { get; internal set; }
@@ -70,11 +75,6 @@ namespace AgencyDispatchFramework.Game
         /// Containts an array of Road Shoulder locations
         /// </summary>
         public RoadShoulder[] RoadShoulders { get; internal set; }
-
-        /// <summary>
-        /// Gets the crime level probability of this zone based on current time of day
-        /// </summary>
-        public int Probability => AverageCalls[GameWorld.CurrentTimePeriod];
 
         /// <summary>
         /// Spawns a <see cref="CallCategory"/> based on the <see cref="WorldStateMultipliers"/> probabilites set
@@ -236,18 +236,6 @@ namespace AgencyDispatchFramework.Game
         {
             // Get random location
             return GetRandomLocationFromPool(Residences, filters, inactiveOnly);
-        }
-
-        /// <summary>
-        /// Gets the <see cref="WorldStateCrimeReport"/> of this <see cref="WorldZone"/> based on the 
-        /// specified <see cref="TimePeriod"/> and <see cref="Game.Weather"/>
-        /// </summary>
-        /// <param name="period"></param>
-        /// <param name="weather"></param>
-        /// <returns></returns>
-        public WorldStateCrimeReport GetCrimeReport(TimePeriod period, Weather weather)
-        {
-            return new WorldStateCrimeReport(period, weather, this);
         }
 
         /// <summary>

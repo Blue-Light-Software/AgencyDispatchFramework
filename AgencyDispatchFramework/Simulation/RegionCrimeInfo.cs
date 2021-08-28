@@ -10,7 +10,7 @@
         /// <summary>
         /// Gets the average crime level index of this Region
         /// </summary>
-        public int AverageCrimeCalls { get; set; }
+        public double AverageCrimeCalls { get; set; }
 
         /// <summary>
         /// Gets the minimum amout of calls to expect from this region

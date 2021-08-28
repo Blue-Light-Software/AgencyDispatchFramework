@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://gta.fandom.com/wiki/Murrieta_Heights -->
+<MURRI>
+  <Name>Murrieta Heights</Name>
+  <Size>Medium</Size>
+  <Type>Residential</Type>
+  <Class>Working</Class>
+  <Population>Dense</Population>
+  <Crime>
+    <AverageCalls>
+      <Night value="0" />
+      <EarlyMorning value="0" />
+      <LateMorning value="0" />
+      <Afternoon value="0" />
+      <EarlyEvening value="0" />
+      <LateEvening value="0" />
+    </AverageCalls>
+    <Probabilities>
+      <Disturbance possible="false" />
+      <Robbery possible="false" />
+      <Property possible="false" />
+      <Traffic possible="false" />
+      <Violent possible="false" />
+      <Other possible="false" />
+    </Probabilities>
+  </Crime>
+  <Locations>
+    <Residences>
+
+    </Residences>
+    <Businesses>
+
+    </Businesses>
+    <RoadShoulders>
+
+    </RoadShoulders>
+  </Locations>
+</MURRI>

@@ -24,7 +24,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// Creates a new instance of <see cref="OfficerUnit"/> for the player
         /// </summary>
         /// <param name="player"></param>
-        internal PlayerOfficerUnit(Player player, Agency agency, CallSign callSign) : base(agency, callSign)
+        internal PlayerOfficerUnit(Player player, Agency agency, CallSign callSign, ShiftRotation shift) : base(agency, callSign, shift)
         {
             Officer = player ?? throw new ArgumentNullException("player");
             LastStatusChange = World.DateTime;

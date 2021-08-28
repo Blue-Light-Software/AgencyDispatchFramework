@@ -190,7 +190,7 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         /// <param name="time"></param>
         /// <returns></returns>
-        public int GetAverageCrimeCalls(TimePeriod time)
+        public double GetAverageCrimeCalls(TimePeriod time)
         {
             return RegionCrimeInfoByTimePeriod[time].AverageCrimeCalls;
         }
@@ -221,7 +221,7 @@ namespace AgencyDispatchFramework.Simulation
                     foreach (var zone in Zones)
                     {
                         // Get average calls per period
-                        var calls = zone.AverageCalls[period];
+                        var calls = zone.CrimeInfo.GetTrueAverageCallCount(period);
                         crimeInfo.AverageCrimeCalls += calls;
                     }
                 }
@@ -311,7 +311,7 @@ namespace AgencyDispatchFramework.Simulation
 
             // Get time until the next TimeOfDay change
             var timeScaleMult = TimeScale.GetCurrentTimeScaleMultiplier();
-            var timerUntilNext = GetTimeUntilNextTimePeriod();
+            var timerUntilNext = GameWorld.GetTimeUntilNextTimePeriod();
             var nextChangeRealMS = (int)(timerUntilNext.TotalMilliseconds / timeScaleMult);
             var hourGameTimeToMSRealTime = 60 * TimeScale.GetMillisecondsPerGameMinute();
 
@@ -366,39 +366,6 @@ namespace AgencyDispatchFramework.Simulation
                 Log.Debug($"\t\t\tAvg MS Per Call: {realMSPerCall}");
                 Log.Debug($"\t\t\tTime Until Next TimeOfDay MS: {nextChangeRealMS}");
             }
-        }
-        
-        /// <summary>
-        /// Gets a <see cref="TimeSpan"/> until the next time of day change using the
-        /// game's current time scale
-        /// </summary>
-        /// <returns></returns>
-        private TimeSpan GetTimeUntilNextTimePeriod()
-        {
-            // Now get time difference
-            var gt = World.TimeOfDay;
-
-            // Get target timespan
-            var target = TimeSpan.Zero;
-            switch (GameWorld.CurrentTimePeriod)
-            {
-                case TimePeriod.EarlyMorning:
-                    target = TimeSpan.FromHours(12);
-                    break;
-                case TimePeriod.Afternoon:
-                    target = TimeSpan.FromHours(18);
-                    break;
-                case TimePeriod.EarlyEvening:
-                    target = TimeSpan.FromSeconds(86399);
-                    break;
-                case TimePeriod.Night:
-                    target = TimeSpan.FromHours(6);
-                    break;
-            }
-
-            // Now get time difference
-            var untilNextChange = target - gt;
-            return untilNextChange;
         }
 
         /// <summary>

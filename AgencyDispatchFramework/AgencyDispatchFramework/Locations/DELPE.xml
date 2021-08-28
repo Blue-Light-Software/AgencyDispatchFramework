@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- https://gta.fandom.com/wiki/Del_Perro -->
 <DELPE>
   <Name>Del Perro</Name>
@@ -7,13 +7,13 @@
   <Class>UpperMiddle</Class>
   <Population>Dense</Population>
   <Crime>
-    <AverageCalls>
-      <Night value="0" />
-      <EarlyMorning value="0" />
-      <LateMorning value="0" />
-      <Afternoon value="0" />
-      <EarlyEvening value="0" />
-      <LateEvening value="0" />
+    <AverageCalls value="0">
+      <Night probability="10" />
+      <EarlyMorning probability="20" />
+      <LateMorning probability="30" />
+      <Afternoon probability="40" />
+      <EarlyEvening probability="50" />
+      <LateEvening probability="60" />
     </AverageCalls>
     <Probabilities>
       <Disturbance possible="false" />

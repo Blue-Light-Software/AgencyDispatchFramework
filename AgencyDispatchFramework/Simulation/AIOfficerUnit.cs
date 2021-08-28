@@ -101,6 +101,9 @@ namespace AgencyDispatchFramework.Simulation
             HandGun = handGunMeta;
             LongGun = longGunMeta;
             NonLethalWeapons = vehicleSet.NonLethalWeapons.ToArray();
+
+            // Check for shift changes!
+            Dispatch.OnShiftEnd += Dispatch_OnShiftEnd;
         }
 
         /// <summary>
@@ -127,6 +130,14 @@ namespace AgencyDispatchFramework.Simulation
             // Time for a new task?
             if (gameTime > NextStatusChange && Status != OfficerStatus.Available)
             {
+                // Is our shift over?
+                if (EndingDuty)
+                {
+                    // Tell the agency! (this should be thread safe)
+                    Agency.OnDutyOfficers.Remove(this);
+                    return;
+                }
+
                 switch (Status)
                 {
                     case OfficerStatus.OnScene:
@@ -302,6 +313,20 @@ namespace AgencyDispatchFramework.Simulation
                 Status = OfficerStatus.Dispatched;
                 LastStatusChange = World.DateTime;
                 NextStatusChange = LastStatusChange.AddMinutes(arrivalTime);
+            }
+        }
+
+        /// <summary>
+        /// Callback for when a shift ends
+        /// </summary>
+        /// <param name="shift"></param>
+        private void Dispatch_OnShiftEnd(ShiftRotation shift)
+        {
+            // Is this our shift?
+            if (shift == Shift)
+            {
+                // Flag ourselves
+                EndingDuty = true;
             }
         }
     }

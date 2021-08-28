@@ -12,7 +12,7 @@ namespace AgencyDispatchFramework.Simulation
     /// <remarks>
     /// This class is uesd to determine how many 
     /// </remarks>
-    public class WorldStateCrimeReport
+    public class WorldStateCrimeProjection
     {
         /// <summary>
         /// Gets the <see cref="TimePeriod"/> of this report
@@ -40,12 +40,12 @@ namespace AgencyDispatchFramework.Simulation
         protected double TotalCallProbability { get; private set; }
 
         /// <summary>
-        /// Creates a new instance of <see cref="WorldStateCrimeReport"/>
+        /// Creates a new instance of <see cref="WorldStateCrimeProjection"/>
         /// </summary>
         /// <param name="period"></param>
         /// <param name="weather"></param>
         /// <param name="zone"></param>
-        public WorldStateCrimeReport(TimePeriod period, Weather weather, WorldZone zone)
+        public WorldStateCrimeProjection(TimePeriod period, Weather weather, WorldZone zone)
         {
             Period = period;
             Weather = weather;
@@ -70,7 +70,9 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Gets the expected call count of the specified <see cref="CallCategory"/> types
+        /// Gets the expected call count of the specified <see cref="CallCategory"/> types.
+        /// This method may return different values everytime it is called, because it uses 
+        /// probability to determine the result.
         /// </summary>
         /// <param name="items"></param>
         /// <returns></returns>
@@ -78,7 +80,7 @@ namespace AgencyDispatchFramework.Simulation
         {
             // Calculate
             var sum = GetCallPercentageOf(items);
-            return Math.Round(Zone.AverageCalls[Period] * sum, 2);
+            return Math.Round(Zone.CrimeInfo.GetTrueAverageCallCount(Period) * sum, 2);
         }
     }
 }

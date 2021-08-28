@@ -10,8 +10,15 @@ namespace AgencyDispatchFramework.Dispatching
     /// Represents an Officer unit that a <see cref="Dispatcher"/> will send to 
     /// respond to <see cref="PriorityCall"/>(s)
     /// </summary>
-    public abstract class OfficerUnit : IDisposable
+    public abstract class OfficerUnit : IDisposable, IEquatable<OfficerUnit>
     {
+        private static int OfficerCounter = 0;
+
+        /// <summary>
+        /// A unique officer ID
+        /// </summary>
+        protected int OfficerId { get; private set; }
+
         /// <summary>
         /// Indicates whether this instance is disposed
         /// </summary>
@@ -107,6 +114,8 @@ namespace AgencyDispatchFramework.Dispatching
             Agency = agency;
             CallSign = callSign;
             Shift = shift;
+
+            OfficerId = OfficerCounter++;
         }
 
         /// <summary>
@@ -157,8 +166,8 @@ namespace AgencyDispatchFramework.Dispatching
             {
                 default:
                 case ShiftRotation.Day: return (time.Hours >= 6 && time.Hours < 16);
-                case ShiftRotation.Night: return (time.Hours >= 22 || time.Hours < 8);
-                case ShiftRotation.Swing: return time.Hours.InRange(14, 24);
+                case ShiftRotation.Night: return (time.Hours >= 21 || time.Hours < 7);
+                case ShiftRotation.Swing: return (time.Hours < 1 || time.Hours >= 15);
             }
         }
 
@@ -235,6 +244,22 @@ namespace AgencyDispatchFramework.Dispatching
         internal void SetCallSign(CallSign callSign)
         {
             CallSign = callSign;
+        }
+
+        public override int GetHashCode()
+        {
+            return OfficerId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as OfficerUnit);
+        }
+
+        public bool Equals(OfficerUnit other)
+        {
+            if (other == null) return false;
+            return other.OfficerId == OfficerId;
         }
     }
 }

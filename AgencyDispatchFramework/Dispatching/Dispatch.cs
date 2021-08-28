@@ -117,6 +117,16 @@ namespace AgencyDispatchFramework
         public static event CallListUpdateHandler OnPlayerCallCompleted;
 
         /// <summary>
+        /// Event called when a shift is begining
+        /// </summary>
+        internal static event ShiftUpdateHandler OnShiftStart;
+
+        /// <summary>
+        /// Event called when a shift is begining
+        /// </summary>
+        internal static event ShiftUpdateHandler OnShiftEnd;
+
+        /// <summary>
         /// Gets or sets the <see cref="RegionCrimeGenerator"/>, responsible for spawning
         /// <see cref="PriorityCall"/>s
         /// </summary>
@@ -151,6 +161,12 @@ namespace AgencyDispatchFramework
         /// Gets the current <see cref="ShiftRotation"/>
         /// </summary>
         internal static ShiftRotation CurrentShift { get; set; }
+
+        /// <summary>
+        /// Contains a hashtable of currently active <see cref="ShiftRotation"/>s
+        /// </summary>
+        private static Dictionary<ShiftRotation, bool> ActiveShifts { get; set; }
+
 
         /// <summary>
         /// Our call Queue, seperated into 4 priority queues
@@ -232,6 +248,11 @@ namespace AgencyDispatchFramework
 
             // Create agency lookup
             AgenciesByName = new Dictionary<string, Agency>();
+            ActiveShifts = new Dictionary<ShiftRotation, bool>();
+            foreach (ShiftRotation period in Enum.GetValues(typeof(ShiftRotation)))
+            {
+                ActiveShifts.Add(period, false);
+            }
 
             // Register for event
             Dispatcher.OnCallRaised += Dispatcher_OnCallRaised;
@@ -1182,9 +1203,10 @@ namespace AgencyDispatchFramework
                     Log.Debug($"\t\tRegion Data during the {name}:");
                     Log.Debug($"\t\t\tAverage Calls: {crimeInfo.AverageCrimeCalls}");
                     Log.Debug($"\t\t\tAverage millseconds Per Call: {crimeInfo.AverageMillisecondsPerCall}");
-                    Log.Debug($"\t\t\tIdeal Patrols: {crimeInfo.OptimumPatrols}");
+                    //Log.Debug($"\t\t\tIdeal Patrols: {crimeInfo.OptimumPatrols}");
 
                     // Get total officer counts by agency
+                    /*
                     StringBuilder b = new StringBuilder();
                     foreach (var a in AgenciesByName)
                     {
@@ -1192,6 +1214,7 @@ namespace AgencyDispatchFramework
                     }
                     var value = b.ToString().TrimEnd(',', ' ');
                     Log.Debug($"\t\t\tActual Patrols by Agency: [{value}]");
+                    */
                 }
 
                 // Initialize CAD. This needs called everytime we go on duty
@@ -1240,6 +1263,11 @@ namespace AgencyDispatchFramework
             {
                 a.Disable();
             }
+
+            foreach (ShiftRotation period in Enum.GetValues(typeof(ShiftRotation)))
+            {
+                ActiveShifts[period] = false;
+            }
         }
 
         #endregion Duty Methods
@@ -1256,6 +1284,29 @@ namespace AgencyDispatchFramework
             bool skip = false;
             while (Main.OnDuty)
             {
+                // Get current datetime and timeperiod
+                var date = World.DateTime;
+                var tod = GameWorld.CurrentTimePeriod;
+
+                // Check for Shift changes
+                var currentShift = GetCurrentShiftByTime(date.TimeOfDay);
+                if (currentShift != CurrentShift)
+                {
+                    CurrentShift = currentShift;
+                    ActiveShifts[currentShift] = true;
+
+                    // Fire event
+                    OnShiftStart?.Invoke(currentShift);
+                }
+
+                // Time to send a shift home?
+                var activeShifts = GetActiveShifts(date.TimeOfDay);
+                var difference = ActiveShifts.Where(x => x.Value && !activeShifts[x.Key]).Select(x => x.Key).ToArray();
+                foreach (var shift in difference)
+                {
+                    OnShiftEnd?.Invoke(shift);
+                }
+
                 // Every other loop, do dispatching logic
                 skip = !skip;
                 if (!skip)
@@ -1278,10 +1329,6 @@ namespace AgencyDispatchFramework
                         GameFiber.Yield();
                     }
                 }
-
-                // Get current datetime and timeperiod
-                var date = World.DateTime;
-                var tod = GameWorld.CurrentTimePeriod;
 
                 // Call OnTick for the VirtualAIUnit(s)
                 foreach (var agency in AgenciesByName.Values)
@@ -1318,6 +1365,34 @@ namespace AgencyDispatchFramework
                 // Stop this thread for one second
                 GameFiber.Wait(1000);
             }
+        }
+
+        private static Dictionary<ShiftRotation, bool> GetActiveShifts(TimeSpan time)
+        {
+            return new Dictionary<ShiftRotation, bool>()
+            {
+                { ShiftRotation.Day, (time.Hours.InRange(6, 16)) },
+                { ShiftRotation.Night, (time.Hours >= 21 || time.Hours < 7) },
+                { ShiftRotation.Swing, (time.Hours < 1 || time.Hours.InRange(15, 24)) }
+            };
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private static ShiftRotation GetCurrentShiftByTime(TimeSpan time)
+        {
+            if (time.Hours.InRange(6, 16))
+            {
+                return ShiftRotation.Day;
+            }
+            else if (time.Hours >= 21 || time.Hours < 7)
+            {
+                return ShiftRotation.Night;
+            }
+            
+            return ShiftRotation.Swing;
         }
 
         /// <summary>

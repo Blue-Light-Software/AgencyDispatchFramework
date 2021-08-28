@@ -11,13 +11,13 @@
   <Class>Lower</Class>
   <Population>Moderate</Population>
   <Crime>
-    <AverageCalls>
-      <Night value="1" />
-      <EarlyMorning value="2" />
-      <LateMorning value="3" />
-      <Afternoon value="4" />
-      <EarlyEvening value="5" />
-      <LateEvening value="6" />
+    <AverageCalls value="20">
+      <Night probability="10" />
+      <EarlyMorning probability="20" />
+      <LateMorning probability="30" />
+      <Afternoon probability="40" />
+      <EarlyEvening probability="50" />
+      <LateEvening probability="60" />
     </AverageCalls>
     <Probabilities>
       <Disturbance possible="true" />

@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://gta.fandom.com/wiki/Paleto_Cove -->
+<PALCOV>
+  <Name>Paleto Cove</Name>
+  <Size>Medium</Size>
+  <Type>Water</Type>
+  <Class>LowerMiddle</Class>
+  <Population>None</Population>
+  <Crime>
+    <AverageCalls>
+      <Night value="0" />
+      <EarlyMorning value="0" />
+      <LateMorning value="0" />
+      <Afternoon value="0" />
+      <EarlyEvening value="0" />
+      <LateEvening value="0" />
+    </AverageCalls>
+    <Probabilities>
+      <Disturbance possible="false" />
+      <Robbery possible="false" />
+      <Property possible="false" />
+      <Traffic possible="false" />
+      <Violent possible="false" />
+      <Other possible="false" />
+    </Probabilities>
+  </Crime>
+  <Locations>
+    <Residences>
+
+    </Residences>
+    <Businesses>
+
+    </Businesses>
+    <RoadShoulders>
+
+    </RoadShoulders>
+  </Locations>
+</PALCOV>

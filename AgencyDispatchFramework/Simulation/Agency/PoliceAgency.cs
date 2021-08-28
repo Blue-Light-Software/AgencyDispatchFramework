@@ -58,7 +58,7 @@ namespace AgencyDispatchFramework.Simulation
             // Get number of optimal patrols, and total calls per period
             // --------------------------------------------------
             var officerCounts = new Dictionary<TimePeriod, int>();
-            var callsByPeriod = new Dictionary<TimePeriod, int>();
+            var callsByPeriod = new Dictionary<TimePeriod, double>();
             int totalDailyCalls = 0;
             int totalRosterSize = 0;
 
@@ -84,12 +84,12 @@ namespace AgencyDispatchFramework.Simulation
                 foreach (var zone in Zones)
                 {
                     // Get average calls per period
-                    var calls = zone.AverageCalls[period];
+                    var calls = zone.CrimeInfo.GetTrueAverageCallCount(period);
                     callsByPeriod[period] += calls;
-                    totalDailyCalls += calls;
+                    totalDailyCalls += zone.CrimeInfo.AverageCalls;
 
                     // Grab crime report of this zone
-                    var report = zone.GetCrimeReport(period, Weather.Clear);
+                    var report = zone.CrimeInfo.CalculateCrimeProbabilities(period, Weather.Clear);
 
                     // --------------------------------------------------
                     // Add Patrol units

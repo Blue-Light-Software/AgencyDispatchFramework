@@ -95,11 +95,11 @@ namespace AgencyDispatchFramework.Xml
 
             // Get average calls by time of day
             var subNode = catagoryNode.SelectSingleNode("AverageCalls");
-            Zone.AverageCalls = GetTimePeriodAverageCalls(subNode);
-            int maxCalls = Zone.AverageCalls.Values.Sum();
+            Zone.CrimeInfo = CreateCrimeProjection(subNode, Zone);
+            int totalProbability = Zone.CrimeInfo.CrimeProbability.Values.Sum();
 
             // Does this zone get any calls?
-            if (maxCalls > 0)
+            if (totalProbability > 0 && Zone.CrimeInfo.AverageCalls > 0)
             {
                 catagoryNode = catagoryNode.SelectSingleNode("Probabilities");
                 if (catagoryNode == null || !catagoryNode.HasChildNodes)
@@ -156,29 +156,35 @@ namespace AgencyDispatchFramework.Xml
         /// </summary>
         /// <param name="node">The AverageCalls node</param>
         /// <returns></returns>
-        private Dictionary<TimePeriod, int> GetTimePeriodAverageCalls(XmlNode node)
+        private CrimeProjection CreateCrimeProjection(XmlNode node, WorldZone zone)
         {
             // If attributes is null, we know... we know...
-            if (!node?.HasChildNodes ?? false)
+            if (node == null)
             {
-                throw new ArgumentNullException(node.Name);
+                throw new ArgumentNullException("node");
+            }
+
+            // Get average calls value
+            if (!Int32.TryParse(node.GetAttribute("value"), out int averageCalls))
+            {
+                throw new FormatException($"[{node.GetFullPath()}]: Missing the 'value' attribute");
             }
 
             // Itterate through each time of day
-            var calls = new Dictionary<TimePeriod, int>(6);
+            var probabilities = new Dictionary<TimePeriod, int>(6);
             foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
             {
                 var name = Enum.GetName(typeof(TimePeriod), period);
                 var todNode = node.SelectSingleNode(name);
-                if (todNode == null || !Int32.TryParse(todNode.GetAttribute("value"), out int val))
+                if (todNode == null || !Int32.TryParse(todNode.GetAttribute("probability"), out int val))
                 {
-                    throw new Exception($"[{node.GetFullPath()}]: Unable to extract value attribute from XmlNode '{name}'");
+                    throw new Exception($"[{node.GetFullPath()}]: Unable to extract 'probability' attribute from XmlNode '{name}'");
                 }
 
-                calls.Add(period, val);
+                probabilities.Add(period, val);
             }
 
-            return calls;
+            return new CrimeProjection(zone, averageCalls, probabilities);
         }
 
         /// <summary>
