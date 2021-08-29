@@ -100,7 +100,9 @@
     <Compile Include="Conversation\Question.cs" />
     <Compile Include="Dispatching\Delegates\ShiftUpdateHandler.cs" />
     <Compile Include="Dispatching\CallSigns\CallSignGenerator.cs" />
+    <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Game\Enums\PedDescriptionPropertyType.cs" />
+    <Compile Include="Game\PedVariationMeta.cs" />
     <Compile Include="NativeUI\OnDutyPluginMenu.cs" />
     <Compile Include="Simulation\Agency\EmsAgency.cs" />
     <Compile Include="Simulation\Agency\FireAgency.cs" />
@@ -142,6 +144,7 @@
     <Compile Include="Dispatching\Assignments\TrafficAccident.cs" />
     <Compile Include="Dispatching\Assignments\StandardTrafficStop.cs" />
     <Compile Include="Simulation\CrimeProjection.cs" />
+    <Compile Include="Simulation\Enums\OutfitVariation.cs" />
     <Compile Include="Simulation\ShiftRotation.cs" />
     <Compile Include="Scripting\Events\AiOfficerEvent.cs" />
     <Compile Include="Scripting\Events\AmbientEventHandler.cs" />
@@ -321,7 +324,7 @@
     <Compile Include="Xml\PedModelMetaFile.cs" />
     <Compile Include="Xml\PedVariantsFile.cs" />
     <Compile Include="Xml\WorldZoneFile.cs" />
-    <Compile Include="Xml\XmlExtractor.cs" />
+    <Compile Include="Xml\XmlHelper.cs" />
     <Compile Include="Xml\XmlFileBase.cs" />
   </ItemGroup>
   <ItemGroup>

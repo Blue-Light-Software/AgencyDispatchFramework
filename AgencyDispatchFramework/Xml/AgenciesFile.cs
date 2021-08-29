@@ -5,9 +5,9 @@ using AgencyDispatchFramework.Simulation;
 using Rage;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Linq.Dynamic;
 using System.Xml;
 
 namespace AgencyDispatchFramework.Xml
@@ -18,6 +18,45 @@ namespace AgencyDispatchFramework.Xml
         /// A dictionary of agencies
         /// </summary>
         public Dictionary<string, Agency> Agencies { get; set; }
+
+        /// <summary>
+        /// Contains a string to Enum value look up for <see cref="PedComponent"/>s
+        /// </summary>
+        protected static Dictionary<string, PedComponent> ComponentLookUp { get; set; }
+
+        /// <summary>
+        /// Contains a string to Enum value look up for <see cref="PedPropIndex"/>s
+        /// </summary>
+        protected static Dictionary<string, PedPropIndex> PropLookUp { get; set; }
+
+        /// <summary>
+        /// Static constructor
+        /// </summary>
+        static AgenciesFile()
+        {
+            ComponentLookUp = new Dictionary<string, PedComponent>()
+            {
+                { "face", PedComponent.Head },
+                { "beard", PedComponent.Mask },
+                { "hair", PedComponent.Hair },
+                { "shirt", PedComponent.Torso },
+                { "pants", PedComponent.Legs },
+                { "hands", PedComponent.Hands },
+                { "shoes", PedComponent.Shoes },
+                { "eyes", PedComponent.Eyes },
+                { "tasks", PedComponent.Tasks },
+                { "decals", PedComponent.Decals },
+                { "shirtoverlay", PedComponent.ShirtOverlay },
+            };
+
+            PropLookUp = new Dictionary<string, PedPropIndex>()
+            {
+                { "hats", PedPropIndex.Hat },
+                { "glasses", PedPropIndex.Glasses },
+                { "ears", PedPropIndex.Ear },
+                { "watches", PedPropIndex.Watch },
+            };
+        }
 
         /// <summary>
         /// Constructor
@@ -359,6 +398,93 @@ namespace AgencyDispatchFramework.Xml
         /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
         private bool TryExtractPeds(XmlNode vn, VehicleSet set, Agency agency)
         {
+            // Grab node
+            var nodes = vn.SelectSingleNode("Peds")?.SelectNodes("Ped");
+            if (nodes == null || nodes.Count == 0)
+                return false;
+
+            // Hash table of models
+            var modelTable = new Dictionary<string, OfficerModelMeta>();
+
+            // Loop through each Ped node
+            foreach (XmlNode node in nodes)
+            {
+                // Extract the chance attribute
+                if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
+                    continue;
+
+                // Local vars
+                OfficerModelMeta meta = null;
+                var variation = OutfitVariation.Dry;
+                var modelName = node.InnerText;
+
+                // Check for rainy or snowy variation!
+                if (node.TryGetAttribute("rain_outfit", out bool rain) && rain)
+                {
+                    variation = OutfitVariation.Rainy;
+                }
+                else if (node.TryGetAttribute("snow_outfit", out bool snow) && snow)
+                {
+                    variation = OutfitVariation.Snowy;
+                }
+
+                // Create meta
+                if (variation == OutfitVariation.Dry)
+                {
+                    meta = new OfficerModelMeta(chance, modelName);
+                    modelTable.AddOrUpdate(modelName, meta);
+                }
+                else if (modelTable.ContainsKey(modelName))
+                {
+                    meta = modelTable[modelName];
+                }
+                else
+                {
+                    Log.Error($"AgenciesFile.TryExtractPeds: Outfit variation found for model '{modelName}' but there is no dry variation!");
+                    return false;
+                }
+
+                // Check for randomize props
+                if (node.TryGetAttribute("random_props", out bool randomize))
+                {
+                    meta.RandomizeProps(variation, randomize);
+                }
+
+                // Extract components
+                foreach (var item in ComponentLookUp)
+                {
+                    // Search for each component
+                    if (Int32.TryParse(node.GetAttribute($"comp_{item.Key}"), out int val))
+                    {
+                        // Check for texture index
+                        if (!Int32.TryParse(node.GetAttribute($"tex_{item.Key}"), out int tex))
+                        {
+                            tex = 0;
+                        }
+
+                        // Add component
+                        meta.SetComponent(variation, item.Value, val, tex);
+                    }
+                }
+
+                // Extract props
+                foreach (var item in PropLookUp)
+                {
+                    // Search for each component
+                    if (Int32.TryParse(node.GetAttribute($"prop_{item.Key}"), out int val))
+                    {
+                        // Check for texture index
+                        if (!Int32.TryParse(node.GetAttribute($"tex_{item.Key}"), out int tex))
+                        {
+                            tex = 0;
+                        }
+
+                        // Add component
+                        meta.SetProp(variation, item.Value, val, tex);
+                    }
+                }
+            }
+
             // Report success
             return true;
         }
@@ -372,6 +498,8 @@ namespace AgencyDispatchFramework.Xml
         /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
         private bool TryExtractNonLethals(XmlNode vn, VehicleSet set, Agency agency)
         {
+            
+
             // Report success
             return true;
         }

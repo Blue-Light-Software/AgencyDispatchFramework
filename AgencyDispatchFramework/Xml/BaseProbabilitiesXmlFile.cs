@@ -24,7 +24,7 @@ namespace AgencyDispatchFramework.Xml
 
             // Grab base crime probabilities
             var node = rootElement.SelectSingleNode("Crime/Probabilities");
-            RegionCrimeGenerator.BaseCrimeMultipliers = XmlExtractor.GetWorldStateMultipliers(node);
+            RegionCrimeGenerator.BaseCrimeMultipliers = XmlHelper.ExtractWorldStateMultipliers(node);
         }
 
         public static void Load()

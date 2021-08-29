@@ -8,13 +8,13 @@ namespace AgencyDispatchFramework
     /// <summary>
     /// Provides methods to extact common formatted XmlNodes and parse them into objects
     /// </summary>
-    internal static class XmlExtractor
+    internal static class XmlHelper
     {
         /// <summary>
         /// Parses world state modifiers from an <see cref="XmlNode"/>
         /// </summary>
         /// <param name="node"></param>
-        public static WorldStateMultipliers GetWorldStateMultipliers(XmlNode node)
+        public static WorldStateMultipliers ExtractWorldStateMultipliers(XmlNode node)
         {
             // Ensure node isn't null
             if (node == null)

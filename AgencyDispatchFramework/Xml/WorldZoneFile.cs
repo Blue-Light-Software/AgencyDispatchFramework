@@ -130,7 +130,7 @@ namespace AgencyDispatchFramework.Xml
                     var multipliers = (WorldStateMultipliers)RegionCrimeGenerator.BaseCrimeMultipliers.Clone();
 
                     // Override settings
-                    XmlExtractor.UpdateWorldStateMultipliers(n, multipliers);
+                    XmlHelper.UpdateWorldStateMultipliers(n, multipliers);
                     Zone.CallCategoryGenerator.Add(calloutType, multipliers);
                 }
             }

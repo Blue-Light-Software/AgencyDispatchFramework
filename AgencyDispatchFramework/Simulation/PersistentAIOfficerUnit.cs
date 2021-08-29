@@ -91,7 +91,7 @@ namespace AgencyDispatchFramework.Simulation
             Officer.RelationshipGroup = RelationshipGroup.Cop;
 
             // Set component variations
-            foreach (var comp in virtualAI.PedMeta.Components)
+            foreach (var comp in virtualAI.PedMeta.DryComponents)
             {
                 // Extract ids
                 int id = (int)comp.Key;
@@ -109,7 +109,7 @@ namespace AgencyDispatchFramework.Simulation
             }
 
             // Set props
-            foreach (var prop in virtualAI.PedMeta.Props)
+            foreach (var prop in virtualAI.PedMeta.DryProps)
             {
                 // Extract ids
                 int id = (int)prop.Key;

@@ -133,7 +133,7 @@ namespace AgencyDispatchFramework.Xml
                 WorldStateMultipliers multipliers = null;
                 try
                 {
-                    multipliers = XmlExtractor.GetWorldStateMultipliers(probNode);
+                    multipliers = XmlHelper.ExtractWorldStateMultipliers(probNode);
                 }
                 catch (Exception e)
                 {
