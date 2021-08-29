@@ -1,5 +1,6 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Extensions;
+using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
 using LSPD_First_Response.Engine.Scripting.Entities;
 using Rage;
@@ -90,9 +91,16 @@ namespace AgencyDispatchFramework.Simulation
             Officer.BlockPermanentEvents = true;
             Officer.RelationshipGroup = RelationshipGroup.Cop;
 
+            // Get weather snapshot
+            var snapshot = GameWorld.GetWeatherSnapshot();
+            var variationMeta = virtualAI.PedMeta.GetVariationMeta(snapshot);
+
             // Set component variations
-            foreach (var comp in virtualAI.PedMeta.DryComponents)
+            foreach (var comp in variationMeta.Components)
             {
+                // Check for disabled
+                //if (comp.Value.Item1 == 0) continue;
+
                 // Extract ids
                 int id = (int)comp.Key;
                 int drawId = comp.Value.Item1;
@@ -103,14 +111,17 @@ namespace AgencyDispatchFramework.Simulation
             }
 
             // Randomize props?
-            if (virtualAI.PedMeta.RandomizeProps)
+            if (variationMeta.RandomizeProps)
             {
                 Officer.RandomizeProps();
             }
 
             // Set props
-            foreach (var prop in virtualAI.PedMeta.DryProps)
+            foreach (var prop in variationMeta.Props)
             {
+                // Check for disabled
+                //if (prop.Value.Item1 == 0) continue;
+
                 // Extract ids
                 int id = (int)prop.Key;
                 int drawId = prop.Value.Item1;
