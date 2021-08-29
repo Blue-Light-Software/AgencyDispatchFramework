@@ -4,7 +4,9 @@ using AgencyDispatchFramework.Game.Locations;
 using AgencyDispatchFramework.Scripting;
 using Rage;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AgencyDispatchFramework.Simulation
 {
@@ -39,11 +41,6 @@ namespace AgencyDispatchFramework.Simulation
         public Dictionary<TimePeriod, RegionCrimeInfo> RegionCrimeInfoByTimePeriod { get; private set; }
 
         /// <summary>
-        /// Containts a range of time between calls in milliseconds (real life time), using the current <see cref="CrimeLevel"/>.
-        /// </summary>
-        public Range<int> CallTimerRange { get; set; }
-
-        /// <summary>
         /// Gets the current crime level definition for the current <see cref="Agency"/>
         /// </summary>
         public CrimeLevel CurrentCrimeLevel { get; private set; }
@@ -62,6 +59,12 @@ namespace AgencyDispatchFramework.Simulation
         /// Spawn generator for random crime levels
         /// </summary>
         private static ProbabilityGenerator<Spawnable<CrimeLevel>> CrimeLevelGenerator { get; set; }
+
+        /// <summary>
+        /// Contains a Queue of <see cref="TimeSpan"/>s as a plan of when the remaining calls
+        /// during this <see cref="TimePeriod"/> will be recieved.
+        /// </summary>
+        private ConcurrentQueue<TimeSpan> NextIncomingCallTimes { get; set; }
 
         /// <summary>
         /// GameFiber containing the CallCenter functions
@@ -112,27 +115,8 @@ namespace AgencyDispatchFramework.Simulation
             // Do initial evaluation
             EvaluateCrimeValues();
 
-            // Register for this event right away
-            TimeScale.OnTimeScaleChanged += TimeScale_OnTimeScaleChanged;
-
             // Determine our initial Crime level during this period
             CurrentCrimeLevel = CrimeLevelGenerator.Spawn().Value;
-        }
-
-        /// <summary>
-        /// Adds a zone to the <see cref="RegionCrimeGenerator"/>
-        /// </summary>
-        /// <param name="zone"></param>
-        public void AddZone(WorldZone zone)
-        {
-            // Add zone
-            CrimeZoneGenerator.Add(zone);
-
-            // Re-do crime evaluation
-            EvaluateCrimeValues();
-
-            // Re-calculate call timers
-            AdjustCallFrequencyTimer();
         }
 
         /// <summary>
@@ -147,9 +131,6 @@ namespace AgencyDispatchFramework.Simulation
 
                 // Register for Dispatch event
                 GameWorld.OnTimePeriodChanged += GameWorld_OnTimeOfDayChanged;
-
-                // Must be called
-                AdjustCallFrequencyTimer();
 
                 // Start GameFiber
                 CrimeFiber = GameFiber.StartNew(ProcessCrimeLogic);
@@ -224,7 +205,7 @@ namespace AgencyDispatchFramework.Simulation
                         var calls = zone.CrimeInfo.GetTrueAverageCallCount(period);
                         crimeInfo.AverageCrimeCalls += calls;
                     }
-                }
+                } 
 
                 // Get our average real time milliseconds per call
                 if (crimeInfo.AverageCallsPerGameHour > 0)
@@ -239,18 +220,80 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="calls">The average crime calls for this time period</param>
+        /// <returns></returns>
+        public int GetNextCallCountByCrimeLevel(double calls)
+        {
+            int min = 0;
+            int max = 0;
+
+            // Adjust call frequency timer based on current Crime Level
+            switch (CurrentCrimeLevel)
+            {
+                case CrimeLevel.VeryHigh:
+                    min = Convert.ToInt32(calls / 2.5d);
+                    max = Convert.ToInt32(calls / 1.75d);
+                    break;
+                case CrimeLevel.High:
+                    min = Convert.ToInt32(calls / 1.75d);
+                    max = Convert.ToInt32(calls / 1.25d);
+                    break;
+                case CrimeLevel.Moderate:
+                    min = Convert.ToInt32(calls / 1.25d);
+                    max = Convert.ToInt32(calls * 1.25d);
+                    break;
+                case CrimeLevel.Low:
+                    min = Convert.ToInt32(calls * 1.5d);
+                    max = Convert.ToInt32(calls * 2d);
+                    break;
+                case CrimeLevel.VeryLow:
+                    min = Convert.ToInt32(calls * 2d);
+                    max = Convert.ToInt32(calls * 2.5d);
+                    break;
+                default:
+                    // None - This gets fixed later down
+                    break;
+            }
+
+            return Randomizer.Next(min, max);
+        }
+
+        /// <summary>
         /// Generates a new <see cref="PriorityCall"/> within a set range of time,
         /// determined by the <see cref="Agency.OverallCrimeLevel"/>
         /// </summary>
         private void ProcessCrimeLogic()
         {
             // stored local variables
-            int time = 0;
             int timesFailed = 0;
+            int sleepTimer = TimeScale.GetMillisecondsPerGameMinute();
 
             // While we are on duty accept calls
             while (IsRunning)
             {
+                // Always yield
+                GameFiber.Sleep(sleepTimer);
+
+                // Do we have another incomming call in the queue?
+                if (!NextIncomingCallTimes.TryPeek(out TimeSpan time))
+                {
+                    continue;
+                }
+
+                // Is this call incoming now?
+                if (time < World.DateTime.TimeOfDay)
+                {
+                    continue;
+                }
+
+                // Remove item
+                if (!NextIncomingCallTimes.TryDequeue(out time))
+                {
+                    continue;
+                }
+
                 // Generate a new call
                 var call = GenerateCall();
                 if (call == null)
@@ -277,7 +320,6 @@ namespace AgencyDispatchFramework.Simulation
 
                     // Log as warning for developer
                     Log.Warning($"Failed to generate a PriorityCall. Trying again in 1 second.");
-                    time = 1000;
 
                     // Count
                     timesFailed++;
@@ -287,84 +329,21 @@ namespace AgencyDispatchFramework.Simulation
                     // Register call so that it can be dispatched
                     Dispatch.AddIncomingCall(call);
 
-                    // Determine random time till next call
-                    time = Randomizer.Next(CallTimerRange.Minimum, CallTimerRange.Maximum);
-                    Log.Debug($"Starting next call in {time}ms");
+                    // Do we have another incomming call in the queue?
+                    if (NextIncomingCallTimes.TryPeek(out time))
+                    {
+                        // Determine random time till next call
+                        Log.Debug($"Starting next call in {time.TotalMinutes} in-game minutes");
+                    }
+                    else
+                    {
+                        // Determine random time till next call
+                        Log.Debug($"No more calls this TimePeriod");
+                    }
 
                     // Reset
                     timesFailed = 0;
                 }
-
-                // Wait
-                GameFiber.Wait(time);
-            }
-        }
-
-        /// <summary>
-        /// Adjusts the crime frequency timer based on current <see cref="CrimeLevel"/>
-        /// </summary>
-        private void AdjustCallFrequencyTimer()
-        {
-            // Grab our RegionCrimeInfo for this time period
-            var crimeInfo = RegionCrimeInfoByTimePeriod[GameWorld.CurrentTimePeriod];
-            int realMSPerCall = crimeInfo.AverageMillisecondsPerCall;
-
-            // Get time until the next TimeOfDay change
-            var timeScaleMult = TimeScale.GetCurrentTimeScaleMultiplier();
-            var timerUntilNext = GameWorld.GetTimeUntilNextTimePeriod();
-            var nextChangeRealMS = (int)(timerUntilNext.TotalMilliseconds / timeScaleMult);
-            var hourGameTimeToMSRealTime = 60 * TimeScale.GetMillisecondsPerGameMinute();
-
-            int min = 0; 
-            int max = 0;
-
-            // Ensure we have any calls
-            if (realMSPerCall > 0)
-            {
-                // Adjust call frequency timer based on current Crime Level
-                switch (CurrentCrimeLevel)
-                {
-                    case CrimeLevel.VeryHigh:
-                        min = Convert.ToInt32(realMSPerCall / 2.5d);
-                        max = Convert.ToInt32(realMSPerCall / 1.75d);
-                        break;
-                    case CrimeLevel.High:
-                        min = Convert.ToInt32(realMSPerCall / 1.75d);
-                        max = Convert.ToInt32(realMSPerCall / 1.25d);
-                        break;
-                    case CrimeLevel.Moderate:
-                        min = Convert.ToInt32(realMSPerCall / 1.25d);
-                        max = Convert.ToInt32(realMSPerCall * 1.25d);
-                        break;
-                    case CrimeLevel.Low:
-                        min = Convert.ToInt32(realMSPerCall * 1.5d);
-                        max = Convert.ToInt32(realMSPerCall * 2d);
-                        break;
-                    case CrimeLevel.VeryLow:
-                        min = Convert.ToInt32(realMSPerCall * 2d);
-                        max = Convert.ToInt32(realMSPerCall * 2.5d);
-                        break;
-                    default:
-                        // None - This gets fixed later down
-                        break;
-                }
-            }
-
-            // Ensure we do not float too far into the next timer period
-            if (realMSPerCall == 0 || CurrentCrimeLevel == CrimeLevel.None || min > nextChangeRealMS)
-            {
-                min = nextChangeRealMS;
-                max = nextChangeRealMS + hourGameTimeToMSRealTime;
-            }
-
-            // Adjust call frequency timer
-            CallTimerRange = new Range<int>(min, max);
-            if (min == 0 || !CallTimerRange.IsValid())
-            {
-                Log.Error($"RegionCrimeGenerator.AdjustCallFrequencyTimer(): Detected a bad call timer range of {CallTimerRange}");
-                Log.Debug($"\t\t\tCurrent Crime Level: {CurrentCrimeLevel}");
-                Log.Debug($"\t\t\tAvg MS Per Call: {realMSPerCall}");
-                Log.Debug($"\t\t\tTime Until Next TimeOfDay MS: {nextChangeRealMS}");
             }
         }
 
@@ -495,9 +474,6 @@ namespace AgencyDispatchFramework.Simulation
             // Log change
             Log.Info($"RegionCrimeGenerator: The time of day is transitioning to {name}. Settings crime level to {Enum.GetName(typeof(CrimeLevel), CurrentCrimeLevel)}");
 
-            // Adjust our call frequency based on new crime level
-            AdjustCallFrequencyTimer();
-
             // Determine message
             string current = Enum.GetName(typeof(CrimeLevel), CurrentCrimeLevel);
             if (CurrentCrimeLevel != oldLevel)
@@ -525,21 +501,38 @@ namespace AgencyDispatchFramework.Simulation
                     $"The time of day is transitioning to ~y~{name}~w~. Crime levels are not expected to change"
                 );
             }
-        }
 
-        /// <summary>
-        /// Method called if the TimeScale in game is changed
-        /// </summary>
-        /// <param name="oldMultiplier"></param>
-        /// <param name="newMultiplier"></param>
-        private void TimeScale_OnTimeScaleChanged(int oldMultiplier, int newMultiplier)
-        {
-            // Re-evaluate
-            EvaluateCrimeValues();
+            // Clear old junk
+            NextIncomingCallTimes = new ConcurrentQueue<TimeSpan>();
 
-            // Re-adjust
-            if (IsRunning)
-                AdjustCallFrequencyTimer();
+            // Rebuild WorldZone probability generator. Probability equals TrueAverageCallCount * 10000
+            CrimeZoneGenerator.Rebuild();
+
+            // Get average number of calls this time
+            var info = RegionCrimeInfoByTimePeriod[GameWorld.CurrentTimePeriod];
+
+            // Multiply # of calls based on crime levels
+            var numCalls = GetNextCallCountByCrimeLevel(info.AverageCrimeCalls);
+
+            // Divided by percent we are through the current time period.
+            var start = World.DateTime.TimeOfDay;
+            var end = GameWorld.GetTimeUntilNextTimePeriod();
+            int maxMinutes = (int)((end - start).TotalMinutes) - 1;
+
+            // Take that number create X amount of random TimeSpans
+            var list = new List<TimeSpan>(numCalls);
+            for (int i = 0; i < numCalls; i++)
+            {
+                int minutes = Randomizer.Next(1, maxMinutes);
+                list.Add(start.Add(TimeSpan.FromMinutes(minutes)));
+            }
+
+            // Store TimeSpans in a queue ordered by total minutes
+            var oList = list.OrderBy(x => x.TotalMinutes);
+            foreach (var time in oList)
+            {
+                NextIncomingCallTimes.Enqueue(time);
+            }
         }
 
         #endregion

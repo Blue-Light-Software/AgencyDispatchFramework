@@ -29,7 +29,7 @@ namespace AgencyDispatchFramework.Game
         /// <summary>
         /// Gets the crime level probability of this zone based on current time of day
         /// </summary>
-        public int Probability => CrimeInfo.AverageCalls * CrimeInfo.CrimeProbability[GameWorld.CurrentTimePeriod] ;
+        public int Probability => (int)CrimeInfo.GetTrueAverageCallCount(GameWorld.CurrentTimePeriod) * 1000;
 
         /// <summary>
         /// Gets the average daily crime calls
