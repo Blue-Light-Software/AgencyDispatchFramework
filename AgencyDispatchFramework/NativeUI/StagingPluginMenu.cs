@@ -1,9 +1,7 @@
 ﻿using AgencyDispatchFramework.Dispatching;
-using AgencyDispatchFramework.Dispatching.Assignments;
 using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
-using AgencyDispatchFramework.Simulation;
 using AgencyDispatchFramework.Xml;
 using Rage;
 using RAGENativeUI;
@@ -13,7 +11,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml;
 using static Rage.Native.NativeFunction;
 
@@ -22,7 +19,10 @@ namespace AgencyDispatchFramework.NativeUI
     /// <summary>
     /// Represents a basic <see cref="MenuPool"/> for the Agency Dispatch Framework Plugin
     /// </summary>
-    internal partial class PluginMenu
+    /// <remarks>
+    /// Plugin menu loaded when the player is OnDuty with LSPDFR, but not ADF
+    /// </remarks>
+    internal partial class StagingPluginMenu
     {
         /// <summary>
         /// Gets the banner menu name to display on all banners on all submenus
@@ -62,8 +62,6 @@ namespace AgencyDispatchFramework.NativeUI
 
         #region Main Menu Buttons
 
-        private UIMenuItem DispatchMenuButton { get; set; }
-
         private UIMenuItem PatrolSettingsMenuButton { get; set; }
 
         private UIMenuItem ModSettingsMenuButton { get; set; }
@@ -75,20 +73,6 @@ namespace AgencyDispatchFramework.NativeUI
         private UIMenuItem CloseMenuButton { get; set; }
 
         #endregion Main Menu Buttons
-
-        #region Dispatch Menu Buttons
-
-        private UIMenuCheckboxItem OutOfServiceButton { get; set; }
-
-        private UIMenuListItem OfficerStatusMenuButton { get; set; }
-
-        private UIMenuItem RequestQueueMenuButton { get; set; }
-
-        private UIMenuItem RequestCallMenuButton { get; set; }
-
-        private UIMenuItem EndCallMenuButton { get; set; }
-
-        #endregion Dispatch Menu Buttons
 
         #region Patrol Menu Buttons
 
@@ -153,9 +137,9 @@ namespace AgencyDispatchFramework.NativeUI
         private GameFiber ListenFiber { get; set; }
 
         /// <summary>
-        /// Creates a new isntance of <see cref="PluginMenu"/>
+        /// Creates a new isntance of <see cref="StagingPluginMenu"/>
         /// </summary>
-        public PluginMenu()
+        public StagingPluginMenu()
         {
             // Create main menu
             MainUIMenu = new UIMenu(MENU_NAME, "~b~Main Menu")
@@ -166,7 +150,6 @@ namespace AgencyDispatchFramework.NativeUI
             MainUIMenu.WidthOffset = 12;
 
             // Create menu buttons
-            DispatchMenuButton = new UIMenuItem("Dispatch Menu", "Opens the dispatch menu");
             PatrolSettingsMenuButton = new UIMenuItem("Patrol Settings", "Opens the patrol settings menu");
             ModSettingsMenuButton = new UIMenuItem("Mod Settings", "Opens the patrol settings menu");
             LocationsMenuButton = new UIMenuItem("Location Menu", "Allows you to view and add new locations for callouts");
@@ -180,7 +163,6 @@ namespace AgencyDispatchFramework.NativeUI
             TeleportMenuButton = new UIMenuListItem("Teleport", "Select police station to teleport to", places);
             
             // Add menu buttons
-            MainUIMenu.AddItem(DispatchMenuButton);
             MainUIMenu.AddItem(PatrolSettingsMenuButton);
             MainUIMenu.AddItem(ModSettingsMenuButton);
             MainUIMenu.AddItem(LocationsMenuButton);
@@ -191,9 +173,6 @@ namespace AgencyDispatchFramework.NativeUI
             LocationsMenuButton.Activated += LocationsMenuButton_Activated;
             TeleportMenuButton.Activated += TeleportMenuButton_Activated;
             CloseMenuButton.Activated += (s, e) => MainUIMenu.Visible = false;
-
-            // Create Dispatch Menu
-            BuildDispatchMenu();
 
             // Create Patrol Menu
             BuildPatrolMenu();
@@ -208,7 +187,6 @@ namespace AgencyDispatchFramework.NativeUI
             BuildLocationsMenu();
 
             // Bind Menus
-            MainUIMenu.BindMenuToItem(DispatchUIMenu, DispatchMenuButton);
             MainUIMenu.BindMenuToItem(PatrolUIMenu, PatrolSettingsMenuButton);
             MainUIMenu.BindMenuToItem(LocationsUIMenu, LocationsMenuButton);
 
@@ -216,7 +194,6 @@ namespace AgencyDispatchFramework.NativeUI
             AllMenus = new MenuPool
             {
                 MainUIMenu,
-                DispatchUIMenu,
                 PatrolUIMenu,
                 LocationsUIMenu,
                 AddRoadShoulderUIMenu,
@@ -233,7 +210,6 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Refresh indexes
             AllMenus.RefreshIndex();
-            MainUIMenu.OnMenuChange += MainUIMenu_OnMenuChange;
 
             // Create needed checkpoints
             SpawnPointHandles = new Dictionary<int, int>(20);
@@ -332,56 +308,6 @@ namespace AgencyDispatchFramework.NativeUI
             PatrolUIMenu.AddItem(BeatMenuButton);
         }
 
-        private void BuildDispatchMenu()
-        {
-            // Create dispatch menu
-            DispatchUIMenu = new UIMenu(MENU_NAME, "~b~Dispatch Menu")
-            {
-                MouseControlsEnabled = false,
-                AllowCameraMovement = true,
-                WidthOffset = 12
-            };
-
-            // Create Dispatch Buttons
-            OutOfServiceButton = new UIMenuCheckboxItem("Out Of Service", false);
-            OutOfServiceButton.CheckboxEvent += OutOfServiceButton_CheckboxEvent;
-            OfficerStatusMenuButton = new UIMenuListItem("Status", "Alerts dispatch to your current status. Click to set.");
-            RequestCallMenuButton = new UIMenuItem("Request Call", "Requests a nearby call from dispatch");
-            RequestQueueMenuButton = new UIMenuItem("Queue Crime Stats", "Requests current crime statistics from dispatch");
-            EndCallMenuButton = new UIMenuItem("Code 4", "Tells dispatch the current call is complete.");
-
-            // Fill List Items
-            foreach (var role in Enum.GetValues(typeof(OfficerStatus)))
-            {
-                OfficerStatusMenuButton.Collection.Add(role, role.ToString());
-            }
-
-            // Create button events
-            OfficerStatusMenuButton.Activated += (s, e) =>
-            {
-                var item = (OfficerStatus)OfficerStatusMenuButton.SelectedValue;
-                Dispatch.SetPlayerStatus(item);
-
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "~b~Status Update",
-                    "Status changed to: " + Enum.GetName(typeof(OfficerStatus), item)
-                );
-            };
-            RequestCallMenuButton.Activated += RequestCallMenuButton_Activated;
-            EndCallMenuButton.Activated += (s, e) => Dispatch.EndPlayerCallout();
-            RequestQueueMenuButton.Activated += RequestQueueMenuButton_Activated;
-
-            // Add dispatch menu buttons
-            DispatchUIMenu.AddItem(OutOfServiceButton);
-            DispatchUIMenu.AddItem(OfficerStatusMenuButton);
-            DispatchUIMenu.AddItem(RequestQueueMenuButton);
-            DispatchUIMenu.AddItem(RequestCallMenuButton);
-            DispatchUIMenu.AddItem(EndCallMenuButton);
-        }
-
         #region Events
 
         /// <summary>
@@ -429,21 +355,6 @@ namespace AgencyDispatchFramework.NativeUI
                     GameFiber.Yield();
                 }
             });
-        }
-
-        private void OutOfServiceButton_CheckboxEvent(UIMenuCheckboxItem sender, bool Checked)
-        {
-            var player = Dispatch.PlayerUnit;
-            if (Checked)
-            {
-                player.Assignment = new OutOfService();
-
-                // @todo change status to OutOfService
-            }
-            else
-            {
-                player.Assignment = null;
-            }
         }
 
         private void AddRoadShoulderUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
@@ -498,82 +409,11 @@ namespace AgencyDispatchFramework.NativeUI
             }
         }
 
-        private void MainUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
-        {
-            if (!forward) return;
-
-            if (newMenu == DispatchUIMenu)
-            {
-                var status = Dispatch.GetPlayerStatus();
-                int index = OfficerStatusMenuButton.Collection.IndexOf(status);
-                OfficerStatusMenuButton.Index = index;
-            }
-        }
-
         private void LocationsMenuButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
             // Grab player location
             var pos = Rage.Game.LocalPlayer.Character.Position;
             LocationsUIMenu.SubtitleText = $"~y~{GameWorld.GetZoneNameAtLocation(pos)}~b~ Locations Menu";
-        }
-
-        private void RequestQueueMenuButton_Activated(UIMenu sender, UIMenuItem selectedItem)
-        {
-            var builder = new StringBuilder("Status: ");
-
-            // Add status
-            switch (Dispatch.CurrentCrimeLevel)
-            {
-                case CrimeLevel.VeryLow:
-                    builder.Append("~g~It is currently very slow~w~");
-                    break;
-                case CrimeLevel.Low:
-                    builder.Append("~g~It is slower than usual~w~");
-                    break;
-                case CrimeLevel.Moderate:
-                    builder.Append("~b~Calls are coming in steady~w~");
-                    break;
-                case CrimeLevel.High:
-                    builder.Append("~y~It is currently busy~w~");
-                    break;
-                case CrimeLevel.VeryHigh:
-                    builder.Append("~o~We have lots of calls coming in~w~");
-                    break;
-            }
-
-            // Add each call priority data
-            for (int i = 1; i < 5; i++)
-            {
-                var calls = Dispatch.GetCallList(i);
-                int c1c = calls.Where(x => x.CallStatus == CallStatus.Created || x.NeedsMoreOfficers).Count();
-                int c1b = calls.Where(x => x.CallStatus == CallStatus.Dispatched).Count() + c1c;
-                builder.Append($"<br />- Priority {i} Calls: ~b~{c1b} ~w~(~g~{c1c} ~w~Avail)");
-            }
-
-            // Display the information to the player
-            Rage.Game.DisplayNotification(
-                "3dtextures",
-                "mpgroundlogo_cops",
-                "Agency Dispatch Framework",
-                "~b~Current Crime Statistics",
-                builder.ToString()
-            );
-        }
-
-        private void RequestCallMenuButton_Activated(UIMenu sender, UIMenuItem selectedItem)
-        {
-            RequestCallMenuButton.Enabled = false;
-            if (!Dispatch.InvokeNextCalloutForPlayer(out bool dispatched))
-            {
-                Rage.Game.DisplayNotification("~r~You are currently not available for calls!");
-            }
-            else
-            {
-                if (!dispatched)
-                {
-                    Rage.Game.DisplayNotification("There are no calls currently available. ~g~Dispatch will send you the next call that comes in");
-                }
-            }
         }
 
         private void TeleportMenuButton_Activated(UIMenu sender, UIMenuItem selectedItem)
@@ -840,17 +680,8 @@ namespace AgencyDispatchFramework.NativeUI
                     // Enable/Disable buttons if not/on duty
                     if (MainUIMenu.Visible)
                     {
-                        DispatchMenuButton.Enabled = Main.OnDuty;
                         PatrolSettingsMenuButton.Enabled = Main.OnDuty;
                         ModSettingsMenuButton.Enabled = Main.OnDuty;
-                    }
-
-                    // Disable patrol area selection if not highway patrol
-                    if (DispatchUIMenu.Visible)
-                    {
-                        // Disable the Callout menu button if player is not on a callout
-                        EndCallMenuButton.Enabled = Dispatch.PlayerActiveCall != null;
-                        RequestCallMenuButton.Enabled = Dispatch.CanInvokeAnyCalloutForPlayer(true);
                     }
                 }
             });
@@ -859,6 +690,7 @@ namespace AgencyDispatchFramework.NativeUI
         internal void StopListening()
         {
             IsListening = false;
+            ListenFiber = null;
         }
     }
 }

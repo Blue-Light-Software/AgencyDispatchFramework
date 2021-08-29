@@ -91,6 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\BackupType.cs" />
+    <Compile Include="API\Events.cs" />
     <Compile Include="API\PersistantBackup.cs" />
     <Compile Include="API\VoiceCommands.cs" />
     <Compile Include="Conversation\CommunicationElement.cs" />
@@ -98,18 +99,20 @@
     <Compile Include="Conversation\PedResponseEventHandler.cs" />
     <Compile Include="Conversation\Question.cs" />
     <Compile Include="Dispatching\Delegates\ShiftUpdateHandler.cs" />
+    <Compile Include="Dispatching\CallSigns\CallSignGenerator.cs" />
     <Compile Include="Game\Enums\PedDescriptionPropertyType.cs" />
+    <Compile Include="NativeUI\OnDutyPluginMenu.cs" />
     <Compile Include="Simulation\Agency\EmsAgency.cs" />
     <Compile Include="Simulation\Agency\FireAgency.cs" />
     <Compile Include="Simulation\Agency\SheriffAgency.cs" />
     <Compile Include="Dispatching\Enums\CallSignStyle.cs" />
-    <Compile Include="Dispatching\NumberStyleCallsign.cs" />
+    <Compile Include="Dispatching\CallSigns\NumberStyleCallsign.cs" />
     <Compile Include="Dispatching\Assignments\BusinessCheck.cs" />
     <Compile Include="Dispatching\Assignments\FelonyTrafficStop.cs" />
     <Compile Include="Dispatching\Assignments\PrisonerTransport.cs" />
     <Compile Include="Dispatching\Assignments\PropertyCheck.cs" />
     <Compile Include="Dispatching\Assignments\TrafficEnforcement.cs" />
-    <Compile Include="Dispatching\CallSign.cs" />
+    <Compile Include="Dispatching\CallSigns\CallSign.cs" />
     <Compile Include="Dispatching\Delegates\BeforeRadioPlayedHandler.cs" />
     <Compile Include="Dispatching\Delegates\CallEndedHandler.cs" />
     <Compile Include="Dispatching\Delegates\CallListUpdateHandler.cs" />
@@ -123,7 +126,7 @@
     <Compile Include="Dispatching\Enums\DispatchPriority.cs" />
     <Compile Include="Dispatching\Enums\UnitType.cs" />
     <Compile Include="Dispatching\Dispatchers\PoliceDispatcher.cs" />
-    <Compile Include="Dispatching\LAPDStyleCallsign.cs" />
+    <Compile Include="Dispatching\CallSigns\LAPDStyleCallsign.cs" />
     <Compile Include="Dispatching\RadioMessage.cs" />
     <Compile Include="Dispatching\Delegates\ScenarioListUpdateHandler.cs" />
     <Compile Include="Dispatching\Enums\ResponseCode.cs" />
@@ -300,7 +303,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="NativeUI\PluginMenu.cs" />
+    <Compile Include="NativeUI\StagingPluginMenu.cs" />
     <Compile Include="NativeUI\CalloutInteractionMenu.cs" />
     <Compile Include="NativeUI\ComputerAidedDispatchMenu.cs" />
     <Compile Include="Range.cs" />

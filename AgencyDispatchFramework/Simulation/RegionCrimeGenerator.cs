@@ -233,24 +233,24 @@ namespace AgencyDispatchFramework.Simulation
             switch (CurrentCrimeLevel)
             {
                 case CrimeLevel.VeryHigh:
-                    min = Convert.ToInt32(calls / 2.5d);
-                    max = Convert.ToInt32(calls / 1.75d);
+                    max = Convert.ToInt32(calls * 2.5d);
+                    min = Convert.ToInt32(calls * 1.75d);
                     break;
                 case CrimeLevel.High:
-                    min = Convert.ToInt32(calls / 1.75d);
-                    max = Convert.ToInt32(calls / 1.25d);
+                    max = Convert.ToInt32(calls * 1.75d);
+                    min = Convert.ToInt32(calls * 1.25d);
                     break;
                 case CrimeLevel.Moderate:
-                    min = Convert.ToInt32(calls / 1.25d);
                     max = Convert.ToInt32(calls * 1.25d);
+                    min = Convert.ToInt32(calls * 0.75d);
                     break;
                 case CrimeLevel.Low:
-                    min = Convert.ToInt32(calls * 1.5d);
-                    max = Convert.ToInt32(calls * 2d);
+                    max = Convert.ToInt32(calls * 0.70d);
+                    min = Convert.ToInt32(calls * 0.45d);
                     break;
                 case CrimeLevel.VeryLow:
-                    min = Convert.ToInt32(calls * 2d);
-                    max = Convert.ToInt32(calls * 2.5d);
+                    max = Convert.ToInt32(calls * 0.40d);
+                    min = Convert.ToInt32(calls * 0.20d);
                     break;
                 default:
                     // None - This gets fixed later down

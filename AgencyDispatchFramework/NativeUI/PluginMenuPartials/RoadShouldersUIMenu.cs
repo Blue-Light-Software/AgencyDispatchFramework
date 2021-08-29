@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace AgencyDispatchFramework.NativeUI
 {
-    internal partial class PluginMenu
+    internal partial class StagingPluginMenu
     {
         private UIMenuItem RoadShoulderCreateButton { get; set; }
 

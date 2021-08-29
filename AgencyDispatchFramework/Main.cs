@@ -48,7 +48,7 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Contains the <see cref="RAGENativeUI.UIMenu"/> for this plgin
         /// </summary>
-        private static PluginMenu PluginMenu { get; set; }
+        private static StagingPluginMenu PluginMenu { get; set; }
 
         /// <summary>
         /// Gets whether the player is currently on duty
@@ -211,7 +211,7 @@ namespace AgencyDispatchFramework
                     }
 
                     // Initialize plugin menu
-                    PluginMenu = new PluginMenu();
+                    PluginMenu = new StagingPluginMenu();
 
                     // Flag
                     HasBeenOnDuty = true;
