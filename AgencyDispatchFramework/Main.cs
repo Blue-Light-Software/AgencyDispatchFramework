@@ -28,7 +28,12 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Gets whether the player is currently on duty
         /// </summary>
-        public static bool OnDuty { get; private set; } = false;
+        public static bool OnDutyLSPDFR { get; private set; } = false;
+
+        /// <summary>
+        /// Gets whether the virtual simulation is running
+        /// </summary>
+        public static bool SimulationRunning { get; private set; } = false;
 
         /// <summary>
         /// Gets the root folder path to the GTA V installation folder
@@ -140,7 +145,7 @@ namespace AgencyDispatchFramework
         /// <param name="onDuty">Indicates whether the player is going on or off duty</param>
         private void OnOnDutyStateChangedHandler(bool onDuty)
         {
-            OnDuty = onDuty;
+            OnDutyLSPDFR = onDuty;
             if (onDuty)
             {
                 // Did we spawn on duty?
@@ -176,7 +181,7 @@ namespace AgencyDispatchFramework
         {
             // Display notification to the player
             var loadingSpinner = InstructionalKey.SymbolBusySpinner.GetId();
-            Rage.Game.DisplayHelp($"~{loadingSpinner}~ AgencyDispatchFramework is initializing");
+            Rage.Game.DisplayHelp($"~{loadingSpinner}~ Initializing AgencyDispatchFramework");
 
             // Run this in a new thread, since this will block the main thread for awhile
             GameFiber.StartNew(delegate

@@ -141,7 +141,7 @@ namespace AgencyDispatchFramework.Game
             GameFiber.Wait(3000);
 
             // While we are on duty accept calls
-            while (Main.OnDuty)
+            while (Main.OnDutyLSPDFR)
             {
                 try
                 {

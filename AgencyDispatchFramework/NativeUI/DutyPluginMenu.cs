@@ -170,7 +170,7 @@ namespace AgencyDispatchFramework.NativeUI
                     // Enable/Disable buttons if not/on duty
                     if (MainUIMenu.Visible)
                     {
-                        DispatchMenuButton.Enabled = Main.OnDuty;
+                        DispatchMenuButton.Enabled = Main.OnDutyLSPDFR;
                         //ModSettingsMenuButton.Enabled = Main.OnDuty;
                     }
 
@@ -255,7 +255,7 @@ namespace AgencyDispatchFramework.NativeUI
             SupervisorBox = new UIMenuCheckboxItem("Supervisor", false, "Enables supervisor mode.");
             FastForwardBox = new UIMenuCheckboxItem("Fast Forward to Shift", true, "If checked, when this menu closes time is fast forwarded to the begining of you shift");
             WorldSettingsButton = new UIMenuItem("World Settings", "Setup world settings.");
-            CallSignsButton = new UIMenuItem("World Settings", "Setup world settings.");
+            CallSignsButton = new UIMenuItem("Choose CallSign", "Choose your CallSign for your Agency.");
 
             // Setup Shift items
             ShiftSelectMenuItem = new UIMenuListItem("Shift Selection", "Sets the shift you will be patrolling.");
@@ -263,6 +263,9 @@ namespace AgencyDispatchFramework.NativeUI
             {
                 ShiftSelectMenuItem.Collection.Add(shift, Enum.GetName(typeof(ShiftRotation), shift));
             }
+            ShiftSelectMenuItem.OnListChanged += ShiftSelectMenuItem_OnListChanged;
+            ShiftSelectMenuItem.Description = "Sets your desired shift hours. Day shift hours are 6am - 4pm";
+            ShiftSelectMenuItem.Index = 0;
 
             // Setup Patrol Menu
             SetRoleMenuItem = new UIMenuListItem("Primary Role", "Sets your primary role in the department. This will determine that types of calls you will dispatched to.");
@@ -372,6 +375,24 @@ namespace AgencyDispatchFramework.NativeUI
             WorldSettingsMenu.AddItem(WeatherMenuItem);
             WorldSettingsMenu.AddItem(RadomWeatherBox);
             WorldSettingsMenu.AddItem(SaveWorldSettingsButton);
+        }
+
+        private void ShiftSelectMenuItem_OnListChanged(UIMenuItem sender, int newIndex)
+        {
+            // Update description
+            ShiftRotation item = (ShiftRotation)ShiftSelectMenuItem.SelectedValue;
+            switch (item)
+            {
+                case ShiftRotation.Day:
+                    ShiftSelectMenuItem.Description = "Sets your desired shift hours. Day shift hours are 6am - 4pm";
+                    break;
+                case ShiftRotation.Swing:
+                    ShiftSelectMenuItem.Description = "Sets your desired shift hours. Swing shift hours are 3pm - 1am";
+                    break;
+                case ShiftRotation.Night:
+                    ShiftSelectMenuItem.Description = "Sets your desired shift hours. Night shift hours are 9pm - 7am";
+                    break;
+            }
         }
 
         private void OutOfServiceButton_CheckboxEvent(UIMenuCheckboxItem sender, bool Checked)

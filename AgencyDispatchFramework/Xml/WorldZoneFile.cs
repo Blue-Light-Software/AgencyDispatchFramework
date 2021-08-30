@@ -116,7 +116,6 @@ namespace AgencyDispatchFramework.Xml
                     // Try and parse the crime type from the node name
                     if (n == null)
                     {
-                        Log.Warning($"ZoneInfo.ctor: Missing CrimeType '{nodeName}' in zone '{Zone.ScriptName}'");
                         continue;
                     }
 

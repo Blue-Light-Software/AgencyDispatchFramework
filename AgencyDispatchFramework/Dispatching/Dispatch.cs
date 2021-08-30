@@ -267,7 +267,7 @@ namespace AgencyDispatchFramework
         public static void SetPlayerStatus(OfficerStatus status)
         {
             // Ensure we are on duty before we do anything
-            if (!Main.OnDuty) return;
+            if (!Main.OnDutyLSPDFR) return;
 
             // Update player status
             PlayerUnit.Status = status;
@@ -282,7 +282,7 @@ namespace AgencyDispatchFramework
         /// <returns></returns>
         public static OfficerStatus GetPlayerStatus()
         {
-            if (!Main.OnDuty) return OfficerStatus.EndingDuty;
+            if (!Main.OnDutyLSPDFR) return OfficerStatus.EndingDuty;
             return PlayerUnit?.Status ?? OfficerStatus.OutOfService;
         }
 
@@ -292,7 +292,7 @@ namespace AgencyDispatchFramework
         public static bool SetPlayerCallSign(CallSign callSign)
         {
             // Ensure we are on duty before we do anything
-            if (!Main.OnDuty) return false;
+            if (!Main.OnDutyLSPDFR) return false;
 
             // Get player Agency, and ensure call sign type matches
             if (PlayerAgency.CallSignStyle != callSign.Style)
@@ -339,7 +339,7 @@ namespace AgencyDispatchFramework
         /// <returns>If the player is not on duty, this method return null</returns>
         public static Agency[] GetEnabledAgencies()
         {
-            return (Main.OnDuty) ? AgenciesByName.Values.ToArray() : null;
+            return (Main.OnDutyLSPDFR) ? AgenciesByName.Values.ToArray() : null;
         }
 
         /// <summary>
@@ -1007,7 +1007,7 @@ namespace AgencyDispatchFramework
         private static void Dispatcher_OnCallRaised(Agency agency, PriorityCall call, CallRaisedEventArgs args)
         {
             // Of we are not on duty, then wth
-            if (!Main.OnDuty) return;
+            if (!Main.OnDutyLSPDFR) return;
 
             // @todo finish
             Agency newAgency = null;
@@ -1282,7 +1282,7 @@ namespace AgencyDispatchFramework
         {
             // While on duty main loop
             bool skip = false;
-            while (Main.OnDuty)
+            while (Main.OnDutyLSPDFR)
             {
                 // Get current datetime and timeperiod
                 var date = World.DateTime;
