@@ -28,7 +28,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Contains the <see cref="WorldStateMultipliers"/> from the BaseProbabilities.xml file
         /// </summary>
-        internal static WorldStateMultipliers BaseCrimeMultipliers { get; set; }
+        internal static Dictionary<CallCategory, WorldStateMultipliers> BaseCrimeMultipliers { get; set; }
 
         /// <summary>
         /// Indicates whether this CrimeGenerator is currently creating calls

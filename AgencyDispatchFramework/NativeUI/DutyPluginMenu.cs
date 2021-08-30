@@ -1,5 +1,6 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Dispatching.Assignments;
+using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Simulation;
 using Rage;
 using RAGENativeUI;
@@ -13,7 +14,7 @@ namespace AgencyDispatchFramework.NativeUI
     /// <summary>
     /// Plugin menu loaded when the player is OnDuty with ADF
     /// </summary>
-    internal class OnDutyPluginMenu
+    internal class DutyPluginMenu
     {
         /// <summary>
         /// Gets the banner menu name to display on all banners on all submenus
@@ -24,16 +25,50 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenu MainUIMenu;
         private UIMenu DispatchUIMenu;
+        private UIMenu PatrolUIMenu;
+        private UIMenu WorldSettingsMenu;
+        private UIMenu CallSignMenu;
+
+        public UIMenuCheckboxItem SupervisorBox { get; private set; }
+        public UIMenuCheckboxItem FastForwardBox { get; private set; }
+        public UIMenuItem WorldSettingsButton { get; private set; }
+        public UIMenuItem CallSignsButton { get; private set; }
+        public UIMenuListItem ShiftSelectMenuItem { get; private set; }
 
         #region Main Menu Buttons
 
         private UIMenuItem DispatchMenuButton { get; set; }
+
+        private UIMenuItem PatrolSettingsMenuButton { get; set; }
 
         private UIMenuItem ModSettingsMenuButton { get; set; }
 
         private UIMenuItem CloseMenuButton { get; set; }
 
         #endregion Main Menu Buttons
+
+        #region Patrol Menu Buttons
+
+        private UIMenuListItem SetRoleMenuItem { get; set; }
+
+        private UIMenuListItem PatrolAreaMenuButton { get; set; }
+
+        private UIMenuListItem DivisionMenuButton { get; set; }
+
+        private UIMenuListItem UnitTypeMenuButton { get; set; }
+
+        private UIMenuListItem BeatMenuButton { get; set; }
+
+        public UIMenuCheckboxItem RadomWeatherBox { get; private set; }
+
+        public UIMenuItem SaveWorldSettingsButton { get; private set; }
+
+        public UIMenuListItem TimeScaleMenuItem { get; private set; }
+
+        public UIMenuListItem WeatherMenuItem { get; private set; }
+
+
+        #endregion Patrol Menu Buttons
 
         #region Dispatch Menu Buttons
 
@@ -58,11 +93,11 @@ namespace AgencyDispatchFramework.NativeUI
         /// Gets the <see cref="GameFiber"/> for this set of menus
         /// </summary>
         private GameFiber ListenFiber { get; set; }
-
+       
         /// <summary>
         /// 
         /// </summary>
-        public OnDutyPluginMenu()
+        public DutyPluginMenu()
         {
             // Create main menu
             MainUIMenu = new UIMenu(MENU_NAME, "~b~Main Menu")
@@ -74,10 +109,12 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Create main menu buttons
             DispatchMenuButton = new UIMenuItem("Dispatch Menu", "Opens the dispatch menu");
+            PatrolSettingsMenuButton = new UIMenuItem("Patrol Settings", "Opens the patrol settings menu");
             CloseMenuButton = new UIMenuItem("Close", "Closes the main menu");
 
             // Add menu buttons
             MainUIMenu.AddItem(DispatchMenuButton);
+            MainUIMenu.AddItem(PatrolSettingsMenuButton);
             MainUIMenu.AddItem(CloseMenuButton);
 
             // Register for button events
@@ -86,14 +123,22 @@ namespace AgencyDispatchFramework.NativeUI
             // Create Dispatch Menu
             BuildDispatchMenu();
 
+            // Create Patrol Menu
+            BuildPatrolMenu();
+
             // Bind Menus
             MainUIMenu.BindMenuToItem(DispatchUIMenu, DispatchMenuButton);
+            MainUIMenu.BindMenuToItem(PatrolUIMenu, PatrolSettingsMenuButton);
 
             // Create menu pool
             AllMenus = new MenuPool
             {
                 MainUIMenu,
+                PatrolUIMenu,
                 DispatchUIMenu,
+
+                WorldSettingsMenu,
+                CallSignMenu
             };
 
             // Refresh indexes
@@ -126,7 +171,7 @@ namespace AgencyDispatchFramework.NativeUI
                     if (MainUIMenu.Visible)
                     {
                         DispatchMenuButton.Enabled = Main.OnDuty;
-                        ModSettingsMenuButton.Enabled = Main.OnDuty;
+                        //ModSettingsMenuButton.Enabled = Main.OnDuty;
                     }
 
                     // Disable patrol area selection if not highway patrol
@@ -194,6 +239,139 @@ namespace AgencyDispatchFramework.NativeUI
             DispatchUIMenu.AddItem(RequestQueueMenuButton);
             DispatchUIMenu.AddItem(RequestCallMenuButton);
             DispatchUIMenu.AddItem(EndCallMenuButton);
+        }
+
+        private void BuildPatrolMenu()
+        {
+            // Create patrol menu
+            PatrolUIMenu = new UIMenu(MENU_NAME, "~b~Patrol Settings Menu")
+            {
+                MouseControlsEnabled = false,
+                AllowCameraMovement = true,
+                WidthOffset = 12
+            };
+
+            // Create buttons
+            SupervisorBox = new UIMenuCheckboxItem("Supervisor", false, "Enables supervisor mode.");
+            FastForwardBox = new UIMenuCheckboxItem("Fast Forward to Shift", true, "If checked, when this menu closes time is fast forwarded to the begining of you shift");
+            WorldSettingsButton = new UIMenuItem("World Settings", "Setup world settings.");
+            CallSignsButton = new UIMenuItem("World Settings", "Setup world settings.");
+
+            // Setup Shift items
+            ShiftSelectMenuItem = new UIMenuListItem("Shift Selection", "Sets the shift you will be patrolling.");
+            foreach (ShiftRotation shift in Enum.GetValues(typeof(ShiftRotation)))
+            {
+                ShiftSelectMenuItem.Collection.Add(shift, Enum.GetName(typeof(ShiftRotation), shift));
+            }
+
+            // Setup Patrol Menu
+            SetRoleMenuItem = new UIMenuListItem("Primary Role", "Sets your primary role in the department. This will determine that types of calls you will dispatched to.");
+            foreach (UnitType role in Agency.GetCurrentPlayerAgency().GetSupportedUnitTypes())
+            {
+                SetRoleMenuItem.Collection.Add(role, Enum.GetName(typeof(UnitType), role));
+            }
+
+            // 
+            DivisionMenuButton = new UIMenuListItem("Division", "Sets your division number.");
+            for (int i = 1; i < 11; i++)
+            {
+                string value = i.ToString();
+                DivisionMenuButton.Collection.Add(i, value);
+            }
+
+            // Find and set index
+            var index = DivisionMenuButton.Collection.IndexOf(Settings.AudioDivision);
+            if (index >= 0)
+            {
+                DivisionMenuButton.Index = index;
+            }
+
+            BeatMenuButton = new UIMenuListItem("Beat", "Sets your Beat number.");
+            for (int i = 1; i < 25; i++)
+            {
+                string value = i.ToString();
+                BeatMenuButton.Collection.Add(i, value);
+            }
+
+            // Find and set index
+            index = BeatMenuButton.Collection.IndexOf(Settings.AudioBeat);
+            if (index >= 0)
+            {
+                BeatMenuButton.Index = index;
+            }
+
+            // Build sub menus
+            BuildWorldSettingsMenu();
+            BuildCallsignsMenu();
+
+            // Add patrol menu buttons
+            PatrolUIMenu.AddItem(SupervisorBox);
+            PatrolUIMenu.AddItem(SetRoleMenuItem);
+            PatrolUIMenu.AddItem(ShiftSelectMenuItem);
+            PatrolUIMenu.AddItem(FastForwardBox);
+            PatrolUIMenu.AddItem(WorldSettingsButton);
+            PatrolUIMenu.AddItem(CallSignsButton);
+
+            // Bind buttons
+            PatrolUIMenu.BindMenuToItem(WorldSettingsMenu, WorldSettingsButton);
+            PatrolUIMenu.BindMenuToItem(CallSignMenu, CallSignsButton);
+        }
+
+        private void BuildCallsignsMenu()
+        {
+            // Create patrol menu
+            CallSignMenu = new UIMenu(MENU_NAME, "~b~CallSign Menu")
+            {
+                MouseControlsEnabled = false,
+                AllowCameraMovement = true,
+                WidthOffset = 12
+            };
+
+            //
+            if (Agency.GetCurrentPlayerAgency().CallSignStyle == CallSignStyle.LAPD)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+
+        private void BuildWorldSettingsMenu()
+        {
+            // Create patrol menu
+            WorldSettingsMenu = new UIMenu(MENU_NAME, "~b~World Settings Menu")
+            {
+                MouseControlsEnabled = false,
+                AllowCameraMovement = true,
+                WidthOffset = 12
+            };
+
+            // Create buttons
+            RadomWeatherBox = new UIMenuCheckboxItem("Randomize Weather", false, "If checked, the weather will be selected at random.");
+            SaveWorldSettingsButton = new UIMenuItem("Save", "Saves the selected settings and goes back to the previous menu.");
+
+            // TimeScale slider
+            TimeScaleMenuItem = new UIMenuListItem("Timescale Multiplier", "Sets the timescale multipler. Default is 30 (1 second in real life equals 30 seconds in game)");
+            foreach (var number in Enumerable.Range(1, 30))
+            {
+                TimeScaleMenuItem.Collection.Add(number, number.ToString());
+            }
+            TimeScaleMenuItem.Index = 29; // Set to default
+
+            // Weather selections
+            WeatherMenuItem = new UIMenuListItem("Weather", "Sets the desired weather for the beggining of your shift");
+            foreach (Weather weather in Enum.GetValues(typeof(Weather)))
+            {
+                WeatherMenuItem.Collection.Add(weather, Enum.GetName(typeof(Weather), weather));
+            }
+
+            // Add patrol menu buttons
+            WorldSettingsMenu.AddItem(TimeScaleMenuItem);
+            WorldSettingsMenu.AddItem(WeatherMenuItem);
+            WorldSettingsMenu.AddItem(RadomWeatherBox);
+            WorldSettingsMenu.AddItem(SaveWorldSettingsButton);
         }
 
         private void OutOfServiceButton_CheckboxEvent(UIMenuCheckboxItem sender, bool Checked)

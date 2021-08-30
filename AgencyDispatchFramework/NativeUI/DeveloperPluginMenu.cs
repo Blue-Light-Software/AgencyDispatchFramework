@@ -22,7 +22,7 @@ namespace AgencyDispatchFramework.NativeUI
     /// <remarks>
     /// Plugin menu loaded when the player is OnDuty with LSPDFR, but not ADF
     /// </remarks>
-    internal partial class StagingPluginMenu
+    internal partial class DeveloperPluginMenu
     {
         /// <summary>
         /// Gets the banner menu name to display on all banners on all submenus
@@ -42,8 +42,6 @@ namespace AgencyDispatchFramework.NativeUI
         private MenuPool AllMenus;
 
         private UIMenu MainUIMenu;
-        private UIMenu DispatchUIMenu;
-        private UIMenu PatrolUIMenu;
         private UIMenu LocationsUIMenu;
 
         private UIMenu RoadShoulderUIMenu;
@@ -62,10 +60,6 @@ namespace AgencyDispatchFramework.NativeUI
 
         #region Main Menu Buttons
 
-        private UIMenuItem PatrolSettingsMenuButton { get; set; }
-
-        private UIMenuItem ModSettingsMenuButton { get; set; }
-
         private UIMenuItem LocationsMenuButton { get; set; }
 
         private UIMenuListItem TeleportMenuButton { get; set; }
@@ -73,20 +67,6 @@ namespace AgencyDispatchFramework.NativeUI
         private UIMenuItem CloseMenuButton { get; set; }
 
         #endregion Main Menu Buttons
-
-        #region Patrol Menu Buttons
-
-        private UIMenuListItem SetRoleMenuButton { get; set; }
-
-        private UIMenuListItem PatrolAreaMenuButton { get; set; }
-
-        private UIMenuListItem DivisionMenuButton { get; set; }
-
-        private UIMenuListItem UnitTypeMenuButton { get; set; }
-
-        private UIMenuListItem BeatMenuButton { get; set; }
-
-        #endregion Patrol Menu Buttons
 
         #region Locations Menu Buttons
 
@@ -124,7 +104,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Indicates to stop processing the controls of this menu while the keyboard is open
         /// </summary>
-        internal bool IsKeyboardOpen { get; set; }
+        internal bool IsKeyboardOpen { get; set; } = false;
 
         /// <summary>
         /// Indicates whether this menu is actively listening for key events
@@ -137,12 +117,12 @@ namespace AgencyDispatchFramework.NativeUI
         private GameFiber ListenFiber { get; set; }
 
         /// <summary>
-        /// Creates a new isntance of <see cref="StagingPluginMenu"/>
+        /// Creates a new isntance of <see cref="DeveloperPluginMenu"/>
         /// </summary>
-        public StagingPluginMenu()
+        public DeveloperPluginMenu()
         {
             // Create main menu
-            MainUIMenu = new UIMenu(MENU_NAME, "~b~Main Menu")
+            MainUIMenu = new UIMenu(MENU_NAME, "~b~Developer Menu")
             {
                 MouseControlsEnabled = false,
                 AllowCameraMovement = true
@@ -150,10 +130,8 @@ namespace AgencyDispatchFramework.NativeUI
             MainUIMenu.WidthOffset = 12;
 
             // Create menu buttons
-            PatrolSettingsMenuButton = new UIMenuItem("Patrol Settings", "Opens the patrol settings menu");
-            ModSettingsMenuButton = new UIMenuItem("Mod Settings", "Opens the patrol settings menu");
             LocationsMenuButton = new UIMenuItem("Location Menu", "Allows you to view and add new locations for callouts");
-            CloseMenuButton = new UIMenuItem("Close", "Closes the main menu");
+            CloseMenuButton = new UIMenuItem("Close", "Closes this menu");
 
             // Cheater menu
             var places = new List<string>()
@@ -163,8 +141,6 @@ namespace AgencyDispatchFramework.NativeUI
             TeleportMenuButton = new UIMenuListItem("Teleport", "Select police station to teleport to", places);
             
             // Add menu buttons
-            MainUIMenu.AddItem(PatrolSettingsMenuButton);
-            MainUIMenu.AddItem(ModSettingsMenuButton);
             MainUIMenu.AddItem(LocationsMenuButton);
             MainUIMenu.AddItem(TeleportMenuButton);
             MainUIMenu.AddItem(CloseMenuButton);
@@ -173,9 +149,6 @@ namespace AgencyDispatchFramework.NativeUI
             LocationsMenuButton.Activated += LocationsMenuButton_Activated;
             TeleportMenuButton.Activated += TeleportMenuButton_Activated;
             CloseMenuButton.Activated += (s, e) => MainUIMenu.Visible = false;
-
-            // Create Patrol Menu
-            BuildPatrolMenu();
 
             // Create RoadShoulders Menu
             BuildRoadShouldersMenu();
@@ -187,14 +160,12 @@ namespace AgencyDispatchFramework.NativeUI
             BuildLocationsMenu();
 
             // Bind Menus
-            MainUIMenu.BindMenuToItem(PatrolUIMenu, PatrolSettingsMenuButton);
             MainUIMenu.BindMenuToItem(LocationsUIMenu, LocationsMenuButton);
 
             // Create menu pool
             AllMenus = new MenuPool
             {
                 MainUIMenu,
-                PatrolUIMenu,
                 LocationsUIMenu,
                 AddRoadShoulderUIMenu,
                 RoadShoulderUIMenu,
@@ -220,7 +191,7 @@ namespace AgencyDispatchFramework.NativeUI
         private void BuildLocationsMenu()
         {
             // Create patrol menu
-            LocationsUIMenu = new UIMenu(MENU_NAME, "~b~Location Menu")
+            LocationsUIMenu = new UIMenu(MENU_NAME, "~b~Location Editor")
             {
                 MouseControlsEnabled = false,
                 AllowCameraMovement = true,
@@ -238,74 +209,6 @@ namespace AgencyDispatchFramework.NativeUI
             // Bind buttons
             LocationsUIMenu.BindMenuToItem(RoadShoulderUIMenu, RoadShouldersButton);
             LocationsUIMenu.BindMenuToItem(ResidenceUIMenu, ResidenceButton);
-        }
-
-        private void BuildPatrolMenu()
-        {
-            // Create patrol menu
-            PatrolUIMenu = new UIMenu(MENU_NAME, "~b~Patrol Settings Menu")
-            {
-                MouseControlsEnabled = false,
-                AllowCameraMovement = true,
-                WidthOffset = 12
-            };
-
-            // Setup Patrol Menu
-            SetRoleMenuButton = new UIMenuListItem("Primary Role", "Sets your role in the department. This will determine that types of calls you will recieve. Click to set.");
-            foreach (var role in Enum.GetValues(typeof(UnitType)))
-            {
-                SetRoleMenuButton.Collection.Add(role, role.ToString());
-            }
-
-            DivisionMenuButton = new UIMenuListItem("Division", "Sets your division number. Click to set.");
-            //DivisionMenuButton.Activated += (s, e) => Dispatch.SetPlayerDivisionId((int)DivisionMenuButton.SelectedValue);
-            for (int i = 1; i < 11; i++)
-            {
-                string value = i.ToString();
-                DivisionMenuButton.Collection.Add(i, value);
-            }
-
-            // Find and set index
-            var index = DivisionMenuButton.Collection.IndexOf(Settings.AudioDivision);
-            if (index >= 0)
-            {
-                DivisionMenuButton.Index = index;
-            }
-
-            BeatMenuButton = new UIMenuListItem("Beat", "Sets your Beat number. Click to set.");
-            //BeatMenuButton.Activated += (s, e) => Dispatch.SetPlayerCallSign((int)BeatMenuButton.SelectedValue);
-            for (int i = 1; i < 25; i++)
-            {
-                string value = i.ToString();
-                BeatMenuButton.Collection.Add(i, value);
-            }
-
-            // Find and set index
-            index = BeatMenuButton.Collection.IndexOf(Settings.AudioBeat);
-            if (index >= 0)
-            {
-                BeatMenuButton.Index = index;
-            }
-
-            UnitTypeMenuButton = new UIMenuListItem("Unit Type", "Sets your unit type. Click to set.");
-            //UnitTypeMenuButton.Activated += (s, e) => Dispatch.SetPlayerUnitType(UnitTypeMenuButton.Index + 1);
-            foreach (string value in Dispatch.LAPDphonetic)
-            {
-                UnitTypeMenuButton.Collection.Add(value, value);
-            }
-
-            // Find and set index
-            index = UnitTypeMenuButton.Collection.IndexOf(Settings.AudioUnitType);
-            if (index >= 0)
-            {
-                UnitTypeMenuButton.Index = index;
-            }
-
-            // Add patrol menu buttons
-            PatrolUIMenu.AddItem(SetRoleMenuButton);
-            PatrolUIMenu.AddItem(DivisionMenuButton);
-            PatrolUIMenu.AddItem(UnitTypeMenuButton);
-            PatrolUIMenu.AddItem(BeatMenuButton);
         }
 
         #region Events
@@ -672,16 +575,9 @@ namespace AgencyDispatchFramework.NativeUI
                     AllMenus.ProcessMenus();
 
                     // If menu is closed, Wait for key press, then open menu
-                    if (!AllMenus.IsAnyMenuOpen() && Keyboard.IsKeyDownWithModifier(Settings.OpenMenuKey, Settings.OpenMenuModifierKey))
+                    if (!AllMenus.IsAnyMenuOpen() && Keyboard.IsKeyDownWithModifier(Settings.OpenCalloutMenuKey, Settings.OpenCalloutMenuModifierKey))
                     {
                         MainUIMenu.Visible = true;
-                    }
-
-                    // Enable/Disable buttons if not/on duty
-                    if (MainUIMenu.Visible)
-                    {
-                        PatrolSettingsMenuButton.Enabled = Main.OnDuty;
-                        ModSettingsMenuButton.Enabled = Main.OnDuty;
                     }
                 }
             });

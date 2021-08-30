@@ -1,5 +1,7 @@
-﻿using AgencyDispatchFramework.Simulation;
+﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Simulation;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace AgencyDispatchFramework.Xml
@@ -21,10 +23,16 @@ namespace AgencyDispatchFramework.Xml
             }
 
             // Grab crime probabilities @todo
+            RegionCrimeGenerator.BaseCrimeMultipliers = new Dictionary<CallCategory, WorldStateMultipliers>();
 
             // Grab base crime probabilities
             var node = rootElement.SelectSingleNode("Crime/Probabilities");
-            RegionCrimeGenerator.BaseCrimeMultipliers = XmlHelper.ExtractWorldStateMultipliers(node);
+            foreach (CallCategory category in Enum.GetValues(typeof(CallCategory)))
+            {
+                // Grab subnode
+                var subNode = node.SelectSingleNode(category.ToString());
+                RegionCrimeGenerator.BaseCrimeMultipliers.Add(category, XmlHelper.ExtractWorldStateMultipliers(subNode));
+            }
         }
 
         public static void Load()

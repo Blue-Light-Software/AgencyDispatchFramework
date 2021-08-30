@@ -8,25 +8,6 @@
 		- OR implement out own backup system
 	- Convert TimePeriod to 6 periods instead of 4.
 
-Duty Setup Menu
-	Patrol Setup Menu
-		- Supervisor [box] (Enables supervisor mode)
-		- Primary Role [<UnitType>] (Choose your primary role in the department)
-		- Shift [<ShiftRotation>] (Choose your shift)
-		- Force Start [box] (Immediatly starts your shift when this menu closes)
-		- World Settings >>
-			- TimeScale [<int>] (sets timescale multiplier, default is 30)
-			- Weather [<Weather>] (sets weather)
-			- Random Weather [box]
-			- Save <<
-		- CallSign Menu >> (Changes based on department callsign)
-			- [LAPD] Division
-			- [LAPD] Beat
-			- [Numeric] Unit Number <> (range changes based on Unit Type and Supervisor setting)
-			- Random Callsign [box]
-			- Save <<
-		- Begin Simulation >>
-
 
  Planned Location types:
 	- RoadShoulder: Used for pullovers, and simple accidents

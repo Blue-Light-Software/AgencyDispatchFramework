@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Agency Dispatch and Callout Framework for LSPDFR")]
 [assembly: AssemblyDescription("An Enhanced Dispatching and Callout Plugin for LSPDFR")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Blue Light Software")]
 [assembly: AssemblyProduct("Agency Dispatch Framework for LSPDFR")]
-[assembly: AssemblyCopyright("Copyright © 2020")]
+[assembly: AssemblyCopyright("Copyright © 2021 Blue Light Software")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

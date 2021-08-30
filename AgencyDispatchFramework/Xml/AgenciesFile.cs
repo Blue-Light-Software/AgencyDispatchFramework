@@ -268,8 +268,17 @@ namespace AgencyDispatchFramework.Xml
                     agency.BackingCounty = c;
                 }
 
-                // Set internals
-                agency.ZoneNames = agencyZones[agency.ScriptName].ToArray();
+                // Set zones for agency
+                if (agencyZones.ContainsKey(agency.ScriptName))
+                {
+                    agency.ZoneNames = agencyZones[agency.ScriptName].ToArray();
+                }
+                else
+                {
+                    Log.Warning($"Agency.Initialize(): Agency '{agency.ScriptName}' does not have any zones in its jurisdiction!");
+                }
+
+                // Add agency
                 Agencies.Add(sname, agency);
             }
 
@@ -288,54 +297,57 @@ namespace AgencyDispatchFramework.Xml
         {
             var sets = new List<VehicleSet>();
             var nodes = n?.SelectNodes("VehicleSet");
-            foreach (XmlNode vn in nodes)
+            if (nodes != null && nodes.Count > 0)
             {
-                // Ensure we have attributes
-                if (vn.Attributes == null)
+                foreach (XmlNode vn in nodes)
                 {
-                    Log.Warning($"Agency.ParseVehicleSets(): Vehicle item for '{agency.ScriptName}' has no attributes in Agencies.xml");
-                    continue;
+                    // Ensure we have attributes
+                    if (vn.Attributes == null)
+                    {
+                        Log.Warning($"Agency.ParseVehicleSets(): Vehicle item for '{agency.ScriptName}' has no attributes in Agencies.xml");
+                        continue;
+                    }
+
+                    // Check for a chance attribute
+                    if (vn.Attributes["chance"]?.Value == null || !int.TryParse(vn.Attributes["chance"].Value, out int probability))
+                    {
+                        probability = 10;
+                    }
+
+                    // Create vehicle info
+                    var set = new VehicleSet(probability);
+
+                    // Try and extract vehicles
+                    if (!TryExtractVehicles(vn, set, agency))
+                    {
+                        // Logging happens within the method
+                        continue;
+                    }
+
+                    // Try and extract Peds
+                    if (!TryExtractPeds(vn, set, agency))
+                    {
+                        // Logging happens within the method
+                        continue;
+                    }
+
+                    // Try and extract NonLethals
+                    if (!TryExtractNonLethals(vn, set, agency))
+                    {
+                        // Logging happens within the method
+                        continue;
+                    }
+
+                    // Try and extract Weapons
+                    if (!TryExtractWeapons(vn, set, agency))
+                    {
+                        // Logging happens within the method
+                        continue;
+                    }
+
+                    // Add vehicle set
+                    sets.Add(set);
                 }
-
-                // Check for a chance attribute
-                if (vn.Attributes["chance"]?.Value == null || !int.TryParse(vn.Attributes["chance"].Value, out int probability))
-                {
-                    probability = 10;
-                }
-
-                // Create vehicle info
-                var set = new VehicleSet(probability);
-
-                // Try and extract vehicles
-                if (!TryExtractVehicles(vn, set, agency))
-                {
-                    // Logging happens within the method
-                    continue;
-                }
-
-                // Try and extract Peds
-                if (!TryExtractPeds(vn, set, agency))
-                {
-                    // Logging happens within the method
-                    continue;
-                }
-
-                // Try and extract NonLethals
-                if (!TryExtractNonLethals(vn, set, agency))
-                {
-                    // Logging happens within the method
-                    continue;
-                }
-
-                // Try and extract Weapons
-                if (!TryExtractWeapons(vn, set, agency))
-                {
-                    // Logging happens within the method
-                    continue;
-                }
-
-                // Add vehicle set
-                sets.Add(set);
             }
 
             return sets;
@@ -409,10 +421,6 @@ namespace AgencyDispatchFramework.Xml
             // Loop through each Ped node
             foreach (XmlNode node in nodes)
             {
-                // Extract the chance attribute
-                if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
-                    continue;
-
                 // Local vars
                 OfficerModelMeta meta = null;
                 var variation = OutfitVariation.Dry;
@@ -431,6 +439,11 @@ namespace AgencyDispatchFramework.Xml
                 // Create meta
                 if (variation == OutfitVariation.Dry)
                 {
+                    // Extract the chance attribute
+                    if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
+                        continue;
+
+                    // Create new meta
                     meta = new OfficerModelMeta(chance, modelName);
                     modelTable.AddOrUpdate(modelName, meta);
                 }

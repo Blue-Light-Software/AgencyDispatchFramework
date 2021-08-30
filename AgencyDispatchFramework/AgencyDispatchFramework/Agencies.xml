@@ -994,7 +994,7 @@
     </Units>
   </Agency>
 
-  <!-- Special Agents -->
+  <!-- Special Agents 
   <Agency>
     <Name>Federal Investigation Bureau</Name>
     <ScriptName>fib</ScriptName>
@@ -1027,7 +1027,7 @@
     </Vehicles>
   </Agency>
 
-  <!-- Parks -->
+  <!- Parks
   <Agency>
     <Name>San Andreas Park Rangers</Name>
     <ScriptName>sapr</ScriptName>
@@ -1043,4 +1043,5 @@
       </Marked>
     </Vehicles>
   </Agency>
+  -->
 </Agencies>

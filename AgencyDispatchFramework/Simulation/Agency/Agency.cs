@@ -395,6 +395,18 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
+        /// Gets an <see cref="Enumerable"/> of supported <see cref="UnitType"/>s for this <see cref="Agency"/>
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<UnitType> GetSupportedUnitTypes()
+        {
+            foreach (var unit in Units)
+            {
+                yield return unit.Key;
+            }
+        }
+
+        /// <summary>
         /// @todo Creates the player <see cref="OfficerUnit"/> and adds them to this <see cref="Agency"/> roster.
         /// </summary>
         /// <returns></returns>

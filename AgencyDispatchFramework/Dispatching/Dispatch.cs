@@ -283,7 +283,7 @@ namespace AgencyDispatchFramework
         public static OfficerStatus GetPlayerStatus()
         {
             if (!Main.OnDuty) return OfficerStatus.EndingDuty;
-            return PlayerUnit.Status;
+            return PlayerUnit?.Status ?? OfficerStatus.OutOfService;
         }
 
         /// <summary>

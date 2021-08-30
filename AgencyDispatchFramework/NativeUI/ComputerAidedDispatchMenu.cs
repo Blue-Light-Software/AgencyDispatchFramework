@@ -151,10 +151,7 @@ namespace AgencyDispatchFramework.NativeUI
                 var menuItems = new List<UIMenuItem<CalloutScenarioInfo>>(scenes.Value.Count);
                 foreach (var scenario in scenes.Value)
                 {
-                    var item = new UIMenuItem<CalloutScenarioInfo>(scenario.Name)
-                    {
-                        Tag = scenario
-                    };
+                    var item = new UIMenuItem<CalloutScenarioInfo>(scenario, scenario.Name);
                     item.Activated += ScenarioItem_Activated;
                     menuItems.Add(item);
                 }

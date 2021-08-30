@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace AgencyDispatchFramework.NativeUI
 {
-    internal partial class StagingPluginMenu
+    internal partial class DeveloperPluginMenu
     {
         private UIMenuItem ResidenceCreateButton { get; set; }
 
@@ -162,7 +162,7 @@ namespace AgencyDispatchFramework.NativeUI
             foreach (ResidencePosition flag in Enum.GetValues(typeof(ResidencePosition)))
             {
                 var name = Enum.GetName(typeof(ResidencePosition), flag);
-                var item = new UIMenuItem<SpawnPoint>(name, "Activate to set position. Character facing is important");
+                var item = new UIMenuItem<SpawnPoint>(null, name, "Activate to set position. Character facing is important");
                 item.Activated += ResidenceSpawnPointButton_Activated;
                 ResidenceSpawnPointItems.Add(flag, item);
 

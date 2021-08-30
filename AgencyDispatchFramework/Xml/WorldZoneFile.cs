@@ -127,7 +127,7 @@ namespace AgencyDispatchFramework.Xml
                     }
 
                     // Try and parse the probability levels, cloning from the base settings
-                    var multipliers = (WorldStateMultipliers)RegionCrimeGenerator.BaseCrimeMultipliers.Clone();
+                    var multipliers = (WorldStateMultipliers)RegionCrimeGenerator.BaseCrimeMultipliers[calloutType].Clone();
 
                     // Override settings
                     XmlHelper.UpdateWorldStateMultipliers(n, multipliers);

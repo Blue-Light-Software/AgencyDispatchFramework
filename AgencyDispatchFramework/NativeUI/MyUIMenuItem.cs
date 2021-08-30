@@ -17,7 +17,15 @@ namespace AgencyDispatchFramework.NativeUI
         /// Basic menu button.
         /// </summary>
         /// <param name="text">Button label.</param>
-        public UIMenuItem(string text) : this(text, "")
+        public UIMenuItem(T item) : this(item, item.ToString(), "")
+        {
+        }
+
+        /// <summary>
+        /// Basic menu button.
+        /// </summary>
+        /// <param name="text">Button label.</param>
+        public UIMenuItem(T item, string text) : this(item, text, "")
         {
         }
 
@@ -26,7 +34,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         /// <param name="text">Button label.</param>
         /// <param name="description">Description.</param>
-        public UIMenuItem(string text, string description) : base(text, description)
+        public UIMenuItem(T item, string text, string description) : base(text, description)
         {
             Enabled = true;
 

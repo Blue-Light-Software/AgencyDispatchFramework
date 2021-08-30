@@ -147,7 +147,7 @@ namespace AgencyDispatchFramework.Xml
                     }
 
                     // Add button
-                    dialogue.AddQuestion(new UIMenuItem<Question>(text) { Tag = question, Parent = menu }, isVisible);
+                    dialogue.AddQuestion(new UIMenuItem<Question>(question, text) { Parent = menu }, isVisible);
                 }
 
                 // Add menu

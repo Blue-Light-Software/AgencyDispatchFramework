@@ -48,7 +48,12 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Contains the <see cref="RAGENativeUI.UIMenu"/> for this plgin
         /// </summary>
-        private static StagingPluginMenu PluginMenu { get; set; }
+        private static DeveloperPluginMenu DevPluginMenu { get; set; }
+
+        /// <summary>
+        /// Contains the <see cref="RAGENativeUI.UIMenu"/> for this plgin
+        /// </summary>
+        private static DutyPluginMenu DutyPluginMenu { get; set; }
 
         /// <summary>
         /// Gets whether the player is currently on duty
@@ -151,7 +156,7 @@ namespace AgencyDispatchFramework
                 Dispatch.StopDuty();
 
                 // Stop the plugin menu
-                PluginMenu?.StopListening();
+                DevPluginMenu?.StopListening();
 
                 // Cancel CAD
                 ComputerAidedDispatchMenu.Dispose();
@@ -171,7 +176,7 @@ namespace AgencyDispatchFramework
         {
             // Display notification to the player
             var loadingSpinner = InstructionalKey.SymbolBusySpinner.GetId();
-            Rage.Game.DisplayHelp($"~{loadingSpinner}~ AgencyDispatchFramework is loading");
+            Rage.Game.DisplayHelp($"~{loadingSpinner}~ AgencyDispatchFramework is initializing");
 
             // Run this in a new thread, since this will block the main thread for awhile
             GameFiber.StartNew(delegate
@@ -194,6 +199,9 @@ namespace AgencyDispatchFramework
                     // Load our agencies and such (this will only initialize once per game session)
                     Agency.Initialize();
 
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
                     // Load vehicles (this will only initialize once per game session)
                     VehicleInfo.Initialize();
 
@@ -211,7 +219,8 @@ namespace AgencyDispatchFramework
                     }
 
                     // Initialize plugin menu
-                    PluginMenu = new StagingPluginMenu();
+                    DevPluginMenu = new DeveloperPluginMenu();
+                    DutyPluginMenu = new DutyPluginMenu();
 
                     // Flag
                     HasBeenOnDuty = true;
@@ -231,6 +240,11 @@ namespace AgencyDispatchFramework
                 // Yield to prevent freezing
                 GameFiber.Yield();
 
+                // Begin listening for the Plugin Menus
+                DevPluginMenu.BeginListening();
+                DutyPluginMenu.BeginListening();
+
+                /*
                 // Finally, start dispatch call center
                 if (Dispatch.StartDuty())
                 {
@@ -239,9 +253,6 @@ namespace AgencyDispatchFramework
 
                     // Tell GameWorld to begin listening. Stops automatically when player goes off duty
                     GameWorld.BeginFibers();
-
-                    // Begin listening for the Plugin Menu
-                    PluginMenu.BeginListening();
 
                     // Display notification to the player
                     Rage.Game.DisplayNotification(
@@ -263,6 +274,7 @@ namespace AgencyDispatchFramework
                         $"~y~Please check your Game.log for errors."
                     );
                 }
+                */
 
                 // Log our TimeScale multiplier
                 Log.Debug($"Detected a timescale multiplier of {TimeScale.GetCurrentTimeScaleMultiplier()}");

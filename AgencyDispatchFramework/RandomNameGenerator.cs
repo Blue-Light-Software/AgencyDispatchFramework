@@ -66,8 +66,8 @@ namespace AgencyDispatchFramework
                 }
 
                 // Ensure we have first names
-                XmlNode first = doc.SelectSingleNode("First");
-                XmlNodeList names = doc?.SelectSingleNode("Male")?.SelectNodes("Name");
+                XmlNode first = doc.SelectSingleNode("Names").SelectSingleNode("First");
+                XmlNodeList names = first?.SelectSingleNode("Male")?.SelectNodes("Name");
                 if (names == null || names.Count == 0)
                 {
                     throw new Exception("RandomNameGenerator: There are no male first names in the Names.xml file!");
@@ -77,7 +77,7 @@ namespace AgencyDispatchFramework
                 MaleFirstNames = (from XmlNode x in names select x.InnerText).ToArray();
 
                 // Extrac female first names
-                names = first?.SelectSingleNode("Female")?.SelectNodes("Name");
+                names = first.SelectSingleNode("Female")?.SelectNodes("Name");
                 if (names == null || names.Count == 0)
                 {
                     throw new Exception("RandomNameGenerator: There are no female first names in the Names.xml file!");
@@ -87,7 +87,7 @@ namespace AgencyDispatchFramework
                 FemaleFirstNames = (from XmlNode x in names select x.InnerText).ToArray();
 
                 // Ensure we have Last names
-                names = doc?.SelectSingleNode("Last")?.SelectNodes("Name");
+                names = doc.SelectSingleNode("Names").SelectSingleNode("Last")?.SelectNodes("Name");
                 if (names == null || names.Count == 0)
                 {
                     throw new Exception("RandomNameGenerator: There are no last names in the Names.xml file!");

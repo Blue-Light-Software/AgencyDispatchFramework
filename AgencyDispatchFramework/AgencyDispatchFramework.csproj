@@ -103,7 +103,7 @@
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Game\Enums\PedDescriptionPropertyType.cs" />
     <Compile Include="Game\PedVariationMeta.cs" />
-    <Compile Include="NativeUI\OnDutyPluginMenu.cs" />
+    <Compile Include="NativeUI\DutyPluginMenu.cs" />
     <Compile Include="Simulation\Agency\EmsAgency.cs" />
     <Compile Include="Simulation\Agency\FireAgency.cs" />
     <Compile Include="Simulation\Agency\SheriffAgency.cs" />
@@ -306,7 +306,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="NativeUI\StagingPluginMenu.cs" />
+    <Compile Include="NativeUI\DeveloperPluginMenu.cs" />
     <Compile Include="NativeUI\CalloutInteractionMenu.cs" />
     <Compile Include="NativeUI\ComputerAidedDispatchMenu.cs" />
     <Compile Include="Range.cs" />
@@ -343,7 +343,9 @@
     <Content Include="AgencyDispatchFramework\Agencies.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="AgencyDispatchFramework\BaseProbabilities.xml" />
+    <Content Include="AgencyDispatchFramework\BaseProbabilities.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="AgencyDispatchFramework\Callouts\DomesticViolence\CalloutMeta.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -642,7 +644,9 @@
     <Content Include="AgencyDispatchFramework\Locations\ZQ_UAR.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="AgencyDispatchFramework\Names.xml" />
+    <Content Include="AgencyDispatchFramework\Names.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="AgencyDispatchFramework\PedModelMeta.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -664,6 +668,7 @@
     <Content Include="Documentation\AiOfficerEvents.txt" />
     <Content Include="Documentation\GameFibers.txt" />
     <Content Include="Documentation\Namespaces.txt" />
+    <Content Include="Documentation\RageNativeMenus.txt" />
     <Content Include="Documentation\Scenarios.txt" />
     <Content Include="Documentation\GameScenarios.txt" />
     <Content Include="Documentation\StopThePed.txt" />

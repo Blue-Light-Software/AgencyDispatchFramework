@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace AgencyDispatchFramework.NativeUI
 {
-    internal partial class StagingPluginMenu
+    internal partial class DeveloperPluginMenu
     {
         private UIMenuItem RoadShoulderCreateButton { get; set; }
 
@@ -210,7 +210,7 @@ namespace AgencyDispatchFramework.NativeUI
             foreach (RoadShoulderPosition flag in Enum.GetValues(typeof(RoadShoulderPosition)))
             {
                 var name = Enum.GetName(typeof(RoadShoulderPosition), flag);
-                var item = new UIMenuItem<SpawnPoint>(name, "Activate to set position. ~y~Ensure there is proper space to spawn a group of Peds at this location");
+                var item = new UIMenuItem<SpawnPoint>(null, name, "Activate to set position. ~y~Ensure there is proper space to spawn a group of Peds at this location");
                 item.Activated += RoadShoulderSpawnPointButton_Activated;
                 RoadShoulderSpawnPointItems.Add(flag, item);
 

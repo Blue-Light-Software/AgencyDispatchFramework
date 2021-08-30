@@ -1,0 +1,49 @@
+﻿Duty Menu
+	- Dispatch Menu >> (Only enabled while on duty)
+		- Quick Actions >>
+			- Request Backup
+		- Automatic Status Updates [box] (When checked, the mod will automatically update officer status of the player)
+		- Out of Service [box] (When checked, dispatch will not send the player to any calls)
+		- Request Call
+		- Queue Statistics
+	- Patrol Setup Menu >> (Only enabled before initial duty)
+		- Supervisor [box] (Enables supervisor mode)
+		- Primary Role [<UnitType>] (Choose your primary role in the department)
+		- Shift [<ShiftRotation>] (Choose your shift)
+		- Fast Forward to Shift [box] (When this menu closes, time is fast forwarded to the begining of you shift)
+		- World Settings >>
+			- TimeScale [<int>] (sets timescale multiplier, default is 30)
+			- Weather [<Weather>] (Sets weather for the begining of your shift)
+			- Random Weather [box]
+			- Save <<
+		- CallSign Menu >> (Changes based on department callsign)
+			- [LAPD] Division
+			- [LAPD] Beat
+			- [Numeric] Unit Number <> (range changes based on Unit Type and Supervisor setting)
+			- Random Callsign [box]
+			- Save <<
+		- Begin Simulation >>
+	- Close
+
+
+Plugin Menu
+	- Location Editor >>
+		- RoadShoulders >>
+			- New >>
+			- 
+		- Residences >>
+			- New >>
+			-
+		- Busniesses >>
+			- New >>
+			-
+	- Teleport To Station <>
+	- Vehicle Editor
+		- Power Settings
+		- Lights Menu >>
+		- Livery Menu >>
+		- Enable Extras >>
+			- Extra 1 [box]
+			- etc etc
+		- Clean
+		- Repair
