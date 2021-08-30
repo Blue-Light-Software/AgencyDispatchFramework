@@ -87,21 +87,21 @@ namespace AgencyDispatchFramework.Game.Locations
                 string value = node.SelectSingleNode("code")?.InnerText;
                 if (value == null || !Int32.TryParse(value, out int code))
                 {
-                    Log.Warning($"Postal.Initialize(): Unable to extract code value");
+                    Log.Warning($"Postal.Initialize(): Unable to parse code value '{value ?? "null" }'");
                     continue;
                 }
 
                 value = node.SelectSingleNode("x")?.InnerText;
                 if (value == null || !float.TryParse(value, out float x))
                 {
-                    Log.Warning($"Postal.Initialize(): Unable to extract X value");
+                    Log.Warning($"Postal.Initialize(): Unable to parse X value '{value ?? "null" }'");
                     continue;
                 }
 
                 value = node.SelectSingleNode("y")?.InnerText;
                 if (value == null || !float.TryParse(value, out float y))
                 {
-                    Log.Warning($"Postal.Initialize(): Unable to extract Y value");
+                    Log.Warning($"Postal.Initialize(): Unable to extract Y value '{value ?? "null" }'");
                     continue;
                 }
 

@@ -124,9 +124,6 @@ namespace AgencyDispatchFramework
             // Load settings
             Settings.Initialize();
 
-            // Load base probabilities
-            BaseProbabilitiesXmlFile.Load();
-
             // Set logging level to config value
             Log.SetLogLevel(Settings.LogLevel);
 
@@ -195,6 +192,9 @@ namespace AgencyDispatchFramework
                 // Only initialize these classes once!
                 if (!HasBeenOnDuty)
                 {
+                    // Load base probabilities
+                    BaseProbabilitiesXmlFile.Load();
+
                     // Load postals
                     Postal.Initialize();
 

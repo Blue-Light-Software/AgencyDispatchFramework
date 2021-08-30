@@ -26,7 +26,7 @@
 	- Close
 
 
-Plugin Menu
+Developer Menu
 	- Location Editor >>
 		- RoadShoulders >>
 			- New >>
