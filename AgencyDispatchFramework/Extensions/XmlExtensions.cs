@@ -78,6 +78,38 @@ namespace AgencyDispatchFramework.Extensions
         /// The value of the specified attribute, converted to the specified type of T. 
         /// Default(T) if a matching attribute is not found or if the attribute does not have a specified value.
         /// </returns>
+        public static bool TryGetAttribute(this XmlNode node, string name, out string value)
+        {
+            if (node.Attributes != null)
+            {
+                var val = node.Attributes[name]?.Value;
+                if (String.IsNullOrEmpty(val))
+                {
+                    value = null;
+                    return false;
+                }
+                else
+                {
+                    value = val;
+                    return true;
+                }
+               
+            }
+
+            value = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the value for the attribute with the specified name.
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="name"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>
+        /// The value of the specified attribute, converted to the specified type of T. 
+        /// Default(T) if a matching attribute is not found or if the attribute does not have a specified value.
+        /// </returns>
         public static bool TryGetAttribute<T>(this XmlNode node, string name, out T value) where T : IConvertible
         {
             if (node.Attributes != null)

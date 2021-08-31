@@ -270,7 +270,7 @@ namespace AgencyDispatchFramework.NativeUI
             FastForwardBox = new UIMenuCheckboxItem("Fast Forward to Shift", true, "If checked, when this menu closes time is fast forwarded to the begining of you shift");
             WorldSettingsButton = new UIMenuItem("World Settings", "Setup world settings.");
             CallSignsButton = new UIMenuItem("Choose CallSign", "Choose your CallSign for your Agency.");
-            BeginSimuButton = new UIMenuItem("Begin Simulation", "Start the ADF simulation.") { BackColor = Color.AliceBlue };
+            BeginSimuButton = new UIMenuItem("Begin Simulation", "Start the ADF simulation.") { BackColor = Color.Green, ForeColor = Color.Black };
             BeginSimuButton.Activated += BeginSimuButton_Activated;
 
             // Setup Shift items

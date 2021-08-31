@@ -81,15 +81,19 @@ namespace AgencyDispatchFramework
                 foreach (WeatherCatagory catagory in Enum.GetValues(typeof(WeatherCatagory)))
                 {
                     var attrName = Enum.GetName(typeof(WeatherCatagory), catagory).ToLowerInvariant();
-
-                    // Extract and parse morning value
-                    if (!Int32.TryParse(todNode.Attributes[attrName]?.Value, out int m))
+                    if (todNode.TryGetAttribute(attrName, out string val))
                     {
-                        continue;
-                    }
+                        // Extract and parse morning value
+                        if (!Int32.TryParse(val, out int m))
+                        {
+                            // Log a warning
+                            Log.Warning($"[{todNode.GetFullPath()}]: Malformed attribute value for '{attrName}' on XmlNode");
+                            continue;
+                        }
 
-                    // Set probability value
-                    multipliers.SetProbability(period, catagory, m);
+                        // Set probability value
+                        multipliers.SetProbability(period, catagory, m);
+                    }
                 }
             }
         }
