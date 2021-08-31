@@ -59,6 +59,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// <exception cref="ArgumentException">thrown if the <paramref name="agency"/> param is null</exception>
         public Dispatcher(Agency agency)
         {
+            // Set internals
             Agency = agency ?? throw new ArgumentNullException(nameof(agency));
             CallQueue = new HashSet<PriorityCall>(12);
             RaisedCalls = new HashSet<PriorityCall>();

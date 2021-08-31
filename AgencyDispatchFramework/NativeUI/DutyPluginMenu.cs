@@ -6,6 +6,7 @@ using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 
@@ -33,6 +34,7 @@ namespace AgencyDispatchFramework.NativeUI
         public UIMenuCheckboxItem FastForwardBox { get; private set; }
         public UIMenuItem WorldSettingsButton { get; private set; }
         public UIMenuItem CallSignsButton { get; private set; }
+        public UIMenuItem BeginSimuButton { get; private set; }
         public UIMenuListItem ShiftSelectMenuItem { get; private set; }
 
         #region Main Menu Buttons
@@ -153,6 +155,18 @@ namespace AgencyDispatchFramework.NativeUI
 
             ListenFiber = GameFiber.StartNew(delegate
             {
+                /*
+                var openMenuKeyString = $"~{Settings.OpenCalloutMenuKey.GetInstructionalId()}~";
+                var openMenuModifierKeyString = $"~{Settings.OpenCalloutMenuModifierKey.GetInstructionalId()}~";
+
+                // Show Help
+                Rage.Game.DisplayHelp($"Press the {openMenuModifierKeyString} ~+~ {openMenuKeyString} keys to open the interaction menu.", 6000);
+                */
+
+                // Open the menu
+                PatrolUIMenu.Visible = true;
+
+                // Main loop
                 while (IsListening)
                 {
                     // Let other fibers do stuff
@@ -256,6 +270,8 @@ namespace AgencyDispatchFramework.NativeUI
             FastForwardBox = new UIMenuCheckboxItem("Fast Forward to Shift", true, "If checked, when this menu closes time is fast forwarded to the begining of you shift");
             WorldSettingsButton = new UIMenuItem("World Settings", "Setup world settings.");
             CallSignsButton = new UIMenuItem("Choose CallSign", "Choose your CallSign for your Agency.");
+            BeginSimuButton = new UIMenuItem("Begin Simulation", "Start the ADF simulation.") { BackColor = Color.AliceBlue };
+            BeginSimuButton.Activated += BeginSimuButton_Activated;
 
             // Setup Shift items
             ShiftSelectMenuItem = new UIMenuListItem("Shift Selection", "Sets the shift you will be patrolling.");
@@ -314,6 +330,7 @@ namespace AgencyDispatchFramework.NativeUI
             PatrolUIMenu.AddItem(FastForwardBox);
             PatrolUIMenu.AddItem(WorldSettingsButton);
             PatrolUIMenu.AddItem(CallSignsButton);
+            PatrolUIMenu.AddItem(BeginSimuButton);
 
             // Bind buttons
             PatrolUIMenu.BindMenuToItem(WorldSettingsMenu, WorldSettingsButton);
@@ -478,6 +495,58 @@ namespace AgencyDispatchFramework.NativeUI
                 {
                     Rage.Game.DisplayNotification("There are no calls currently available. ~g~Dispatch will send you the next call that comes in");
                 }
+            }
+        }
+
+        private void BeginSimuButton_Activated(UIMenu sender, UIMenuItem selectedItem)
+        {
+            // Disable button spam
+            BeginSimuButton.Enabled = false;
+
+            // Wrap to catch exceptions
+            try
+            {
+                if (Dispatch.StartDuty())
+                {
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
+                    // Tell GameWorld to begin listening. Stops automatically when player goes off duty
+                    GameWorld.BeginFibers();
+
+                    // Display notification to the player
+                    Rage.Game.DisplayNotification(
+                        "3dtextures",
+                        "mpgroundlogo_cops",
+                        "Agency Dispatch Framework",
+                        "~g~Plugin is Now Active.",
+                        $"Now on duty serving ~g~{Dispatch.PlayerAgency.Zones.Length}~s~ zone(s)"
+                    );
+                }
+                else
+                {
+                    // Display notification to the player
+                    Rage.Game.DisplayNotification(
+                        "3dtextures",
+                        "mpgroundlogo_cops",
+                        "Agency Dispatch Framework",
+                        "~o~Initialization Failed.",
+                        $"~y~Please check your Game.log for errors."
+                    );
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Exception(e);
+
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "~o~Initialization Failed.",
+                    $"~y~Please check your Game.log for errors."
+                );
             }
         }
     }

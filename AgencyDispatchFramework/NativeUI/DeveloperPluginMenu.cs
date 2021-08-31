@@ -44,8 +44,10 @@ namespace AgencyDispatchFramework.NativeUI
         private UIMenu MainUIMenu;
         private UIMenu LocationsUIMenu;
 
-        private UIMenu RoadShoulderUIMenu;
-        private UIMenu AddRoadShoulderUIMenu;
+        private UIMenu RoadUIMenu;
+        private UIMenu AddRoadUIMenu;
+        private UIMenu RoadSpawnPointsUIMenu;
+
         private UIMenu RoadShoulderFlagsUIMenu;
         private UIMenu RoadShoulderBeforeFlagsUIMenu;
         private UIMenu RoadShoulderAfterFlagsUIMenu;
@@ -167,8 +169,8 @@ namespace AgencyDispatchFramework.NativeUI
             {
                 MainUIMenu,
                 LocationsUIMenu,
-                AddRoadShoulderUIMenu,
-                RoadShoulderUIMenu,
+                AddRoadUIMenu,
+                RoadUIMenu,
                 RoadShoulderFlagsUIMenu,
                 RoadShoulderBeforeFlagsUIMenu,
                 RoadShoulderAfterFlagsUIMenu,
@@ -207,7 +209,7 @@ namespace AgencyDispatchFramework.NativeUI
             LocationsUIMenu.AddItem(ResidenceButton);
 
             // Bind buttons
-            LocationsUIMenu.BindMenuToItem(RoadShoulderUIMenu, RoadShouldersButton);
+            LocationsUIMenu.BindMenuToItem(RoadUIMenu, RoadShouldersButton);
             LocationsUIMenu.BindMenuToItem(ResidenceUIMenu, ResidenceButton);
         }
 
@@ -263,7 +265,7 @@ namespace AgencyDispatchFramework.NativeUI
         private void AddRoadShoulderUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
         {
             // Are we backing out of this main menu
-            if (!forward && oldMenu == AddRoadShoulderUIMenu)
+            if (!forward && oldMenu == AddRoadUIMenu)
             {
                 ResetCheckPoints();
             }

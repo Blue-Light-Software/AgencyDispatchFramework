@@ -74,7 +74,7 @@ namespace AgencyDispatchFramework
                 var todNode = node.SelectSingleNode(name);
                 if (todNode == null)
                 {
-                    throw new Exception($"[{node.GetFullPath()}]: Unable to extract '{name}' attribute from XmlNode");
+                    continue;
                 }
 
                 // Itterate through each weather catagory
@@ -85,7 +85,7 @@ namespace AgencyDispatchFramework
                     // Extract and parse morning value
                     if (!Int32.TryParse(todNode.Attributes[attrName]?.Value, out int m))
                     {
-                        throw new Exception($"[{todNode.GetFullPath()}]: Unable to extract '{attrName}' attribute on XmlNode");
+                        continue;
                     }
 
                     // Set probability value

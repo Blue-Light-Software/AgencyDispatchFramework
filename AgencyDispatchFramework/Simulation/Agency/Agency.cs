@@ -287,11 +287,11 @@ namespace AgencyDispatchFramework.Simulation
             // Saftey
             if (IsActive) return;
 
-            // Calculate agency size
-            CalculateAgencySize();
-
             // Get our zones of jurisdiction, and ensure each zone has the primary agency set
             Zones = WorldZone.GetZonesByName(ZoneNames, out int loaded);
+
+            // Calculate agency size
+            CalculateAgencySize();
 
             // Load officers
             OfficersByShift = new Dictionary<ShiftRotation, List<OfficerUnit>>();
@@ -318,7 +318,7 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         internal virtual void Disable()
         {
-            // Un-Register for TimeOfDay changes!
+            // Un-Register for Shift changes!
             Dispatch.OnShiftStart -= Dispatch_OnShiftStart;
 
             // Dispose the dispatcher

@@ -189,87 +189,83 @@ namespace AgencyDispatchFramework
                 // Initialize GameWorld FIRST!!! Important!
                 GameWorld.Initialize();
 
-                // Only initialize these classes once!
-                if (!HasBeenOnDuty)
+                // Catch exceptions
+                try
                 {
-                    // Load base probabilities
-                    BaseProbabilitiesXmlFile.Load();
-
-                    // Load postals
-                    Postal.Initialize();
-
-                    // Load name generator
-                    RandomNameGenerator.Initialize();
-
-                    // Load our agencies and such (this will only initialize once per game session)
-                    Agency.Initialize();
-
-                    // Yield to prevent freezing
-                    GameFiber.Yield();
-
-                    // Load vehicles (this will only initialize once per game session)
-                    VehicleInfo.Initialize();
-
-                    // Load peds (this will only initialize once per game session)
-                    GamePed.Initialize();
-
-                    // Check for and initialize API classes
-                    ComputerPlusAPI.Initialize();
-                    StopThePedAPI.Initialize();
-
-                    // Set timescale?
-                    if (Settings.ForceTimeScale && Settings.TimeScaleMultiplier > 0)
+                    // Only initialize these classes once!
+                    if (!HasBeenOnDuty)
                     {
-                        TimeScale.SetTimeScaleMultiplier(Settings.TimeScaleMultiplier);
+                        // Load base probabilities
+                        BaseProbabilitiesXmlFile.Load();
+
+                        // Load postals
+                        Postal.Initialize();
+
+                        // Load name generator
+                        RandomNameGenerator.Initialize();
+
+                        // Load our agencies and such (this will only initialize once per game session)
+                        Agency.Initialize();
+
+                        // Yield to prevent freezing
+                        GameFiber.Yield();
+
+                        // Load vehicles (this will only initialize once per game session)
+                        VehicleInfo.Initialize();
+
+                        // Load peds (this will only initialize once per game session)
+                        GamePed.Initialize();
+
+                        // Check for and initialize API classes
+                        ComputerPlusAPI.Initialize();
+                        StopThePedAPI.Initialize();
+
+                        // Set timescale?
+                        if (Settings.ForceTimeScale && Settings.TimeScaleMultiplier > 0)
+                        {
+                            TimeScale.SetTimeScaleMultiplier(Settings.TimeScaleMultiplier);
+                        }
+
+                        // Initialize plugin menu
+                        DevPluginMenu = new DeveloperPluginMenu();
+                        DutyPluginMenu = new DutyPluginMenu();
+
+                        // Flag
+                        HasBeenOnDuty = true;
+                    }
+                    else
+                    {
+                        // Clear scenario pool
+                        ScenarioPool.Reset();
                     }
 
-                    // Initialize plugin menu
-                    DevPluginMenu = new DeveloperPluginMenu();
-                    DutyPluginMenu = new DutyPluginMenu();
-
-                    // Flag
-                    HasBeenOnDuty = true;
-                }
-                else
-                {
-                    // Clear scenario pool
-                    ScenarioPool.Reset();
-                }
-
-                // Yield to prevent freezing
-                GameFiber.Yield();
-
-                // Load scenarios for updated probabilities
-                ScenarioPool.RegisterCalloutsFromPath(Path.Combine(FrameworkFolderPath, "Callouts"), typeof(Main).Assembly);
-
-                // Yield to prevent freezing
-                GameFiber.Yield();
-
-                // Begin listening for the Plugin Menus
-                DevPluginMenu.BeginListening();
-                DutyPluginMenu.BeginListening();
-
-                /*
-                // Finally, start dispatch call center
-                if (Dispatch.StartDuty())
-                {
                     // Yield to prevent freezing
                     GameFiber.Yield();
 
-                    // Tell GameWorld to begin listening. Stops automatically when player goes off duty
-                    GameWorld.BeginFibers();
+                    // Load scenarios for updated probabilities
+                    ScenarioPool.RegisterCalloutsFromPath(Path.Combine(FrameworkFolderPath, "Callouts"), typeof(Main).Assembly);
 
-                    // Display notification to the player
-                    Rage.Game.DisplayNotification(
-                        "3dtextures",
-                        "mpgroundlogo_cops",
-                        "Agency Dispatch Framework",
-                        "~g~Plugin is Now Active.",
-                        $"Now on duty serving ~g~{Dispatch.PlayerAgency.Zones.Length}~s~ zone(s)"
-                    );
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
+                    // Close loading spinner
+                    Rage.Game.HideHelp();
+
+                    // Begin listening for the Plugin Menus
+                    DevPluginMenu.BeginListening();
+                    DutyPluginMenu.BeginListening();
+
+                    // Log our TimeScale multiplier
+                    Log.Debug($"Detected a timescale multiplier of {TimeScale.GetCurrentTimeScaleMultiplier()}");
                 }
-                else
+                catch (Exception e)
                 {
+                    // Close loading spinner
+                    Rage.Game.HideHelp();
+
+                    // Log
+                    Log.Exception(e);
+
                     // Display notification to the player
                     Rage.Game.DisplayNotification(
                         "3dtextures",
@@ -279,15 +275,6 @@ namespace AgencyDispatchFramework
                         $"~y~Please check your Game.log for errors."
                     );
                 }
-                */
-
-                // Log our TimeScale multiplier
-                Log.Debug($"Detected a timescale multiplier of {TimeScale.GetCurrentTimeScaleMultiplier()}");
-
-                // Close loading spinner
-                Rage.Game.HideHelp();
-
-                //PauseMenuExample.RunPauseMenuExample();
             });
         }
 

@@ -60,7 +60,7 @@ namespace AgencyDispatchFramework.NativeUI
         private void BuildRoadShouldersMenu()
         {
             // Create road shoulder ui menu
-            RoadShoulderUIMenu = new UIMenu(MENU_NAME, "~b~Road Shoulder Menu")
+            RoadUIMenu = new UIMenu(MENU_NAME, "~b~Road Shoulder Menu")
             {
                 MouseControlsEnabled = false,
                 AllowCameraMovement = true,
@@ -68,7 +68,7 @@ namespace AgencyDispatchFramework.NativeUI
             };
 
             // Create road shoulder ui menu
-            AddRoadShoulderUIMenu = new UIMenu(MENU_NAME, "~b~Add Road Shoulder")
+            AddRoadUIMenu = new UIMenu(MENU_NAME, "~b~Add Road Shoulder")
             {
                 MouseControlsEnabled = false,
                 AllowCameraMovement = true,
@@ -106,12 +106,12 @@ namespace AgencyDispatchFramework.NativeUI
             RoadShoulderClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
 
             // Add buttons
-            RoadShoulderUIMenu.AddItem(RoadShoulderCreateButton);
-            RoadShoulderUIMenu.AddItem(RoadShoulderLoadBlipsButton);
-            RoadShoulderUIMenu.AddItem(RoadShoulderClearBlipsButton);
+            RoadUIMenu.AddItem(RoadShoulderCreateButton);
+            RoadUIMenu.AddItem(RoadShoulderLoadBlipsButton);
+            RoadUIMenu.AddItem(RoadShoulderClearBlipsButton);
 
             // Bind Buttons
-            RoadShoulderUIMenu.BindMenuToItem(AddRoadShoulderUIMenu, RoadShoulderCreateButton);
+            RoadUIMenu.BindMenuToItem(AddRoadUIMenu, RoadShoulderCreateButton);
 
             // *************************************************
             // Add RoadShoulder UI Menu
@@ -133,18 +133,18 @@ namespace AgencyDispatchFramework.NativeUI
             RoadShoulderSaveButton.Activated += RoadShoulderSaveButton_Activated;
 
             // Add Buttons
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderStreetButton);
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderHintButton);
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderSpeedButton);
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderZoneButton);
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderPostalButton);
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderSpawnPointsButton);
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderFlagsButton);
-            AddRoadShoulderUIMenu.AddItem(RoadShoulderSaveButton);
+            AddRoadUIMenu.AddItem(RoadShoulderStreetButton);
+            AddRoadUIMenu.AddItem(RoadShoulderHintButton);
+            AddRoadUIMenu.AddItem(RoadShoulderSpeedButton);
+            AddRoadUIMenu.AddItem(RoadShoulderZoneButton);
+            AddRoadUIMenu.AddItem(RoadShoulderPostalButton);
+            AddRoadUIMenu.AddItem(RoadShoulderSpawnPointsButton);
+            AddRoadUIMenu.AddItem(RoadShoulderFlagsButton);
+            AddRoadUIMenu.AddItem(RoadShoulderSaveButton);
 
             // Bind buttons
-            AddRoadShoulderUIMenu.BindMenuToItem(RoadShoulderFlagsUIMenu, RoadShoulderFlagsButton);
-            AddRoadShoulderUIMenu.BindMenuToItem(RoadShoulderSpawnPointsUIMenu, RoadShoulderSpawnPointsButton);
+            AddRoadUIMenu.BindMenuToItem(RoadShoulderFlagsUIMenu, RoadShoulderFlagsButton);
+            AddRoadUIMenu.BindMenuToItem(RoadShoulderSpawnPointsUIMenu, RoadShoulderSpawnPointsButton);
 
             // *************************************************
             // Intersection Flags
@@ -231,7 +231,7 @@ namespace AgencyDispatchFramework.NativeUI
             }
 
             // Register for events
-            AddRoadShoulderUIMenu.OnMenuChange += AddRoadShoulderUIMenu_OnMenuChange;
+            AddRoadUIMenu.OnMenuChange += AddRoadShoulderUIMenu_OnMenuChange;
             RoadShoulderFlagsUIMenu.OnMenuChange += RoadShoulderFlagsUIMenu_OnMenuChange;
         }
 
@@ -514,7 +514,7 @@ namespace AgencyDispatchFramework.NativeUI
             );
 
             // Go back
-            AddRoadShoulderUIMenu.GoBack();
+            AddRoadUIMenu.GoBack();
 
             // Are we currently showing checkpoints and blips?
             if (ZoneCheckpoints.Count > 0)

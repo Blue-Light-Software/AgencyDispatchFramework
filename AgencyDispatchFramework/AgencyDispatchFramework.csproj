@@ -104,6 +104,7 @@
     <Compile Include="Game\Enums\PedDescriptionPropertyType.cs" />
     <Compile Include="Game\PedVariationMeta.cs" />
     <Compile Include="NativeUI\DutyPluginMenu.cs" />
+    <Compile Include="NativeUI\PluginMenuPartials\RoadUIMenu.cs" />
     <Compile Include="Simulation\Agency\EmsAgency.cs" />
     <Compile Include="Simulation\Agency\FireAgency.cs" />
     <Compile Include="Simulation\Agency\SheriffAgency.cs" />
