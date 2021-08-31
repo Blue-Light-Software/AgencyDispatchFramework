@@ -6,7 +6,6 @@
 	- Plan on the implementation of AmbientEvents as well as AiOfficerEvents
 	- Finish implementing an interface for UltimateBackup to use
 		- OR implement out own backup system
-	- Convert TimePeriod to 6 periods instead of 4.
 
 
  Planned Location types:

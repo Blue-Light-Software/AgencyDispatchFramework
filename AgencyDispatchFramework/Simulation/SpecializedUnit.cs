@@ -67,13 +67,22 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// 
+        /// Calculate the number of patrol cars needed to cover the number crime calls generated
+        /// that are unique to this <see cref="SpecializedUnit"/>
         /// </summary>
         /// <returns></returns>
         internal Dictionary<ShiftRotation, int> CalculateShiftCount()
         {
-            // @todo
-            return null;
+            // Create
+            var patrols = new Dictionary<ShiftRotation, int>();
+
+            // Calculate
+            patrols.Add(ShiftRotation.Day, GetOfficerCount(OptimumPatrols[TimePeriod.LateMorning], OptimumPatrols[TimePeriod.Afternoon]));
+            patrols.Add(ShiftRotation.Swing, GetOfficerCount(OptimumPatrols[TimePeriod.EarlyEvening], OptimumPatrols[TimePeriod.LateEvening]));
+            patrols.Add(ShiftRotation.Night, GetOfficerCount(OptimumPatrols[TimePeriod.Night], OptimumPatrols[TimePeriod.EarlyMorning]));
+
+            // Returns
+            return patrols;
         }
 
         /// <summary>
@@ -109,6 +118,17 @@ namespace AgencyDispatchFramework.Simulation
                 Log.Exception(e);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Returns the maximum of 2 officer counts, with a minimum of 1
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
+        private int GetOfficerCount(int v1, int v2)
+        {
+            return Math.Max(1, Math.Max(v1, v2));
         }
 
         /// <summary>

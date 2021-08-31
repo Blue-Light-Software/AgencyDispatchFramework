@@ -347,10 +347,10 @@ namespace AgencyDispatchFramework.Simulation
                 var unitName = Enum.GetName(typeof(UnitType), unit.UnitType);
 
                 // Create officers for every shift
-                foreach (var shift in OfficersByShift.Keys.ToArray())
+                foreach (var shift in shiftCounts)
                 {
-                    var shiftName = Enum.GetName(typeof(ShiftRotation), shift);
-                    var aiPatrolCount = shiftCounts[shift];
+                    var shiftName = Enum.GetName(typeof(ShiftRotation), shift.Key);
+                    var aiPatrolCount = shift.Value;
                     var toCreate = aiPatrolCount;
 
                     // Calculate sergeants, needs at least 3 units on shift
@@ -360,22 +360,22 @@ namespace AgencyDispatchFramework.Simulation
                         toCreate -= 1;
 
                         // Create instance
-                        var officer = unit.CreateOfficerUnit(true, shift);
+                        var officer = unit.CreateOfficerUnit(true, shift.Key);
                         if (unit == null) break;
 
                         // Add officer by shift
-                        OfficersByShift[shift].Add(officer);
+                        OfficersByShift[shift.Key].Add(officer);
                     }
 
                     // Create officer units
                     for (int i = 0; i < toCreate; i++)
                     {
                         // Create instance
-                        var officer = unit.CreateOfficerUnit(false, shift);
+                        var officer = unit.CreateOfficerUnit(false, shift.Key);
                         if (unit == null) break;
 
                         // Add officer by shift
-                        OfficersByShift[shift].Add(officer);
+                        OfficersByShift[shift.Key].Add(officer);
                     }
 
                     // Log for debugging

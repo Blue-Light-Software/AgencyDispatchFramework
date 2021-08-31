@@ -138,7 +138,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <returns></returns>
         protected virtual double GetOptimumPatrolCountForZone(double averageCalls, TimePeriod period, WorldZone zone)
         {
-            double callsPerOfficerPerShift = 4d;
+            double callsPerOfficerPerShift = 2d;
             double baseCount = Math.Max(0.5d, averageCalls / callsPerOfficerPerShift);
 
             switch (zone.Size)
@@ -168,7 +168,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <returns></returns>
         protected virtual double GetOptimumTrafficCountForZone(double averageCalls, TimePeriod period, WorldZone zone)
         {
-            double callsPerOfficerPerShift = 4d;
+            double callsPerOfficerPerShift = 2d;
             double baseCount = Math.Max(0.5d, averageCalls / callsPerOfficerPerShift);
 
             if (Units.ContainsKey(UnitType.Traffic))
