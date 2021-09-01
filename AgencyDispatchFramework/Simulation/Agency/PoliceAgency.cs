@@ -11,6 +11,14 @@ namespace AgencyDispatchFramework.Simulation
     /// </summary>
     public class PoliceAgency : Agency
     {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scriptName"></param>
+        /// <param name="friendlyName"></param>
+        /// <param name="staffLevel"></param>
+        /// <param name="signStyle"></param>
         internal PoliceAgency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle) 
             : base(scriptName, friendlyName, staffLevel, signStyle)
         {
@@ -58,9 +66,9 @@ namespace AgencyDispatchFramework.Simulation
             // Get number of optimal patrols, and total calls per period
             // --------------------------------------------------
             var officerCounts = new Dictionary<TimePeriod, int>();
-            var callsByPeriod = new Dictionary<TimePeriod, double>();
-            int totalDailyCalls = 0;
-            int totalRosterSize = 0;
+            CallsByPeriod = new Dictionary<TimePeriod, double>();
+            AverageDailyCalls = 0;
+            IdealRosterSize = 0;
 
             // Define which responsibilities that Patrol is the primary responder for
             var patrolHandlingCalls = new HashSet<CallCategory>((CallCategory[])Enum.GetValues(typeof(CallCategory)));
@@ -74,7 +82,7 @@ namespace AgencyDispatchFramework.Simulation
             {
                 // Add period to counts
                 officerCounts.Add(period, 0);
-                callsByPeriod.Add(period, 0);
+                CallsByPeriod.Add(period, 0);
 
                 // Cache variables
                 double optimumPatrols = 0;
@@ -85,8 +93,8 @@ namespace AgencyDispatchFramework.Simulation
                 {
                     // Get average calls per period
                     var calls = zone.CrimeInfo.GetTrueAverageCallCount(period);
-                    callsByPeriod[period] += calls;
-                    totalDailyCalls += zone.CrimeInfo.AverageCalls;
+                    CallsByPeriod[period] += calls;
+                    AverageDailyCalls += zone.CrimeInfo.AverageCalls;
 
                     // Grab crime report of this zone
                     var report = zone.CrimeInfo.CalculateCrimeProbabilities(period, Weather.Clear);
@@ -102,7 +110,7 @@ namespace AgencyDispatchFramework.Simulation
 
                         officers = (int)Math.Ceiling(optimumPatrols);
                         officerCounts[period] += officers;
-                        totalRosterSize += officers;
+                        IdealRosterSize += officers;
                         Units[UnitType.Patrol].OptimumPatrols[period] = officers;
                     }
 
@@ -117,7 +125,7 @@ namespace AgencyDispatchFramework.Simulation
 
                         officers = (int)Math.Ceiling(optimumPatrols);
                         officerCounts[period] += officers;
-                        totalRosterSize += officers;
+                        IdealRosterSize += officers;
                         Units[UnitType.Traffic].OptimumPatrols[period] = officers;
                     }
 

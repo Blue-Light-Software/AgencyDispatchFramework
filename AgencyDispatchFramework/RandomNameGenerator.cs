@@ -96,6 +96,9 @@ namespace AgencyDispatchFramework
                 // Extract names
                 LastNames = (from XmlNode x in names select x.InnerText).ToArray();
 
+                // Create a random instance
+                Random = new CryptoRandom();
+
                 // Flag
                 IsLoaded = true;
             }
@@ -108,13 +111,15 @@ namespace AgencyDispatchFramework
         /// <returns></returns>
         public static RandomName Generate(Gender gender)
         {
-            var nameGen = new RandomName()
+            // Load if not already...
+            if (!IsLoaded) Initialize();
+
+            // Create a name
+            return new RandomName()
             {
                 Forename = (gender == Gender.Male) ? Random.PickOne(MaleFirstNames) : Random.PickOne(FemaleFirstNames),
                 Surname = Random.PickOne(LastNames)
             };
-
-            return nameGen;
         }
     }
 }

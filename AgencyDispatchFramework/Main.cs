@@ -217,7 +217,7 @@ namespace AgencyDispatchFramework
                         GamePed.Initialize();
 
                         // Check for and initialize API classes
-                        ComputerPlusAPI.Initialize();
+                        //ComputerPlusAPI.Initialize();
                         StopThePedAPI.Initialize();
 
                         // Set timescale?

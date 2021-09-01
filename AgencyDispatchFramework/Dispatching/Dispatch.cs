@@ -150,7 +150,7 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Contains the active agencies by type
         /// </summary>
-        private static Dictionary<string, Agency> AgenciesByName { get; set; }
+        private static Dictionary<string, Agency> EnabledAgenciesByName { get; set; }
 
         /// <summary>
         /// Gets the player's <see cref="OfficerUnit"/> instance
@@ -247,7 +247,7 @@ namespace AgencyDispatchFramework
             };
 
             // Create agency lookup
-            AgenciesByName = new Dictionary<string, Agency>();
+            EnabledAgenciesByName = new Dictionary<string, Agency>();
             ActiveShifts = new Dictionary<ShiftRotation, bool>();
             foreach (ShiftRotation period in Enum.GetValues(typeof(ShiftRotation)))
             {
@@ -339,7 +339,7 @@ namespace AgencyDispatchFramework
         /// <returns>If the player is not on duty, this method return null</returns>
         public static Agency[] GetEnabledAgencies()
         {
-            return (Main.OnDutyLSPDFR) ? AgenciesByName.Values.ToArray() : null;
+            return (Main.OnDutyLSPDFR) ? EnabledAgenciesByName.Values.ToArray() : null;
         }
 
         /// <summary>
@@ -1063,7 +1063,7 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Method called at the start of every duty
         /// </summary>
-        internal static bool StartDuty()
+        internal static bool BeginSimulation()
         {
             try
             {
@@ -1073,7 +1073,7 @@ namespace AgencyDispatchFramework
                 if (PlayerAgency == null)
                 {
                     PlayerAgency = oldAgency;
-                    Log.Error("Dispatch.StartDuty(): Player Agency is null");
+                    Log.Error("Dispatch.BeginSimulation(): Player Agency is null");
                     return false;
                 }
 
@@ -1084,20 +1084,25 @@ namespace AgencyDispatchFramework
                 if (oldAgency != null && !PlayerAgency.ScriptName.Equals(oldAgency.ScriptName))
                 {
                     // Clear agency data
-                    foreach (var ag in AgenciesByName)
+                    foreach (var ag in EnabledAgenciesByName)
+                    {
                         ag.Value.Disable();
-
-                    AgenciesByName.Clear();
+                    }
 
                     // Clear calls
                     foreach (var callList in CallQueue)
+                    {
                         callList.Clear();
+                    }
+
+                    // Clear enabled angencies
+                    EnabledAgenciesByName.Clear();
                 }
 
                 // ********************************************
                 // Build a hashset of zones to load
                 // ********************************************
-                var zonesToLoad = new HashSet<string>(Agency.GetCurrentAgencyZoneNames());
+                var zonesToLoad = new HashSet<string>(PlayerAgency.ZoneNames);
                 if (zonesToLoad.Count == 0)
                 {
                     // Display notification to the player
@@ -1115,7 +1120,7 @@ namespace AgencyDispatchFramework
                 // ********************************************
                 // Load all agencies that need to be loaded
                 // ********************************************
-                AgenciesByName.Add(PlayerAgency.ScriptName, PlayerAgency);
+                EnabledAgenciesByName.Add(PlayerAgency.ScriptName, PlayerAgency);
 
                 // Next we need to determine which agencies to load alongside the players agency
                 switch (PlayerAgency.AgencyType)
@@ -1123,24 +1128,24 @@ namespace AgencyDispatchFramework
                     case AgencyType.CityPolice:
                         // Add county
                         var name = (PlayerAgency.BackingCounty == County.Blaine) ? "bcso" : "lssd";
-                        AgenciesByName.Add(name, Agency.GetAgencyByName(name));
+                        EnabledAgenciesByName.Add(name, Agency.GetAgencyByName(name));
                         zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName(name));
 
                         // Add state
-                        AgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
+                        EnabledAgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
                         zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("sahp"));
                         break;
                     case AgencyType.CountySheriff:
                     case AgencyType.StateParks:
                         // Add state
-                        AgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
+                        EnabledAgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
                         zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("sahp"));
                         break;
                     case AgencyType.StatePolice:
                     case AgencyType.HighwayPatrol:
                         // Add both counties
-                        AgenciesByName.Add("bcso", Agency.GetAgencyByName("bcso"));
-                        AgenciesByName.Add("lssd", Agency.GetAgencyByName("lssd"));
+                        EnabledAgenciesByName.Add("bcso", Agency.GetAgencyByName("bcso"));
+                        EnabledAgenciesByName.Add("lssd", Agency.GetAgencyByName("lssd"));
 
                         // Load both counties zones
                         zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("bcso"));
@@ -1170,51 +1175,67 @@ namespace AgencyDispatchFramework
                 // Yield to prevent freezing
                 GameFiber.Yield();
 
-                // Create player, and initialize all agencies
-                PlayerUnit = PlayerAgency.AddPlayerUnit();
-                foreach (var a in AgenciesByName.Values)
-                {
-                    a.Enable();
-                }
-
-                // Yield to prevent freezing
-                GameFiber.Yield();
-
                 // ********************************************
                 // Build the crime generator
                 // ********************************************
                 CrimeGenerator = new RegionCrimeGenerator(Zones.ToArray());
 
-                // Debugging
-                Log.Debug("Starting duty with the following Player Agency data:");
-                Log.Debug($"\t\tAgency Name: {PlayerAgency.FullName}");
-                Log.Debug($"\t\tAgency Type: {PlayerAgency.AgencyType}");
-                Log.Debug($"\t\tAgency Staff Level: {PlayerAgency.StaffLevel}");
-                Log.Debug("Starting duty with the following Region data:");
-                Log.Debug($"\t\tRegion Zone Count: {Zones.Count}");
+                // Create player, and initialize all agencies
+                PlayerUnit = PlayerAgency.AddPlayerUnit();
 
-                // Loop through each time period and cache crime numbers
-                foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
+                // Log for debugging
+                foreach (var agency in EnabledAgenciesByName.Values)
                 {
-                    // Log crime logic
-                    var crimeInfo = CrimeGenerator.RegionCrimeInfoByTimePeriod[period];
-                    string name = Enum.GetName(typeof(TimePeriod), period);
+                    // Debugging
+                    Log.Debug("Loading Agency with the following data:");
+                    Log.Debug($"\t\tAgency Name: {agency.FullName}");
+                    Log.Debug($"\t\tAgency Type: {agency.AgencyType}");
+                    Log.Debug($"\t\tAgency Staff Level: {agency.StaffLevel}");
 
-                    Log.Debug($"\t\tRegion Data during the {name}:");
-                    Log.Debug($"\t\t\tAverage Calls: {crimeInfo.AverageCrimeCalls}");
-                    Log.Debug($"\t\t\tAverage millseconds Per Call: {crimeInfo.AverageMillisecondsPerCall}");
-                    //Log.Debug($"\t\t\tIdeal Patrols: {crimeInfo.OptimumPatrols}");
+                    // Enable the agency
+                    agency.Enable();
 
-                    // Get total officer counts by agency
-                    /*
-                    StringBuilder b = new StringBuilder();
-                    foreach (var a in AgenciesByName)
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
+                    // Log shift information
+                    Log.Debug($"\t\tAgency Unit Shift Data:");
+                    foreach (ShiftRotation shift in Enum.GetValues(typeof(ShiftRotation)))
                     {
-                        b.Append($"{a.Key} => {a.Value.OfficersByShift[period].Count}, ");
+                        var shiftName = Enum.GetName(typeof(ShiftRotation), shift);
+                        Log.Debug($"\t\t\t{shiftName} shift:");
+                        foreach (var unit in agency.Units.Values)
+                        {
+                            var name = Enum.GetName(typeof(UnitType), unit.UnitType);
+                            Log.Debug($"\t\t\t\t{name}: {unit.Roster.Count}");
+                        }
                     }
-                    var value = b.ToString().TrimEnd(',', ' ');
-                    Log.Debug($"\t\t\tActual Patrols by Agency: [{value}]");
-                    */
+
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
+                    // Loop through each time period and cache crime numbers
+                    Log.Debug($"\t\tAgency Projected Crime Data:");
+                    foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
+                    {      
+                        // Log crime logic;
+                        string name = Enum.GetName(typeof(TimePeriod), period);
+                        Log.Debug($"\t\t\tAverage Calls during the {name}: {agency.CallsByPeriod[period]}");
+                    }
+
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
+                    // Log zone data
+                    Log.Debug($"\t\tAgency Primary Zone Count: {agency.Zones.Length}");
+                    Log.Debug($"\t\tAgency Primary Zones: ");
+                    foreach (var zone in agency.Zones)
+                    {
+                        Log.Debug($"\t\t\t{zone.ScriptName}");
+                    }
+
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
                 }
 
                 // Initialize CAD. This needs called everytime we go on duty
@@ -1259,7 +1280,7 @@ namespace AgencyDispatchFramework
             LSPD_First_Response.Mod.API.Events.OnCalloutFinished -= LSPDFR_OnCalloutFinished;
 
             // Deactivate all agencies
-            foreach (var a in AgenciesByName.Values)
+            foreach (var a in EnabledAgenciesByName.Values)
             {
                 a.Disable();
             }
@@ -1280,8 +1301,11 @@ namespace AgencyDispatchFramework
         /// </summary>
         private static void Process()
         {
-            // While on duty main loop
+            // local vars
             bool skip = false;
+            var orderedAgencies = EnabledAgenciesByName.Values.OrderBy(x => (int)x.AgencyType);
+
+            // While on duty main loop
             while (Main.OnDutyLSPDFR)
             {
                 // Get current datetime and timeperiod
@@ -1307,32 +1331,30 @@ namespace AgencyDispatchFramework
                     OnShiftEnd?.Invoke(shift);
                 }
 
-                // Every other loop, do dispatching logic
-                skip = !skip;
-                if (!skip)
+                // Are we invoking a call to the player?
+                if (InvokeForPlayer != null)
                 {
-                    // Are we invoking a call to the player?
-                    if (InvokeForPlayer != null)
-                    {
-                        // Tell the players dispatcher they are about to get a call
-                        PlayerAgency.Dispatcher.AssignUnitToCall(PlayerUnit, InvokeForPlayer);
-                        InvokeForPlayer = null;
-                    }
-
-                    // Process each agency
-                    var orderedAgencies = AgenciesByName.Values.OrderBy(x => (int)x.AgencyType);
-                    foreach (var agency in orderedAgencies)
-                    {
-                        agency.Dispatcher.Process();
-
-                        // Be nice
-                        GameFiber.Yield();
-                    }
+                    // Tell the players dispatcher they are about to get a call
+                    PlayerAgency.Dispatcher.AssignUnitToCall(PlayerUnit, InvokeForPlayer);
+                    InvokeForPlayer = null;
                 }
 
+                // Every other loop, do dispatching logic
+                skip = !skip;
+
                 // Call OnTick for the VirtualAIUnit(s)
-                foreach (var agency in AgenciesByName.Values)
+                foreach (var agency in orderedAgencies)
                 {
+                    // Do dispatching logic?
+                    if (!skip)
+                    {
+                        agency.Dispatcher.Process();
+                    }
+
+                    // Be nice
+                    GameFiber.Yield();
+
+                    // On tick for every AI officer currently on duty
                     foreach (var officer in agency.OnDutyOfficers)
                     {
                         officer.OnTick(date);
@@ -1367,6 +1389,11 @@ namespace AgencyDispatchFramework
             }
         }
 
+        /// <summary>
+        /// Returns a hash table of all shifts, and flags which ones are still active by the provided time
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
         private static Dictionary<ShiftRotation, bool> GetActiveShifts(TimeSpan time)
         {
             return new Dictionary<ShiftRotation, bool>()

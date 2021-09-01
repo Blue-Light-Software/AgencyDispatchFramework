@@ -74,7 +74,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// 
         /// </summary>
-        protected Dictionary<UnitType, SpecializedUnit> Units { get; set; }
+        internal Dictionary<UnitType, SpecializedUnit> Units { get; set; }
 
         /// <summary>
         /// 
@@ -85,6 +85,21 @@ namespace AgencyDispatchFramework.Simulation
         /// Contains a list of all <see cref="AIOfficerUnit"/>s currently on duty
         /// </summary>
         internal HashSet<AIOfficerUnit> OnDutyOfficers { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal Dictionary<TimePeriod, double> CallsByPeriod { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal int AverageDailyCalls { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal int IdealRosterSize { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="Dispatching.Dispatcher"/> for this <see cref="Agency"/>
@@ -257,6 +272,7 @@ namespace AgencyDispatchFramework.Simulation
             CallSignStyle = signStyle;
 
             // Initiate vars
+            CallsByPeriod = new Dictionary<TimePeriod, double>();
             Units = new Dictionary<UnitType, SpecializedUnit>();
             OnDutyOfficers = new HashSet<AIOfficerUnit>();
         }
@@ -377,9 +393,6 @@ namespace AgencyDispatchFramework.Simulation
                         // Add officer by shift
                         OfficersByShift[shift.Key].Add(officer);
                     }
-
-                    // Log for debugging
-                    Log.Debug($"Loaded {aiPatrolCount} Virtual AI officer units for agency '{FullName}' for unit {unitName} on {shiftName} shift");
                 }
             }
         }

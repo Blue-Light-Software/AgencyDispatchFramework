@@ -137,9 +137,6 @@ namespace AgencyDispatchFramework.Game
         /// </summary>
         private static void UpdateWorldState()
         {
-            // Wait
-            GameFiber.Wait(3000);
-
             // While we are on duty accept calls
             while (Main.OnDutyLSPDFR)
             {

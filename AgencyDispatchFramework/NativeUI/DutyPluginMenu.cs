@@ -506,7 +506,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Wrap to catch exceptions
             try
             {
-                if (Dispatch.StartDuty())
+                if (Dispatch.BeginSimulation())
                 {
                     // Yield to prevent freezing
                     GameFiber.Yield();

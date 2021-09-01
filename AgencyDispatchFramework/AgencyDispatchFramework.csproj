@@ -134,7 +134,7 @@
     <Compile Include="Dispatching\Delegates\ScenarioListUpdateHandler.cs" />
     <Compile Include="Dispatching\Enums\ResponseCode.cs" />
     <Compile Include="Dispatching\Scanner.cs" />
-    <Compile Include="ScenarioPool.cs" />
+    <Compile Include="Scripting\ScenarioPool.cs" />
     <Compile Include="Dispatching\Assignments\AssignedToCall.cs" />
     <Compile Include="Dispatching\Assignments\CivilDisturbance.cs" />
     <Compile Include="Dispatching\Assignments\CrimeInProgress.cs" />

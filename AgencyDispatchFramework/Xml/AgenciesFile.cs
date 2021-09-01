@@ -5,6 +5,7 @@ using AgencyDispatchFramework.Simulation;
 using Rage;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
@@ -226,9 +227,10 @@ namespace AgencyDispatchFramework.Xml
                 foreach (XmlNode unitNode in unitsNode.SelectNodes("Unit"))
                 {
                     // Get type attribute
-                    if (!Enum.TryParse(unitNode.GetAttribute("type"), out UnitType unitType))
+                    var attrValue = unitNode.GetAttribute("type");
+                    if (!Enum.TryParse(attrValue, out UnitType unitType))
                     {
-                        Log.Warning($"Agency.Initialize(): Unable to extract Unit type value for '{sname}' in Agencies.xml");
+                        Log.Warning($"Agency.Initialize(): Unable to extract Unit type value '{attrValue ?? "null"}' for '{sname}' in Agencies.xml");
                         continue;
                     }
 
@@ -362,6 +364,46 @@ namespace AgencyDispatchFramework.Xml
         /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
         private bool TryExtractWeapons(XmlNode vn, VehicleSet set, Agency agency)
         {
+            string[] options = new[] { "HandGun", "LongGun" };
+            foreach (var name in options)
+            {
+                // Grab nodes
+                var nodes = vn.SelectSingleNode($"{name}s")?.SelectNodes(name);
+                if (nodes == null || nodes.Count == 0)
+                    continue;
+
+                // Loop through each Ped node
+                foreach (XmlNode node in nodes)
+                {
+                    // Extract the chance attribute
+                    if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
+                    {
+                        Log.Warning($"Agency.TryExtractWeapons(): Weapon entry for '{agency.ScriptName}' has no chance attribute in Agencies.xml");
+                        continue;
+                    }
+
+                    // Create new meta
+                    var modelName = node.InnerText;
+                    var meta = new WeaponMeta(chance, modelName);
+
+                    // Extras
+                    var range = Enumerable.Range(1, 6);
+                    foreach (int num in range)
+                    {
+                        // Search for each component
+                        if (node.TryGetAttribute($"comp_{num}", out string compName))
+                        {
+                            // Add component
+                            meta.Components.Add(compName);
+                        }
+                    }
+
+                    // Add to VehicleSet
+                    var metaSet = name.Equals("HandGun") ? set.HandGunMetas : set.LongGunMetas; 
+                    metaSet.Add(meta);
+                }
+            }
+
             // Report success
             return true;
         }
@@ -375,30 +417,55 @@ namespace AgencyDispatchFramework.Xml
         /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
         private bool TryExtractVehicles(XmlNode vn, VehicleSet set, Agency agency)
         {
-            /*
-            // Try and extract livery value
-            if (vn.Attributes["livery"]?.Value != null && int.TryParse(vn.Attributes["livery"].Value, out int livery))
-            {
-                set.Livery = livery;
-            }
+            // Grab nodes
+            var nodes = vn.SelectSingleNode("Vehicles")?.SelectNodes("Vehicle");
+            if (nodes == null || nodes.Count == 0)
+                return false;
 
-            // Extract extras
-            if (!String.IsNullOrWhiteSpace(vn.Attributes["extras"]?.Value))
+            // Loop through each Ped node
+            foreach (XmlNode node in nodes)
             {
-                string extras = vn.Attributes["extras"].Value;
-                set.Extras = ParseExtras(extras);
-            }
+                // Extract the chance attribute
+                if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
+                {
+                    Log.Warning($"Agency.TryExtractVehicles(): Vehicle entry for '{agency.ScriptName}' has no chance attribute in Agencies.xml");
+                    continue;
+                }
 
-            // Extract spawn color
-            if (!String.IsNullOrWhiteSpace(vn.Attributes["color"]?.Value))
-            {
-                string color = vn.Attributes["color"].Value;
-                set.SpawnColor = (Color)Enum.Parse(typeof(Color), color);
+                // Create new meta
+                var modelName = node.InnerText;
+                var meta = new VehicleModelMeta(chance, modelName);
+
+                // Check for livery
+                if (node.TryGetAttribute("livery", out int livery))
+                {
+                    meta.LiveryIndex = livery;
+                }
+
+                // Check for livery
+                if (node.TryGetAttribute("color", out string colorName))
+                {
+                    meta.SpawnColor = Color.FromName(colorName);
+                }
+
+                // Extras
+                var range = Enumerable.Range(1, 12);
+                foreach (int num in range)
+                {
+                    // Search for each component
+                    if (bool.TryParse(node.GetAttribute($"extra_{num}"), out bool ee))
+                    {
+                        // Add component
+                        meta.Extras.AddOrUpdate(num, ee);
+                    }
+                }
+
+                // Add to VehicleSet
+                set.VehicleMetas.Add(meta);
             }
-            */
 
             // Report success
-            return true;
+            return set.VehicleMetas.ItemCount > 0;
         }
 
         /// <summary>
@@ -496,10 +563,13 @@ namespace AgencyDispatchFramework.Xml
                         meta.SetProp(variation, item.Value, val, tex);
                     }
                 }
+
+                // Add to VehicleSet
+                set.OfficerMetas.Add(meta);
             }
 
             // Report success
-            return true;
+            return set.OfficerMetas.ItemCount > 0;
         }
 
         /// <summary>
@@ -511,48 +581,20 @@ namespace AgencyDispatchFramework.Xml
         /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
         private bool TryExtractNonLethals(XmlNode vn, VehicleSet set, Agency agency)
         {
-            
+            // Grab nodes
+            var nodes = vn.SelectSingleNode("NonLethals")?.SelectNodes("NonLethal");
+            if (nodes == null || nodes.Count == 0)
+                return false;
 
+            // Loop through each Ped node
+            foreach (XmlNode node in nodes)
+            {
+                // Create new meta
+                var modelName = node.InnerText;
+                set.NonLethalWeapons.Add(modelName);
+            }
             // Report success
             return true;
-        }
-
-        /// <summary>
-        /// Parses the extras attribute into a hash table
-        /// </summary>
-        /// <param name="extras"></param>
-        /// <returns></returns>
-        private static Dictionary<int, bool> ParseExtras(string extras)
-        {
-            // No extras?
-            if (String.IsNullOrWhiteSpace(extras))
-            {
-                return new Dictionary<int, bool>();
-            }
-
-            string toParse = extras.Replace("extra", "").Replace(" ", String.Empty);
-            string[] parts = toParse.Split(',', '=');
-
-            // Ensure we have an even number of things
-            if (parts.Length % 2 != 0)
-            {
-                return new Dictionary<int, bool>();
-            }
-
-            // Parse items
-            var dic = new Dictionary<int, bool>(parts.Length / 2);
-            for (int i = 0; i < parts.Length - 1; i += 2)
-            {
-                if (!int.TryParse(parts[i], out int id))
-                    continue;
-
-                if (!bool.TryParse(parts[i + 1], out bool value))
-                    continue;
-
-                dic.Add(id, value);
-            }
-
-            return dic;
         }
     }
 }

@@ -80,24 +80,17 @@ namespace AgencyDispatchFramework.Extensions
         /// </returns>
         public static bool TryGetAttribute(this XmlNode node, string name, out string value)
         {
-            if (node.Attributes != null)
+            var val = node.Attributes[name]?.Value;
+            if (String.IsNullOrEmpty(val))
             {
-                var val = node.Attributes[name]?.Value;
-                if (String.IsNullOrEmpty(val))
-                {
-                    value = null;
-                    return false;
-                }
-                else
-                {
-                    value = val;
-                    return true;
-                }
-               
+                value = null;
+                return false;
             }
-
-            value = null;
-            return false;
+            else
+            {
+                value = val;
+                return true;
+            }
         }
 
         /// <summary>

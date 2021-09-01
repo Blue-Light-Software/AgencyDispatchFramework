@@ -27,7 +27,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Gets or Sets the color of the <see cref="Vehicle"/>
         /// </summary>
-        public Color SpawnColor { get; set; }
+        public Color? SpawnColor { get; set; }
 
         /// <summary>
         /// Gets or Sets the extras values of the <see cref="Vehicle"/>

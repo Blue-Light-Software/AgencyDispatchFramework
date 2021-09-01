@@ -23,9 +23,10 @@ namespace AgencyDispatchFramework.Simulation
         /// Creates a new instance of <see cref="WeaponMeta"/>
         /// </summary>
         /// <param name="probability"></param>
-        public WeaponMeta(int probability)
+        public WeaponMeta(int probability, string name)
         {
             Probability = probability;
+            Name = name;
             Components = new List<string>();
         }
     }
