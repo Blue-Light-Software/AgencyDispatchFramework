@@ -132,6 +132,9 @@ namespace AgencyDispatchFramework.Simulation
                 // Register for Dispatch event
                 GameWorld.OnTimePeriodChanged += GameWorld_OnTimeOfDayChanged;
 
+                // Build call queue
+                BuildCallQueue();
+
                 // Start GameFiber
                 CrimeFiber = GameFiber.StartNew(ProcessCrimeLogic);
             }
@@ -502,6 +505,15 @@ namespace AgencyDispatchFramework.Simulation
                 );
             }
 
+            // Build call queue
+            BuildCallQueue();
+        }
+
+        /// <summary>
+        /// Builds the call queue for this current <see cref="TimePeriod"/>
+        /// </summary>
+        private void BuildCallQueue()
+        {
             // Clear old junk
             NextIncomingCallTimes = new ConcurrentQueue<TimeSpan>();
 
@@ -516,8 +528,11 @@ namespace AgencyDispatchFramework.Simulation
 
             // Divided by percent we are through the current time period.
             var start = World.DateTime.TimeOfDay;
-            var end = GameWorld.GetTimeUntilNextTimePeriod();
+            var end = GameWorld.GetTimeUntilNextTimePeriod().Add(start);
             int maxMinutes = (int)((end - start).TotalMinutes) - 1;
+
+            // If max minutes is really small, skip
+            if (maxMinutes < 5) return;
 
             // Take that number create X amount of random TimeSpans
             var list = new List<TimeSpan>(numCalls);

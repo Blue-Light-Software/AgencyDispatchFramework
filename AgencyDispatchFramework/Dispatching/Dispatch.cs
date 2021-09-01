@@ -1187,8 +1187,7 @@ namespace AgencyDispatchFramework
                 foreach (var agency in EnabledAgenciesByName.Values)
                 {
                     // Debugging
-                    Log.Debug("Loading Agency with the following data:");
-                    Log.Debug($"\t\tAgency Name: {agency.FullName}");
+                    Log.Debug($"Loading {agency.FullName} with the following data:");
                     Log.Debug($"\t\tAgency Type: {agency.AgencyType}");
                     Log.Debug($"\t\tAgency Staff Level: {agency.StaffLevel}");
 
