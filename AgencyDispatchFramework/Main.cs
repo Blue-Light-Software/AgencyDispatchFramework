@@ -155,7 +155,7 @@ namespace AgencyDispatchFramework
             else
             {
                 // Stop generating calls
-                Dispatch.StopDuty();
+                Dispatch.Shutdown();
 
                 // Stop the plugin menu
                 DevPluginMenu?.StopListening();

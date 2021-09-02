@@ -162,6 +162,8 @@
     <Compile Include="Game\AnimationMeta.cs" />
     <Compile Include="Game\AnimationSequence.cs" />
     <Compile Include="Game\AnimationData.cs" />
+    <Compile Include="Simulation\Simulation.cs" />
+    <Compile Include="Simulation\SimulationSettings.cs" />
     <Compile Include="Simulation\WorldStateCrimeProjection.cs" />
     <Compile Include="Game\Enums\PedComponent.cs" />
     <Compile Include="Game\Enums\PedPropIndex.cs" />

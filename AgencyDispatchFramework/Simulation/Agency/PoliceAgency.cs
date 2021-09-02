@@ -12,6 +12,8 @@ namespace AgencyDispatchFramework.Simulation
     public class PoliceAgency : Agency
     {
 
+        public override AgencyType AgencyType => AgencyType.CityPolice;
+
         /// <summary>
         /// 
         /// </summary>

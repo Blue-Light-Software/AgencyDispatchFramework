@@ -304,9 +304,9 @@ namespace AgencyDispatchFramework.Integration
 
             // Add tabs and their corresponding containers
             tc_main.AddPage("Active Call List", base_active_calls);
-            for (int i = 1; i < 5; i++)
+            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
             {
-                foreach (var call in Dispatch.GetCallList(i))
+                foreach (var call in Dispatch.GetCallList(priority))
                 {
                     var timeSpan = World.DateTime - call.CallCreated;
                     var row = list_active_calls.AddRow(

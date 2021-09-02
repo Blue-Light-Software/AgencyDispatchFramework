@@ -245,7 +245,7 @@ namespace AgencyDispatchFramework.Game
         /// <param name="names">An array of zones to load (should be all uppercase)</param>
         /// <returns>returns the number of locations loaded</returns>
         /// <param name="loaded">Returns the number of zones loaded directly from the XML files.</param>
-        public static WorldZone[] GetZonesByName(string[] names, out int loaded)
+        public static WorldZone[] GetZonesByName(string[] names, out int loaded, out int totalLocations)
         {
             // Create instance of not already!
             if (ZoneCache == null)
@@ -253,7 +253,7 @@ namespace AgencyDispatchFramework.Game
                 ZoneCache = new Dictionary<string, WorldZone>();
             }
 
-            int totalLocations = 0;
+            totalLocations = 0;
             int zonesAdded = 0;
             List<WorldZone> zones = new List<WorldZone>();
 
@@ -304,9 +304,6 @@ namespace AgencyDispatchFramework.Game
                     continue;
                 }
             }
-
-            // Log and return
-            Log.Info($"Loaded {zonesAdded} zones with {totalLocations} locations into memory'");
 
             loaded = zonesAdded;
             return zones.ToArray();

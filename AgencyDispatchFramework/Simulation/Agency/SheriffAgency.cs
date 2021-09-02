@@ -1,16 +1,12 @@
 ﻿using AgencyDispatchFramework.Dispatching;
-using AgencyDispatchFramework.Game;
-using AgencyDispatchFramework.Simulation;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AgencyDispatchFramework.Simulation
 {
     public class SheriffAgency : PoliceAgency
     {
+        public override AgencyType AgencyType => AgencyType.CountySheriff;
+
         internal SheriffAgency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle)
             : base(scriptName, friendlyName, staffLevel, signStyle)
         {

@@ -10,7 +10,6 @@ using Rage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace AgencyDispatchFramework
@@ -169,15 +168,9 @@ namespace AgencyDispatchFramework
 
 
         /// <summary>
-        /// Our call Queue, seperated into 4 priority queues
+        /// Our open calls list
         /// </summary>
-        /// <remarks>
-        /// 0 => IMMEDIATE EMERGENCY RESPONSE: The 3 closest units will be removed from priority 3 and 4 calls to respond
-        /// 1 => EMERGENCY RESPONSE: The 2 closest units will be removed from priority 4 calls to respond
-        /// 2 => EXPEDITED RESPONSE: Dispatched to a close unit that is available or will be done with thier call soon
-        /// 3 => ROUTINE RESPONSE: Dispatched to an available unit that is close
-        /// </remarks>
-        private static List<PriorityCall>[] CallQueue { get; set; }
+        private static Dictionary<CallPriority, List<PriorityCall>> OpenCalls { get; set; }
 
         /// <summary>
         /// Contains the priority call being dispatched to the player currently
@@ -238,13 +231,11 @@ namespace AgencyDispatchFramework
 
             // Create call Queue
             // See also: https://grantpark.org/info/16029
-            CallQueue = new List<PriorityCall>[4] 
+            OpenCalls = new Dictionary<CallPriority, List<PriorityCall>>();
+            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
             {
-                new List<PriorityCall>(4),  // IMMEDIATE EMERGENCY BROADCAST
-                new List<PriorityCall>(8),  // EMERGENCY RESPONSE
-                new List<PriorityCall>(12), // EXPEDITED RESPONSE
-                new List<PriorityCall>(20), // ROUTINE RESPONSE
-            };
+                OpenCalls.Add(priority, new List<PriorityCall>());
+            }
 
             // Create agency lookup
             EnabledAgenciesByName = new Dictionary<string, Agency>();
@@ -308,12 +299,9 @@ namespace AgencyDispatchFramework
         /// </summary>
         /// <param name="priority"></param>
         /// <returns></returns>
-        public static PriorityCall[] GetCallList(int priority)
+        public static PriorityCall[] GetCallList(CallPriority priority)
         {
-            if (priority > 4 || priority < 1) return null;
-
-            int index = priority - 1;
-            return CallQueue[index].ToArray();
+            return OpenCalls[priority].ToArray();
         }
 
         /// <summary>
@@ -322,14 +310,7 @@ namespace AgencyDispatchFramework
         /// <returns></returns>
         public static Dictionary<CallPriority, int> GetCallCount()
         {
-            var callCount = new Dictionary<CallPriority, int>();
-            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
-            {
-                var index = ((int)priority) - 1;
-                callCount.Add(priority, CallQueue[index].Count);
-            }
-
-            return callCount;
+            return OpenCalls.ToDictionary(x => x.Key, y => y.Value.Count);
         }
 
         /// <summary>
@@ -404,15 +385,14 @@ namespace AgencyDispatchFramework
                 var location = Rage.Game.LocalPlayer.Character.Position;
 
                 // Try and find a call for the player
-                for (int i = 0; i < 4; i++)
+                foreach (var callList in OpenCalls)
                 {
                     // Get call list
-                    var calls = CallQueue[i];
-                    if (calls.Count == 0)
+                    if (callList.Value.Count == 0)
                         continue;
 
                     // Filter calls
-                    var list = calls.Where(x => CanPlayerHandleCall(x) && x.NeedsMoreOfficers).ToArray();
+                    var list = callList.Value.Where(x => CanPlayerHandleCall(x) && x.NeedsMoreOfficers).ToArray();
                     if (list.Length == 0)
                         continue;
 
@@ -590,10 +570,10 @@ namespace AgencyDispatchFramework
                 var playerPosition = Rage.Game.LocalPlayer.Character.Position;
 
                 // Lets see if we have a call already created
-                for (int i = 0; i < 4; i++)
+                foreach (var callList in OpenCalls)
                 {
                     var calls = (
-                        from x in CallQueue[i]
+                        from x in callList.Value
                         where x.ScenarioInfo.CalloutName.Equals(calloutName) && status.Contains(x.CallStatus)
                         orderby x.Location.Position.DistanceTo(playerPosition) ascending
                         select x
@@ -623,8 +603,7 @@ namespace AgencyDispatchFramework
                     // Add call to priority Queue
                     lock (_threadLock)
                     {
-                        var index = ((int)call.OriginalPriority) - 1;
-                        CallQueue[index].Add(call);
+                        OpenCalls[call.OriginalPriority].Add(call);
                         Log.Debug($"Dispatch: Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.FullName}'");
 
                         // Invoke the next callout for player
@@ -802,8 +781,7 @@ namespace AgencyDispatchFramework
             {
                 if (ActiveCrimeLocations.Add(call.Location))
                 {
-                    var index = ((int)call.OriginalPriority) - 1;
-                    CallQueue[index].Add(call);
+                    OpenCalls[call.OriginalPriority].Add(call);
                     Log.Debug($"Dispatch.AddIncomingCall(): Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.FullName}'");
                 }
                 else
@@ -875,10 +853,9 @@ namespace AgencyDispatchFramework
             }
 
             // Remove call
-            var priority = ((int)call.OriginalPriority) - 1;
             lock (_threadLock)
             {
-                CallQueue[priority].Remove(call);
+                OpenCalls[call.OriginalPriority].Remove(call);
                 ActiveCrimeLocations.Remove(call.Location);
             }
 
@@ -1063,214 +1040,214 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Method called at the start of every duty
         /// </summary>
-        internal static bool BeginSimulation()
+        internal static bool Start(SimulationSettings settings)
         {
-            try
+            // Always call this first
+            Shutdown();
+
+            // Get players current agency
+            Agency oldAgency = PlayerAgency;
+            PlayerAgency = Agency.GetCurrentPlayerAgency();
+            if (PlayerAgency == null)
             {
-                // Get players current agency
-                Agency oldAgency = PlayerAgency;
-                PlayerAgency = Agency.GetCurrentPlayerAgency();
-                if (PlayerAgency == null)
+                PlayerAgency = oldAgency;
+                Log.Error("Dispatch.Start(): Player Agency is null");
+                return false;
+            }
+
+            // Did we change Agencies?
+            if (oldAgency != null && !PlayerAgency.ScriptName.Equals(oldAgency.ScriptName))
+            {
+                // Clear agency data
+                foreach (var ag in EnabledAgenciesByName)
                 {
-                    PlayerAgency = oldAgency;
-                    Log.Error("Dispatch.BeginSimulation(): Player Agency is null");
-                    return false;
+                    ag.Value.Disable();
                 }
 
-                // End current crime generation if running
-                CrimeGenerator?.End();
-
-                // Did we change Agencies?
-                if (oldAgency != null && !PlayerAgency.ScriptName.Equals(oldAgency.ScriptName))
+                // Clear calls
+                foreach (var callList in OpenCalls)
                 {
-                    // Clear agency data
-                    foreach (var ag in EnabledAgenciesByName)
+                    callList.Value.Clear();
+                }
+
+                // Clear enabled angencies
+                EnabledAgenciesByName.Clear();
+            }
+
+            // ********************************************
+            // Build a hashset of zones to load
+            // ********************************************
+            var zonesToLoad = new HashSet<string>(PlayerAgency.ZoneNames);
+            if (zonesToLoad.Count == 0)
+            {
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "~o~Initialization Failed.",
+                    $"~y~Selected Agency does not have any zones in it's jurisdiction."
+                );
+
+                return false;
+            }
+
+            // ********************************************
+            // Load all agencies that need to be loaded
+            // ********************************************
+            EnabledAgenciesByName.Add(PlayerAgency.ScriptName, PlayerAgency);
+
+            // Next we need to determine which agencies to load alongside the players agency
+            switch (PlayerAgency.AgencyType)
+            {
+                case AgencyType.CityPolice:
+                    // Add county
+                    var name = (PlayerAgency.BackingCounty == County.Blaine) ? "bcso" : "lssd";
+                    EnabledAgenciesByName.Add(name, Agency.GetAgencyByName(name));
+                    zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName(name));
+
+                    // Add state
+                    EnabledAgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
+                    zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("sahp"));
+                    break;
+                case AgencyType.CountySheriff:
+                case AgencyType.StateParks:
+                    // Add state
+                    EnabledAgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
+                    zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("sahp"));
+                    break;
+                case AgencyType.StatePolice:
+                case AgencyType.HighwayPatrol:
+                    // Add both counties
+                    EnabledAgenciesByName.Add("bcso", Agency.GetAgencyByName("bcso"));
+                    EnabledAgenciesByName.Add("lssd", Agency.GetAgencyByName("lssd"));
+
+                    // Load both counties zones
+                    zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("bcso"));
+                    zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("lssd"));
+                    break;
+            }
+
+            // ********************************************
+            // Load locations based on current agency jurisdiction.
+            // This method needs called everytime the player Agency is changed
+            // ********************************************
+            Zones = WorldZone.GetZonesByName(zonesToLoad.ToArray(), out int numZonesLoaded, out int totalLocations).ToList();
+            if (Zones.Count == 0)
+            {
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "~o~Initialization Failed.",
+                    $"~r~Failed to load all zone XML files."
+                );
+
+                return false;
+            }
+
+            // Log
+            Log.Info($"Loaded {numZonesLoaded} zones with {totalLocations} locations into memory'");
+
+            // Yield to prevent freezing
+            GameFiber.Yield();
+
+            // ********************************************
+            // Build the crime generator
+            // ********************************************
+            CrimeGenerator = new RegionCrimeGenerator(Zones.ToArray());
+
+            // Create player, and initialize all agencies
+            PlayerUnit = PlayerAgency.AddPlayerUnit(settings.PrimaryRole, settings.SetCallSign, settings.SelectedShift, settings.Supervisor);
+
+            // Log for debugging
+            foreach (var agency in EnabledAgenciesByName.Values)
+            {
+                // Debugging
+                Log.Debug($"Loading {agency.FullName} with the following data:");
+                Log.Debug($"\t\tAgency Type: {agency.AgencyType}");
+                Log.Debug($"\t\tAgency Staff Level: {agency.StaffLevel}");
+
+                // Enable the agency
+                agency.Enable();
+
+                // Yield to prevent freezing
+                GameFiber.Yield();
+
+                // Log shift information
+                Log.Debug($"\t\tAgency Unit Shift Data:");
+                foreach (ShiftRotation shift in Enum.GetValues(typeof(ShiftRotation)))
+                {
+                    var shiftName = Enum.GetName(typeof(ShiftRotation), shift);
+                    Log.Debug($"\t\t\t{shiftName} shift:");
+                    foreach (var unit in agency.Units.Values)
                     {
-                        ag.Value.Disable();
+                        var name = Enum.GetName(typeof(UnitType), unit.UnitType);
+                        Log.Debug($"\t\t\t\t{name}: {unit.OfficersByShift[shift].Count}");
                     }
-
-                    // Clear calls
-                    foreach (var callList in CallQueue)
-                    {
-                        callList.Clear();
-                    }
-
-                    // Clear enabled angencies
-                    EnabledAgenciesByName.Clear();
-                }
-
-                // ********************************************
-                // Build a hashset of zones to load
-                // ********************************************
-                var zonesToLoad = new HashSet<string>(PlayerAgency.ZoneNames);
-                if (zonesToLoad.Count == 0)
-                {
-                    // Display notification to the player
-                    Rage.Game.DisplayNotification(
-                        "3dtextures",
-                        "mpgroundlogo_cops",
-                        "Agency Dispatch Framework",
-                        "~o~Initialization Failed.",
-                        $"~y~Selected Agency does not have any zones in it's jurisdiction."
-                    );
-
-                    return false;
-                }
-
-                // ********************************************
-                // Load all agencies that need to be loaded
-                // ********************************************
-                EnabledAgenciesByName.Add(PlayerAgency.ScriptName, PlayerAgency);
-
-                // Next we need to determine which agencies to load alongside the players agency
-                switch (PlayerAgency.AgencyType)
-                {
-                    case AgencyType.CityPolice:
-                        // Add county
-                        var name = (PlayerAgency.BackingCounty == County.Blaine) ? "bcso" : "lssd";
-                        EnabledAgenciesByName.Add(name, Agency.GetAgencyByName(name));
-                        zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName(name));
-
-                        // Add state
-                        EnabledAgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
-                        zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("sahp"));
-                        break;
-                    case AgencyType.CountySheriff:
-                    case AgencyType.StateParks:
-                        // Add state
-                        EnabledAgenciesByName.Add("sahp", Agency.GetAgencyByName("sahp"));
-                        zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("sahp"));
-                        break;
-                    case AgencyType.StatePolice:
-                    case AgencyType.HighwayPatrol:
-                        // Add both counties
-                        EnabledAgenciesByName.Add("bcso", Agency.GetAgencyByName("bcso"));
-                        EnabledAgenciesByName.Add("lssd", Agency.GetAgencyByName("lssd"));
-
-                        // Load both counties zones
-                        zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("bcso"));
-                        zonesToLoad.UnionWith(Agency.GetZoneNamesByAgencyName("lssd"));
-                        break;
-                }
-
-                // ********************************************
-                // Load locations based on current agency jurisdiction.
-                // This method needs called everytime the player Agency is changed
-                // ********************************************
-                Zones = WorldZone.GetZonesByName(zonesToLoad.ToArray(), out int numZonesLoaded).ToList();
-                if (Zones.Count == 0)
-                {
-                    // Display notification to the player
-                    Rage.Game.DisplayNotification(
-                        "3dtextures",
-                        "mpgroundlogo_cops",
-                        "Agency Dispatch Framework",
-                        "~o~Initialization Failed.",
-                        $"~r~Failed to load all zone XML files."
-                    );
-
-                    return false;
                 }
 
                 // Yield to prevent freezing
                 GameFiber.Yield();
 
-                // ********************************************
-                // Build the crime generator
-                // ********************************************
-                CrimeGenerator = new RegionCrimeGenerator(Zones.ToArray());
-
-                // Create player, and initialize all agencies
-                PlayerUnit = PlayerAgency.AddPlayerUnit();
-
-                // Log for debugging
-                foreach (var agency in EnabledAgenciesByName.Values)
-                {
-                    // Debugging
-                    Log.Debug($"Loading {agency.FullName} with the following data:");
-                    Log.Debug($"\t\tAgency Type: {agency.AgencyType}");
-                    Log.Debug($"\t\tAgency Staff Level: {agency.StaffLevel}");
-
-                    // Enable the agency
-                    agency.Enable();
-
-                    // Yield to prevent freezing
-                    GameFiber.Yield();
-
-                    // Log shift information
-                    Log.Debug($"\t\tAgency Unit Shift Data:");
-                    foreach (ShiftRotation shift in Enum.GetValues(typeof(ShiftRotation)))
-                    {
-                        var shiftName = Enum.GetName(typeof(ShiftRotation), shift);
-                        Log.Debug($"\t\t\t{shiftName} shift:");
-                        foreach (var unit in agency.Units.Values)
-                        {
-                            var name = Enum.GetName(typeof(UnitType), unit.UnitType);
-                            Log.Debug($"\t\t\t\t{name}: {unit.Roster.Count}");
-                        }
-                    }
-
-                    // Yield to prevent freezing
-                    GameFiber.Yield();
-
-                    // Loop through each time period and cache crime numbers
-                    Log.Debug($"\t\tAgency Projected Crime Data:");
-                    foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
-                    {      
-                        // Log crime logic;
-                        string name = Enum.GetName(typeof(TimePeriod), period);
-                        Log.Debug($"\t\t\tAverage Calls during the {name}: {agency.CallsByPeriod[period]}");
-                    }
-
-                    // Yield to prevent freezing
-                    GameFiber.Yield();
-
-                    // Log zone data
-                    Log.Debug($"\t\tAgency Primary Zone Count: {agency.Zones.Length}");
-                    Log.Debug($"\t\tAgency Primary Zones: ");
-                    foreach (var zone in agency.Zones)
-                    {
-                        Log.Debug($"\t\t\t{zone.ScriptName}");
-                    }
-
-                    // Yield to prevent freezing
-                    GameFiber.Yield();
+                // Loop through each time period and cache crime numbers
+                Log.Debug($"\t\tAgency Projected Crime Data:");
+                foreach (TimePeriod period in Enum.GetValues(typeof(TimePeriod)))
+                {      
+                    // Log crime logic;
+                    string name = Enum.GetName(typeof(TimePeriod), period);
+                    Log.Debug($"\t\t\tAverage Calls during the {name}: {agency.CallsByPeriod[period]}");
                 }
 
-                // Initialize CAD. This needs called everytime we go on duty
-                ComputerAidedDispatchMenu.Initialize();
+                // Yield to prevent freezing
+                GameFiber.Yield();
 
-                // Register for LSPDFR events
-                LSPD_First_Response.Mod.API.Events.OnCalloutDisplayed += LSPDFR_OnCalloutDisplayed;
-                LSPD_First_Response.Mod.API.Events.OnCalloutAccepted += LSPDFR_OnCalloutAccepted;
-                LSPD_First_Response.Mod.API.Events.OnCalloutNotAccepted += LSPDFR_OnCalloutNotAccepted;
-                LSPD_First_Response.Mod.API.Events.OnCalloutFinished += LSPDFR_OnCalloutFinished;
+                // Log zone data
+                Log.Debug($"\t\tAgency Primary Zone Count: {agency.Zones.Length}");
+                Log.Debug($"\t\tAgency Primary Zones: ");
+                foreach (var zone in agency.Zones)
+                {
+                    Log.Debug($"\t\t\t{zone.ScriptName}");
+                }
 
-                // Start Dispatching logic fibers
-                CrimeGenerator.Begin();
-                Log.Debug($"Setting current crime level: {CrimeGenerator.CurrentCrimeLevel}");
-
-                // Start timer
-                BeginAISimulation();
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                Log.Exception(e);
+                // Yield to prevent freezing
+                GameFiber.Yield();
             }
 
-            return false;
+            // Initialize CAD. This needs called everytime we go on duty
+            ComputerAidedDispatchMenu.Initialize();
+
+            // Register for LSPDFR events
+            LSPD_First_Response.Mod.API.Events.OnCalloutDisplayed += LSPDFR_OnCalloutDisplayed;
+            LSPD_First_Response.Mod.API.Events.OnCalloutAccepted += LSPDFR_OnCalloutAccepted;
+            LSPD_First_Response.Mod.API.Events.OnCalloutNotAccepted += LSPDFR_OnCalloutNotAccepted;
+            LSPD_First_Response.Mod.API.Events.OnCalloutFinished += LSPDFR_OnCalloutFinished; 
+
+            // Start Dispatching logic fibers
+            CrimeGenerator.Begin();
+            Log.Debug($"Setting current crime level: {CrimeGenerator.CurrentCrimeLevel}");
+
+            // Start simulation fiber
+            AISimulationFiber = GameFiber.StartNew(Process);
+
+            // Report back
+            return true;
         }
 
         /// <summary>
         /// Stops the internal thread and preforms clean up
         /// </summary>
-        internal static void StopDuty()
+        internal static void Shutdown()
         {
             // End crime generation
             CrimeGenerator?.End();
-            StopAISimulation();
+
+            // End fibers
+            if (AISimulationFiber != null && (AISimulationFiber.IsAlive || AISimulationFiber.IsSleeping))
+            {
+                AISimulationFiber.Abort();
+            }
 
             // Register for LSPDFR events
             LSPD_First_Response.Mod.API.Events.OnCalloutDisplayed -= LSPDFR_OnCalloutDisplayed;
@@ -1283,7 +1260,8 @@ namespace AgencyDispatchFramework
             {
                 a.Disable();
             }
-
+            
+            // Set back to Default
             foreach (ShiftRotation period in Enum.GetValues(typeof(ShiftRotation)))
             {
                 ActiveShifts[period] = false;
@@ -1419,75 +1397,6 @@ namespace AgencyDispatchFramework
             }
             
             return ShiftRotation.Swing;
-        }
-
-        /// <summary>
-        /// Stops the 2 <see cref="GameFiber"/>(s) that run the call center
-        /// and AI dispatching
-        /// </summary>
-        private static void StopAISimulation()
-        {
-            if (AISimulationFiber != null && (AISimulationFiber.IsAlive || AISimulationFiber.IsSleeping))
-            {
-                AISimulationFiber.Abort();
-            }
-        }
-
-        /// <summary>
-        /// Loads the AI officer units and begins the <see cref="RegionCrimeGenerator"/>
-        /// </summary>
-        private static void BeginAISimulation()
-        {
-            // Always call Stop first!
-            StopAISimulation();
-
-            /* @todo
-
-            // Determine initial amount of calls to spawn in
-            var crime = CrimeGenerator.RegionCrimeInfoByTimeOfDay[GameWorld.CurrentTimeOfDay];
-            var numCalls = 0;
-            switch (CrimeGenerator.CurrentCrimeLevel)
-            {
-                default:
-                case CrimeLevel.VeryLow:
-                    break;
-                case CrimeLevel.Low:
-                    numCalls = Convert.ToInt32(crime.MaxCrimeCalls * 0.10);
-                    break;
-                case CrimeLevel.Moderate:
-                    numCalls = Convert.ToInt32(crime.MaxCrimeCalls * 0.20);
-                    break;
-                case CrimeLevel.High:
-                    numCalls = Convert.ToInt32(crime.MaxCrimeCalls * 0.33);
-                    break;
-                case CrimeLevel.VeryHigh:
-                    numCalls = Convert.ToInt32(crime.MaxCrimeCalls * 0.50);
-                    break;
-            }
-            
-            // Assign officers to initial amount of calls
-            var officers = new List<OfficerUnit>(OfficerUnits);
-            for (int i = 0; i < numCalls; i++)
-            {
-                // Keep generating calls
-                var call = CrimeGenerator.GenerateCall();
-                if (call == null)
-                    break;
-
-                // Add call
-                AddIncomingCall(call);
-
-                // If we have more calls than available officers
-                if (officers.Count <= i)
-                    continue;
-
-                // Dispatch an AI unit to this call at a random completion time
-                officers[i].AssignToCallWithRandomCompletion(call);
-            }
-            */
-
-            // Start simulation fiber
-            AISimulationFiber = GameFiber.StartNew(Process);
         }
 
         #endregion GameFiber methods

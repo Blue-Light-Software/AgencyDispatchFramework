@@ -61,8 +61,8 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenuListItem BeatMenuButton { get; set; }
 
-        public UIMenuCheckboxItem RadomWeatherBox { get; private set; }
-
+        public UIMenuCheckboxItem RandomWeatherBox { get; private set; }
+        public UIMenuCheckboxItem ForceWeatherBox { get; private set; }
         public UIMenuItem SaveWorldSettingsButton { get; private set; }
 
         public UIMenuListItem TimeScaleMenuItem { get; private set; }
@@ -290,35 +290,6 @@ namespace AgencyDispatchFramework.NativeUI
                 SetRoleMenuItem.Collection.Add(role, Enum.GetName(typeof(UnitType), role));
             }
 
-            // 
-            DivisionMenuButton = new UIMenuListItem("Division", "Sets your division number.");
-            for (int i = 1; i < 11; i++)
-            {
-                string value = i.ToString();
-                DivisionMenuButton.Collection.Add(i, value);
-            }
-
-            // Find and set index
-            var index = DivisionMenuButton.Collection.IndexOf(Settings.AudioDivision);
-            if (index >= 0)
-            {
-                DivisionMenuButton.Index = index;
-            }
-
-            BeatMenuButton = new UIMenuListItem("Beat", "Sets your Beat number.");
-            for (int i = 1; i < 25; i++)
-            {
-                string value = i.ToString();
-                BeatMenuButton.Collection.Add(i, value);
-            }
-
-            // Find and set index
-            index = BeatMenuButton.Collection.IndexOf(Settings.AudioBeat);
-            if (index >= 0)
-            {
-                BeatMenuButton.Index = index;
-            }
-
             // Build sub menus
             BuildWorldSettingsMenu();
             BuildCallsignsMenu();
@@ -350,7 +321,34 @@ namespace AgencyDispatchFramework.NativeUI
             //
             if (Agency.GetCurrentPlayerAgency().CallSignStyle == CallSignStyle.LAPD)
             {
+                // 
+                DivisionMenuButton = new UIMenuListItem("Division", "Sets your division number.");
+                for (int i = 1; i < 11; i++)
+                {
+                    string value = i.ToString();
+                    DivisionMenuButton.Collection.Add(i, value);
+                }
 
+                // Find and set index
+                var index = DivisionMenuButton.Collection.IndexOf(Settings.AudioDivision);
+                if (index >= 0)
+                {
+                    DivisionMenuButton.Index = index;
+                }
+
+                BeatMenuButton = new UIMenuListItem("Beat", "Sets your Beat number.");
+                for (int i = 1; i < 25; i++)
+                {
+                    string value = i.ToString();
+                    BeatMenuButton.Collection.Add(i, value);
+                }
+
+                // Find and set index
+                index = BeatMenuButton.Collection.IndexOf(Settings.AudioBeat);
+                if (index >= 0)
+                {
+                    BeatMenuButton.Index = index;
+                }
             }
             else
             {
@@ -369,8 +367,13 @@ namespace AgencyDispatchFramework.NativeUI
             };
 
             // Create buttons
-            RadomWeatherBox = new UIMenuCheckboxItem("Randomize Weather", false, "If checked, the weather will be selected at random.");
+            RandomWeatherBox = new UIMenuCheckboxItem("Randomize Weather", false, "If checked, the weather will be selected at random.");
+            ForceWeatherBox = new UIMenuCheckboxItem("Force Weather", false, "If checked, the selected weather will be forced at when this menu closes.");
             SaveWorldSettingsButton = new UIMenuItem("Save", "Saves the selected settings and goes back to the previous menu.");
+
+            // Events
+            ForceWeatherBox.CheckboxEvent += ForceWeatherBox_CheckboxEvent;
+            RandomWeatherBox.CheckboxEvent += RandomWeatherBox_CheckboxEvent;
 
             // TimeScale slider
             TimeScaleMenuItem = new UIMenuListItem("Timescale Multiplier", "Sets the timescale multipler. Default is 30 (1 second in real life equals 30 seconds in game)");
@@ -389,9 +392,38 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Add patrol menu buttons
             WorldSettingsMenu.AddItem(TimeScaleMenuItem);
+            WorldSettingsMenu.AddItem(ForceWeatherBox);
             WorldSettingsMenu.AddItem(WeatherMenuItem);
-            WorldSettingsMenu.AddItem(RadomWeatherBox);
+            WorldSettingsMenu.AddItem(RandomWeatherBox);
             WorldSettingsMenu.AddItem(SaveWorldSettingsButton);
+        }
+
+        private void RandomWeatherBox_CheckboxEvent(UIMenuCheckboxItem sender, bool Checked)
+        {
+            if (Checked)
+            {
+                ForceWeatherBox.Checked = false;
+                ForceWeatherBox.Enabled = false;
+            }
+            else
+            {
+                ForceWeatherBox.Enabled = true;
+            }
+        }
+
+        private void ForceWeatherBox_CheckboxEvent(UIMenuCheckboxItem sender, bool Checked)
+        {
+            if (Checked)
+            {
+                RandomWeatherBox.Checked = false;
+                RandomWeatherBox.Enabled = false;
+                WeatherMenuItem.Enabled = true;
+            }
+            else
+            {
+                RandomWeatherBox.Enabled = true;
+                WeatherMenuItem.Enabled = false;
+            }
         }
 
         private void ShiftSelectMenuItem_OnListChanged(UIMenuItem sender, int newIndex)
@@ -464,12 +496,12 @@ namespace AgencyDispatchFramework.NativeUI
             }
 
             // Add each call priority data
-            for (int i = 1; i < 5; i++)
+            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
             {
-                var calls = Dispatch.GetCallList(i);
+                var calls = Dispatch.GetCallList(priority);
                 int c1c = calls.Where(x => x.CallStatus == CallStatus.Created || x.NeedsMoreOfficers).Count();
                 int c1b = calls.Where(x => x.CallStatus == CallStatus.Dispatched).Count() + c1c;
-                builder.Append($"<br />- Priority {i} Calls: ~b~{c1b} ~w~(~g~{c1c} ~w~Avail)");
+                builder.Append($"<br />- Priority {priority} Calls: ~b~{c1b} ~w~(~g~{c1c} ~w~Avail)");
             }
 
             // Display the information to the player
@@ -506,7 +538,27 @@ namespace AgencyDispatchFramework.NativeUI
             // Wrap to catch exceptions
             try
             {
-                if (Dispatch.BeginSimulation())
+                // Close menu
+                AllMenus.CloseAllMenus();
+
+                // @todo
+                CallSign.TryParse("1L-18", out CallSign callSign);
+
+                // Create the settings struct
+                var settings = new SimulationSettings()
+                {
+                    PrimaryRole = (UnitType)SetRoleMenuItem.SelectedValue,
+                    SelectedShift = (ShiftRotation)ShiftSelectMenuItem.SelectedValue,
+                    TimescaleMult = (int)TimeScaleMenuItem.SelectedValue,
+                    FastForward = FastForwardBox.Checked,
+                    ForceWeather = ForceWeatherBox.Checked,
+                    RandomWeather = RandomWeatherBox.Checked,
+                    SelectedWeather = (Weather)WeatherMenuItem.SelectedValue,
+                    SetCallSign = callSign
+                };
+
+                // Being simulation
+                if (Simulation.Simulation.Begin(settings))
                 {
                     // Yield to prevent freezing
                     GameFiber.Yield();
@@ -521,17 +573,6 @@ namespace AgencyDispatchFramework.NativeUI
                         "Agency Dispatch Framework",
                         "~g~Plugin is Now Active.",
                         $"Now on duty serving ~g~{Dispatch.PlayerAgency.Zones.Length}~s~ zone(s)"
-                    );
-                }
-                else
-                {
-                    // Display notification to the player
-                    Rage.Game.DisplayNotification(
-                        "3dtextures",
-                        "mpgroundlogo_cops",
-                        "Agency Dispatch Framework",
-                        "~o~Initialization Failed.",
-                        $"~y~Please check your Game.log for errors."
                     );
                 }
             }

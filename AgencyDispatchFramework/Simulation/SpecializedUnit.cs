@@ -42,6 +42,11 @@ namespace AgencyDispatchFramework.Simulation
         internal List<AIOfficerUnit> Roster { get; set; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        internal Dictionary<ShiftRotation, List<OfficerUnit>> OfficersByShift { get; set; }
+
+        /// <summary>
         /// Creates a new instance of <see cref="SpecializedUnit"/>
         /// </summary>
         /// <param name="type"></param>
@@ -64,6 +69,12 @@ namespace AgencyDispatchFramework.Simulation
 
             };
             Roster = new List<AIOfficerUnit>();
+            OfficersByShift = new Dictionary<ShiftRotation, List<OfficerUnit>>()
+            {
+                { ShiftRotation.Day, new List<OfficerUnit>() },
+                { ShiftRotation.Swing, new List<OfficerUnit>() },
+                { ShiftRotation.Night, new List<OfficerUnit>() }
+            };
         }
 
         /// <summary>
@@ -109,6 +120,7 @@ namespace AgencyDispatchFramework.Simulation
 
                 // Add to roster
                 Roster.Add(officer);
+                OfficersByShift[shift].Add(officer);
 
                 // Return the officer unit
                 return officer;

@@ -47,7 +47,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Gets the <see cref="Dispatching.AgencyType"/> for this <see cref="Agency"/>
         /// </summary>
-        public AgencyType AgencyType { get; private set; }
+        public abstract AgencyType AgencyType { get; }
 
         /// <summary>
         /// Gets the <see cref="Dispatching.CallSignStyle"/> this department uses when assigning 
@@ -304,7 +304,10 @@ namespace AgencyDispatchFramework.Simulation
             if (IsActive) return;
 
             // Get our zones of jurisdiction, and ensure each zone has the primary agency set
-            Zones = WorldZone.GetZonesByName(ZoneNames, out int loaded);
+            Zones = WorldZone.GetZonesByName(ZoneNames, out int loaded, out int locations);
+
+            // Assign zone agencies
+            AssignZones();
 
             // Calculate agency size
             CalculateAgencySize();
@@ -423,12 +426,14 @@ namespace AgencyDispatchFramework.Simulation
         /// @todo Creates the player <see cref="OfficerUnit"/> and adds them to this <see cref="Agency"/> roster.
         /// </summary>
         /// <returns></returns>
-        internal OfficerUnit AddPlayerUnit()
+        internal OfficerUnit AddPlayerUnit(UnitType role, CallSign callSign, ShiftRotation shift, bool supervisor)
         {
-            // @toto
-            CallSign.TryParse("1L-18", out CallSign callSign);
-            var playerUnit = new PlayerOfficerUnit(Rage.Game.LocalPlayer, this, callSign, ShiftRotation.Day);
+            // Create player
+            var playerUnit = new PlayerOfficerUnit(Rage.Game.LocalPlayer, this, callSign, shift);
 
+            // @todo replace an AI unit with the player
+
+            // Return the player object
             return playerUnit;
         }
 

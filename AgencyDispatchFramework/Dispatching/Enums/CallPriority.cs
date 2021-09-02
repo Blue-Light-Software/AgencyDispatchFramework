@@ -1,5 +1,11 @@
 ﻿namespace AgencyDispatchFramework.Dispatching
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /// VERY IMPORTANT to keep priorities ordered!
+    /// </remarks>
     public enum CallPriority
     {
         /// <summary>
