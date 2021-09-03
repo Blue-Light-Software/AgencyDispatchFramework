@@ -102,6 +102,7 @@
     <Compile Include="Dispatching\CallSigns\CallSignGenerator.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Game\Enums\PedDescriptionPropertyType.cs" />
+    <Compile Include="Game\NativeMemory.cs" />
     <Compile Include="Game\PedVariationMeta.cs" />
     <Compile Include="NativeUI\DutyPluginMenu.cs" />
     <Compile Include="NativeUI\PluginMenuPartials\RoadUIMenu.cs" />

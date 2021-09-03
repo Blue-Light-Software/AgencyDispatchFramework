@@ -480,7 +480,24 @@ namespace AgencyDispatchFramework.Simulation
             int i = 0;
             foreach (var unit in OfficersByShift[shift])
             {
-                unit.StartDuty(locations[i]);
+                // Temporary @todo
+                if (i >= locations.Length)
+                    i = 0;
+
+                if (unit == null)
+                {
+                    Log.Error("Officer unit if null, what the actual fuck?");
+                }
+
+                // Tell unit to get to work!
+                var spawnLocation = locations[i];
+                if (spawnLocation == null)
+                {
+                    Log.Error("Spawnlocation is null, what the actual fuck?");
+                }
+
+                var vector = spawnLocation.Position;
+                unit.StartDuty(vector);
                 i++;
             }
         }

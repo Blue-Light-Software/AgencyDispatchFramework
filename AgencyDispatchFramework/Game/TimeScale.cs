@@ -71,24 +71,49 @@ namespace AgencyDispatchFramework.Game
         /// Sets how many real milliseconds are equal to one game minute.
         /// </summary>
         /// <param name="value">The time in milliseconds</param>
-        internal static void SetMillisecondsPerGameMinute(int value)
+        internal static bool SetMillisecondsPerGameMinute(int value)
         {
+            // Check for setting of the same value
             int oldValue = GetCurrentTimeScaleMultiplier();
-            Natives.SetMillisecondsPerGameMinute(value);
+            if (oldValue == value) return true;
 
-            // Invoke event
-            OnTimeScaleChanged?.Invoke(oldValue, value);
+            // Catch errors
+            try
+            {
+                // Natives.SetMillisecondsPerGameMinute does not work, so we need to
+                // edit memory manually
+                unsafe
+                {
+                    var address = NativeMemory.FindPattern("\x66\x0F\x6E\x05\x00\x00\x00\x00\x0F\x57\xF6", "xxxx????xxx");
+                    int* millisecondsPerGameMinuteAddress = (int*)(*(int*)(address + 4) + address + 8);
+                    *millisecondsPerGameMinuteAddress = value;
+                }
+
+                // Invoke event
+                int newValue = GetCurrentTimeScaleMultiplier();
+                OnTimeScaleChanged?.Invoke(oldValue, value);
+
+                // Temp logging
+                Log.Debug($"TimeScale changed from {oldValue} to {newValue}");
+                return (newValue == value);
+            }
+            catch (Exception e)
+            {
+                // Temp logging
+                Log.Exception(e, $"Failed to set TimeScale to value of {value}");
+                return false;
+            }
         }
 
         /// <summary>
         /// Sets the time scale multiplier in game
         /// </summary>
         /// <param name="value">default value is 30</param>
-        public static void SetTimeScaleMultiplier(int value)
+        public static bool SetTimeScaleMultiplier(int value)
         {
             var realMsPerMin = 60000;
             var msPerGameMin = realMsPerMin / value;
-            SetMillisecondsPerGameMinute(msPerGameMin);
+            return SetMillisecondsPerGameMinute(msPerGameMin);
         }
 
         /// <summary>

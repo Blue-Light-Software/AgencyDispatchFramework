@@ -26,6 +26,6 @@ namespace AgencyDispatchFramework.Simulation
 
         public UnitType PrimaryRole { get; set; }
 
-        public int TimescaleMult { get; set; }
+        public int TimeScaleMult { get; set; }
     }
 }

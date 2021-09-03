@@ -157,43 +157,42 @@ namespace AgencyDispatchFramework.NativeUI
                 Index = CorrectIndex(Index);
 
             // Do we have an actual sub menu item focused within index range?
-            if (Items.Count > 0 && Items[Index].Focused)
+            if (Items.Count > 0)
             {
-                // If select is clicked while the call is focused, now we invoke the callout for the player
-                if (Common.IsDisabledControlJustPressed(0, GameControl.CellphoneCancel))
+                if (Items[Index].Focused)
                 {
-                    Common.PlaySound("CANCEL", "HUD_FRONTEND_DEFAULT_SOUNDSET");
-                    if (Items[Index].CanBeFocused && Items[Index].Focused)
+                    // If select is clicked while the call is focused, now we invoke the callout for the player
+                    if (Common.IsDisabledControlJustPressed(0, GameControl.CellphoneCancel))
                     {
-                        Parent.FocusLevel--;
-                        Items[Index].Focused = false;
+                        Common.PlaySound("CANCEL", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                        if (Items[Index].CanBeFocused && Items[Index].Focused)
+                        {
+                            Parent.FocusLevel--;
+                            Items[Index].Focused = false;
+                        }
                     }
+
+                    Items[Index].ProcessControls();
                 }
-
-                Items[Index].ProcessControls();
-            }
-            else
-            {
-                // Focus level equals one, so the menu item is not yet
-                if (Common.IsDisabledControlJustPressed(0, GameControl.CellphoneSelect) && Focused && Parent.FocusLevel == 1)
+                else
                 {
-                    Common.PlaySound("SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET");
-
-                    if (Items[Index].CanBeFocused && !Items[Index].Focused)
+                    // Focus level equals one, so the menu item is not yet
+                    if (Common.IsDisabledControlJustPressed(0, GameControl.CellphoneSelect) && Focused && Parent.FocusLevel == 1)
                     {
-                        Parent.FocusLevel++;
-                        Items[Index].JustOpened = true;
-                        Items[Index].Focused = true;
-                    }
-                    else
-                    {
-                        Items[Index].OnActivated();
-                    }
-                }
+                        Common.PlaySound("SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET");
 
-                // Only process up and down if we have items to scroll through
-                if (Items.Count > 0)
-                {
+                        if (Items[Index].CanBeFocused && !Items[Index].Focused)
+                        {
+                            Parent.FocusLevel++;
+                            Items[Index].JustOpened = true;
+                            Items[Index].Focused = true;
+                        }
+                        else
+                        {
+                            Items[Index].OnActivated();
+                        }
+                    }
+                    
                     // Move up button pressed
                     if (Common.IsDisabledControlJustPressed(0, GameControl.FrontendUp) || Common.IsDisabledControlJustPressed(0, GameControl.MoveUpOnly) || Common.IsDisabledControlJustPressed(0, GameControl.CursorScrollUp) && Parent.FocusLevel == 1)
                     {

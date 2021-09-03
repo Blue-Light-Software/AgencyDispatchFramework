@@ -376,12 +376,17 @@ namespace AgencyDispatchFramework.NativeUI
             RandomWeatherBox.CheckboxEvent += RandomWeatherBox_CheckboxEvent;
 
             // TimeScale slider
+            var currentMult = TimeScale.GetCurrentTimeScaleMultiplier();
             TimeScaleMenuItem = new UIMenuListItem("Timescale Multiplier", "Sets the timescale multipler. Default is 30 (1 second in real life equals 30 seconds in game)");
             foreach (var number in Enumerable.Range(1, 30))
             {
+                // Add item
                 TimeScaleMenuItem.Collection.Add(number, number.ToString());
+
+                // Set index to default
+                if (currentMult == number)
+                    TimeScaleMenuItem.Index = TimeScaleMenuItem.Collection.Count - 1;
             }
-            TimeScaleMenuItem.Index = 29; // Set to default
 
             // Weather selections
             WeatherMenuItem = new UIMenuListItem("Weather", "Sets the desired weather for the beggining of your shift");
@@ -549,7 +554,7 @@ namespace AgencyDispatchFramework.NativeUI
                 {
                     PrimaryRole = (UnitType)SetRoleMenuItem.SelectedValue,
                     SelectedShift = (ShiftRotation)ShiftSelectMenuItem.SelectedValue,
-                    TimescaleMult = (int)TimeScaleMenuItem.SelectedValue,
+                    TimeScaleMult = (int)TimeScaleMenuItem.SelectedValue,
                     FastForward = FastForwardBox.Checked,
                     ForceWeather = ForceWeatherBox.Checked,
                     RandomWeather = RandomWeatherBox.Checked,

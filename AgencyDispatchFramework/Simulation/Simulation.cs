@@ -13,25 +13,43 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="settings"></param>
         public static bool Begin(SimulationSettings settings)
         {
+            // Do we fade in the screen?
+            bool fadeScreen = settings.ForceWeather || settings.RandomWeather || settings.FastForward;
+            bool changedTimeScale = false;
+
+            // Wrap to catch unexpected errors
             try
             {
                 // Show message
                 Rage.Game.DisplayHelp("Begining Simulation...");
+                
+                // Fade screen?
+                if (fadeScreen)
+                {
+                    // Fade the screen out and wait
+                    Rage.Game.FadeScreenOut(1500);
+                    GameFiber.Sleep(1500);
+                }
 
-                // Fade the screen out and wait
-                Rage.Game.FadeScreenOut(1500);
-                GameFiber.Sleep(1500);
+                // Set timescale if not default first, since the RegionCrimeGenerator
+                // uses the TimeScale in game for its sleep timer
+                var currentMult = TimeScale.GetCurrentTimeScaleMultiplier();
+                if (settings.TimeScaleMult != currentMult)
+                {
+                    changedTimeScale = TimeScale.SetTimeScaleMultiplier(settings.TimeScaleMult);
+                }
 
                 // Initialize dispatch script
                 if (!Dispatch.Start(settings))
                 {
-                    return false;
-                }
+                    // Set back
+                    if (changedTimeScale)
+                    {
+                        TimeScale.SetTimeScaleMultiplier(currentMult);
+                    }
 
-                // Set timescale if not default
-                if (settings.TimescaleMult != 30)
-                {
-                    TimeScale.SetTimeScaleMultiplier(settings.TimescaleMult);
+                    // Report back that we failed
+                    return false;
                 }
 
                 // Transition weather
@@ -47,8 +65,11 @@ namespace AgencyDispatchFramework.Simulation
                 }
 
                 // Fade the screen back in
-                Rage.Game.FadeScreenIn(1000);
-                Rage.Game.HideHelp();
+                if (fadeScreen)
+                {
+                    Rage.Game.FadeScreenIn(1000);
+                    Rage.Game.HideHelp();
+                }
 
                 // Report back
                 return true;
@@ -72,7 +93,7 @@ namespace AgencyDispatchFramework.Simulation
                 );
 
                 // Make sure screen is faded in
-                if (Rage.Game.IsScreenFadingOut || Rage.Game.IsScreenFadedOut)
+                if (fadeScreen)
                 {
                     Rage.Game.FadeScreenIn(500);
                 }

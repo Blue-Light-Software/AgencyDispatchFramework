@@ -188,7 +188,6 @@ namespace AgencyDispatchFramework.Simulation
             RegionCrimeInfoByTimePeriod.Clear();
 
             // Declare vars
-            int timeScaleMult = TimeScale.GetCurrentTimeScaleMultiplier();
             int msPerGameMinute = TimeScale.GetMillisecondsPerGameMinute();
             int hourGameTimeToMSRealTime = 60 * msPerGameMinute;
 
