@@ -53,7 +53,7 @@ namespace AgencyDispatchFramework.Dispatching
             foreach (var call in calls)
             {
                 // Create officer pool, grouped by dispatching priority
-                var officerPool = CreateOfficerPriorityPool(call, onDutyOfficers, currentTime.TimeOfDay);
+                var officerPool = CreateOfficerPriorityPool(call, onDutyOfficers, currentTime);
 
                 /******************************************************
                  * Immediate Emergency Calls
@@ -206,7 +206,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="priority"></param>
         /// <returns></returns>
-        private Dictionary<DispatchPriority, List<OfficerUnit>> CreateOfficerPriorityPool(PriorityCall call, OfficerUnit[] onDutyOfficers, TimeSpan time)
+        private Dictionary<DispatchPriority, List<OfficerUnit>> CreateOfficerPriorityPool(PriorityCall call, OfficerUnit[] onDutyOfficers, DateTime time)
         {
             // Create a new list
             var availableOfficers = new List<OfficerUnit>();
@@ -225,6 +225,7 @@ namespace AgencyDispatchFramework.Dispatching
                 // Is the officer nearing the end of his shift?
                 if (officer.IsNearingEndOfShift(time))
                 {
+                    // Only add officer as an option for emergencies only
                     switch (call.Priority)
                     {
                         case CallPriority.Immediate:

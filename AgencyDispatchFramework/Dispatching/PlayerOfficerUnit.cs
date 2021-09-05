@@ -64,5 +64,10 @@ namespace AgencyDispatchFramework.Dispatching
         {
             return Officer.Character.Position;
         }
+
+        internal override void OnTick(DateTime gameTime)
+        {
+            // We are the player, we dont care
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AgencyDispatchFramework.Dispatching.Assignments;
+using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Simulation;
 using LSPD_First_Response.Engine.Scripting.Entities;
 using Rage;
@@ -97,11 +98,6 @@ namespace AgencyDispatchFramework.Dispatching
         protected Vector3 Position { get; set; }
 
         /// <summary>
-        /// 
-        /// </summary>
-        internal Range<int> ShiftHours { get; set; }
-
-        /// <summary>
         /// Gets the <see cref="ShiftRotation"/> for this <see cref="OfficerUnit"/>
         /// </summary>
         internal ShiftRotation Shift { get; private set; }
@@ -151,10 +147,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// Method called every tick on the AI Fiber Thread
         /// </summary>
         /// <param name="gameTime"></param>
-        internal virtual void OnTick(DateTime gameTime)
-        {
-
-        }
+        internal abstract void OnTick(DateTime gameTime);
 
         /// <summary>
         /// Returns whether this <see cref="OfficerUnit"/> is on shift based
@@ -162,14 +155,14 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="time"></param>
         /// <returns></returns>
-        public virtual bool IsOnShift(TimeSpan time)
+        public virtual bool IsOnShift(DateTime now)
         {
             switch (Shift)
             {
                 default:
-                case ShiftRotation.Day: return (time.Hours >= 6 && time.Hours < 16);
-                case ShiftRotation.Night: return (time.Hours >= 21 || time.Hours < 7);
-                case ShiftRotation.Swing: return (time.Hours < 1 || time.Hours >= 15);
+                case ShiftRotation.Day: return now.IsBetween(TimeSpan.FromHours(6), TimeSpan.FromHours(16));
+                case ShiftRotation.Night: return now.IsBetween(TimeSpan.FromHours(21), TimeSpan.FromHours(7));
+                case ShiftRotation.Swing: return now.IsBetween(TimeSpan.FromHours(15), TimeSpan.FromHours(1));
             }
         }
 
@@ -179,16 +172,16 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="time"></param>
         /// <returns></returns>
-        public virtual bool IsNearingEndOfShift(TimeSpan time)
+        public virtual bool IsNearingEndOfShift(DateTime now)
         {
             if (EndingDuty) return true;
 
             switch (Shift)
             {
                 default:
-                case ShiftRotation.Day: return (time.Hours < 6 && time.Hours >= 15);
-                case ShiftRotation.Night: return (time.Hours >= 6 && time.Hours < 21);
-                case ShiftRotation.Swing: return (time.Hours == 0 || time.Hours < 15);
+                case ShiftRotation.Day: return !now.IsBetween(TimeSpan.FromHours(6), TimeSpan.FromHours(15));
+                case ShiftRotation.Night: return !now.IsBetween(TimeSpan.FromHours(21), TimeSpan.FromHours(6));
+                case ShiftRotation.Swing: return !now.IsBetween(TimeSpan.FromHours(15), new TimeSpan(23, 59, 59));
             }
         }
 

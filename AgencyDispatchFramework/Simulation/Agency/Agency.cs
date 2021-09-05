@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace AgencyDispatchFramework.Simulation
 {
@@ -206,20 +205,6 @@ namespace AgencyDispatchFramework.Simulation
                 default:
                     throw new NotImplementedException($"The AgencyType '{type}' is yet supported");
             }
-        }
-
-        /// <summary>
-        /// Gets an array of all zones under the players current Jurisdiction
-        /// </summary>
-        public static string[] GetCurrentAgencyZoneNames()
-        {
-            string name = Functions.GetCurrentAgencyScriptName().ToLowerInvariant();
-            if (Agencies.ContainsKey(name))
-            {
-                return Agencies[name].ZoneNames;
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -441,10 +426,10 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="officerUnit"></param>
         internal void RemoveOnDuty(OfficerUnit officerUnit)
         {
-            lock (_threadLock)
-            {
+            //lock (_threadLock)
+            //{
                 OnDutyOfficers.Remove(officerUnit);
-            }
+            //}
         }
 
         /// <summary>
@@ -552,10 +537,10 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         public virtual OfficerUnit[] GetOnDutyOfficers()
         {
-            lock (_threadLock)
-            {
+            //lock (_threadLock)
+            //{
                 return OnDutyOfficers.ToArray();
-            }
+            //}
         }
 
         public override string ToString()
