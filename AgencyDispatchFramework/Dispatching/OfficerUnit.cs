@@ -135,6 +135,8 @@ namespace AgencyDispatchFramework.Dispatching
             Position = startPosition;
             LastStatusChange = World.DateTime;
             Status = OfficerStatus.Available;
+
+            Log.Info($"Unit {CallSign} starting duty");
         }
 
         /// <summary>
@@ -168,6 +170,25 @@ namespace AgencyDispatchFramework.Dispatching
                 case ShiftRotation.Day: return (time.Hours >= 6 && time.Hours < 16);
                 case ShiftRotation.Night: return (time.Hours >= 21 || time.Hours < 7);
                 case ShiftRotation.Swing: return (time.Hours < 1 || time.Hours >= 15);
+            }
+        }
+
+        /// <summary>
+        /// Returns whether this <see cref="OfficerUnit"/> is off duty or ending shift within
+        /// the next hour
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public virtual bool IsNearingEndOfShift(TimeSpan time)
+        {
+            if (EndingDuty) return true;
+
+            switch (Shift)
+            {
+                default:
+                case ShiftRotation.Day: return (time.Hours < 6 && time.Hours >= 15);
+                case ShiftRotation.Night: return (time.Hours >= 6 && time.Hours < 21);
+                case ShiftRotation.Swing: return (time.Hours == 0 || time.Hours < 15);
             }
         }
 

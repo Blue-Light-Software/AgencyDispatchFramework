@@ -73,6 +73,7 @@ namespace AgencyDispatchFramework.Xml
         /// </summary>
         public void Parse()
         {
+            string[] catagories = { "Officer", "Supervisor" };
             var mapping = new Dictionary<string, string>();
             var agencyZones = new Dictionary<string, HashSet<string>>();
 
@@ -195,73 +196,57 @@ namespace AgencyDispatchFramework.Xml
                 // Check name
                 if (String.IsNullOrWhiteSpace(sname))
                 {
-                    Log.Warning($"Agency.Initialize(): Unable to extract ScriptName value for agency in Agencies.xml");
+                    Log.Warning($"AgenciesFile.Parse(): Unable to extract ScriptName value for agency");
                     continue;
                 }
 
                 // Try and parse agency type
                 if (String.IsNullOrWhiteSpace(atype) || !Enum.TryParse(atype, out AgencyType type))
                 {
-                    Log.Warning($"Agency.Initialize(): Unable to extract AgencyType value for '{sname}' in Agencies.xml");
+                    Log.Warning($"AgenciesFile.Parse(): Unable to extract AgencyType value for '{sname}'");
                     continue;
                 }
 
                 // Try and parse funding level
                 if (String.IsNullOrWhiteSpace(sLevel) || !Enum.TryParse(sLevel, out StaffLevel staffing))
                 {
-                    Log.Warning($"Agency.Initialize(): Unable to extract StaffLevel value for '{sname}' in Agencies.xml");
+                    Log.Warning($"AgenciesFile.Parse(): Unable to extract StaffLevel value for '{sname}'");
                     continue;
                 }
 
                 // Try and parse call sign style
                 if (String.IsNullOrWhiteSpace(csStyle) || !Enum.TryParse(csStyle, out CallSignStyle style))
                 {
-                    Log.Warning($"Agency.Initialize(): Unable to extract CallSignStyle value for '{sname}' in Agencies.xml");
+                    Log.Warning($"AgenciesFile.Parse(): Unable to extract CallSignStyle value for '{sname}'");
                     style = CallSignStyle.LAPD;
                 }
 
-                // Load vehicle sets
-                string[] catagories = { "Officer", "Supervisor" };
+                // Create the agency
                 var unitMapping = new Dictionary<UnitType, SpecializedUnit>();
                 Agency agency = Agency.CreateAgency(type, sname, name, staffing, style);
+
+                // Parse units
                 foreach (XmlNode unitNode in unitsNode.SelectNodes("Unit"))
                 {
                     // Get type attribute
                     var attrValue = unitNode.GetAttribute("type");
                     if (!Enum.TryParse(attrValue, out UnitType unitType))
                     {
-                        Log.Warning($"Agency.Initialize(): Unable to extract Unit type value '{attrValue ?? "null"}' for '{sname}' in Agencies.xml");
+                        Log.Warning($"AgenciesFile.Parse(): Unable to extract Unit type value '{attrValue ?? "null"}' for '{sname}'");
                         continue;
                     }
 
                     // Create unit
-                    var unit = new SpecializedUnit(unitType, agency);
+                    SpecializedUnit unit = new SpecializedUnit(unitType, agency);
 
-                    // Get derives attribute
-                    if (Enum.TryParse(unitNode.GetAttribute("derives"), out UnitType unitDerives))
-                    {
-                        // @todo
-                    }
-
-                    // Load each catagory of vehicle sets
-                    for (int i = 0; i < catagories.Length; i++)
-                    {
-                        // Officer or Supervisor node
-                        var n = unitNode.SelectSingleNode(catagories[i]);
-                        var sets = ParseVehicleSets(n, unit, agency);
-
-                        if (i == 0)
-                        {
-                            unit.OfficerSets.AddRange(sets);
-                        }
-                        else
-                        {
-                            unit.SupervisorSets.AddRange(sets);
-                        }
-                    }
+                    // Add to mapping
+                    unitMapping[unitType] = unit;
 
                     // Add unit to agency
                     agency.AddUnit(unit);
+
+                    // Load each catagory of vehicle sets
+                    ParseUnitNode(unit, unitNode);
                 }
 
                 // Try and parse funding level
@@ -277,7 +262,7 @@ namespace AgencyDispatchFramework.Xml
                 }
                 else
                 {
-                    Log.Warning($"Agency.Initialize(): Agency '{agency.ScriptName}' does not have any zones in its jurisdiction!");
+                    Log.Warning($"AgenciesFile.Parse(): Agency '{agency.ScriptName}' does not have any zones in its jurisdiction!");
                 }
 
                 // Add agency
@@ -290,121 +275,134 @@ namespace AgencyDispatchFramework.Xml
         }
 
         /// <summary>
-        /// Parses a VehicleSets node
+        /// 
         /// </summary>
-        /// <param name="n">The "Unit" node that contains the "VehicleSet" nodes</param>
         /// <param name="unit"></param>
-        /// <returns>A list of parsed <see cref="VehicleSet"/> objects</returns>
-        private List<VehicleSet> ParseVehicleSets(XmlNode n, SpecializedUnit unit, Agency agency)
+        /// <param name="unitNode"></param>
+        private void ParseUnitNode(SpecializedUnit unit, XmlNode unitNode)
         {
-            var sets = new List<VehicleSet>();
-            var nodes = n?.SelectNodes("VehicleSet");
-            if (nodes != null && nodes.Count > 0)
+            string[] catagories = { "Officer", "Supervisor" };
+            var agency = unit.AssignedAgency;
+
+            // Load each catagory of vehicle sets
+            for (int i = 0; i < catagories.Length; i++)
             {
-                foreach (XmlNode vn in nodes)
+                // Determine generator
+                var index = i;
+                var generator = (i == 0) ? unit.OfficerSets : unit.SupervisorSets;
+
+                // Check for regular existing node
+                var subNode = unitNode.SelectSingleNode(catagories[index]);
+                if (subNode == null)
                 {
-                    // Ensure we have attributes
-                    if (vn.Attributes == null)
+                    Log.Error($"AgenciesFile.ParseUnitNode(): Missing VehicleSet category named '{catagories[index]}' for '{unit.AssignedAgency.ScriptName}'");
+                    continue;
+                }
+
+                // Are we derriving?
+                if (subNode.TryGetAttribute("derives", out string copies))
+                {
+                    // Copying from a different unit?
+                    if (copies.Contains('.'))
                     {
-                        Log.Warning($"Agency.ParseVehicleSets(): Vehicle item for '{agency.ScriptName}' has no attributes in Agencies.xml");
-                        continue;
-                    }
+                        var parts = copies.Split('.');
+                        if (parts.Length != 2)
+                        {
+                            Log.Error($"AgenciesFile.ParseUnitNode(): Malformed 'derives' value for '{unit.AssignedAgency.ScriptName}'");
+                            continue;
+                        }
 
-                    // Check for a chance attribute
-                    if (vn.Attributes["chance"]?.Value == null || !int.TryParse(vn.Attributes["chance"].Value, out int probability))
+                        // parse unit type
+                        if (!Enum.TryParse(parts[0], out UnitType unitType))
+                        {
+                            Log.Error($"AgenciesFile.ParseUnitNode(): Unable to extract Unit type value '{parts[0] ?? "null"}' for '{agency.ScriptName}'");
+                            continue;
+                        }
+
+                        // Ensure other unit has been parsed
+                        if (!agency.Units.ContainsKey(unitType))
+                        {
+                            Log.Error($"AgenciesFile.ParseUnitNode(): Attempting to derive from another unit type that has not been parsed yet '{parts[0] ?? "null"}' for '{agency.ScriptName}'");
+                            continue;
+                        }
+
+                        // Grab other unit
+                        var copying = (parts[1].Equals("Officer")) ? agency.Units[unitType].OfficerSets : agency.Units[unitType].SupervisorSets;
+                        generator.AddRange(copying.GetItems());
+                    }
+                    else
                     {
-                        probability = 10;
+                        var newIndex = Array.IndexOf(catagories, copies);
+                        if (newIndex > -1 && newIndex != index)
+                        {
+                            // Grab other set
+                            var copying = (i == 0) ? unit.OfficerSets : unit.SupervisorSets;
+                            generator.AddRange(copying.GetItems());
+                        }
+                        else
+                        {
+                            Log.Error($"AgenciesFile.ParseUnitNode(): Malformed 'derives' value for '{unit.AssignedAgency.ScriptName}'");
+                            continue;
+                        }
                     }
+                }
 
-                    // Create vehicle info
-                    var set = new VehicleSet(probability);
-
-                    // Try and extract vehicles
-                    if (!TryExtractVehicles(vn, set, agency))
+                // Add VehicleSets
+                var nodes = subNode.SelectNodes("VehicleSet");
+                if (nodes != null && nodes.Count > 0)
+                {
+                    foreach (XmlNode vn in nodes)
                     {
-                        // Logging happens within the method
-                        continue;
-                    }
+                        // Check for a chance attribute
+                        if (vn.Attributes["chance"]?.Value == null || !int.TryParse(vn.Attributes["chance"].Value, out int probability))
+                        {
+                            probability = 10;
+                        }
 
-                    // Try and extract Peds
-                    if (!TryExtractPeds(vn, set, agency))
-                    {
-                        // Logging happens within the method
-                        continue;
+                        // Create vehicle info
+                        var set = new VehicleSet(probability);
+                        if (ParseVehicleSet(vn, unit, set))
+                        {
+                            generator.Add(set);
+                        }
                     }
-
-                    // Try and extract NonLethals
-                    if (!TryExtractNonLethals(vn, set, agency))
-                    {
-                        // Logging happens within the method
-                        continue;
-                    }
-
-                    // Try and extract Weapons
-                    if (!TryExtractWeapons(vn, set, agency))
-                    {
-                        // Logging happens within the method
-                        continue;
-                    }
-
-                    // Add vehicle set
-                    sets.Add(set);
                 }
             }
-
-            return sets;
         }
 
         /// <summary>
-        /// Extracts the HandGuns and LongGuns data from a VehicleSet XML node
+        /// Parses a VehicleSet node
         /// </summary>
-        /// <param name="vn">The VehicleSet xml node</param>
-        /// <param name="set">The <see cref="VehicleSet"/> to append the data to</param>
-        /// <param name="agency">The <see cref="Agency"/> we are currently extracting for</param>
-        /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
-        private bool TryExtractWeapons(XmlNode vn, VehicleSet set, Agency agency)
+        /// <param name="n">"VehicleSet" node</param>
+        /// <param name="unit"></param>
+        /// <returns>true on success, false otherwise</returns>
+        private bool ParseVehicleSet(XmlNode vn, SpecializedUnit unit, VehicleSet set)
         {
-            string[] options = new[] { "HandGun", "LongGun" };
-            foreach (var name in options)
+            var agency = unit.AssignedAgency;
+
+            // Try and extract vehicles
+            if (!TryExtractVehicles(vn, set, agency))
             {
-                // Grab nodes
-                var nodes = vn.SelectSingleNode($"{name}s")?.SelectNodes(name);
-                if (nodes == null || nodes.Count == 0)
-                    continue;
-
-                // Loop through each Ped node
-                foreach (XmlNode node in nodes)
-                {
-                    // Extract the chance attribute
-                    if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
-                    {
-                        Log.Warning($"Agency.TryExtractWeapons(): Weapon entry for '{agency.ScriptName}' has no chance attribute in Agencies.xml");
-                        continue;
-                    }
-
-                    // Create new meta
-                    var modelName = node.InnerText;
-                    var meta = new WeaponMeta(chance, modelName);
-
-                    // Extras
-                    var range = Enumerable.Range(1, 6);
-                    foreach (int num in range)
-                    {
-                        // Search for each component
-                        if (node.TryGetAttribute($"comp_{num}", out string compName))
-                        {
-                            // Add component
-                            meta.Components.Add(compName);
-                        }
-                    }
-
-                    // Add to VehicleSet
-                    var metaSet = name.Equals("HandGun") ? set.HandGunMetas : set.LongGunMetas; 
-                    metaSet.Add(meta);
-                }
+                // Log
+                Log.Error($"No Vehicles extracted for unit type '{unit.UnitType}' for {agency.ScriptName}");
+                return false;
             }
 
-            // Report success
+            // Try and extract Peds
+            if (!TryExtractPeds(vn, set, agency))
+            {
+                // Log
+                Log.Error($"No Peds extracted for unit type '{unit.UnitType}' for {agency.ScriptName}");
+                return false;
+            }
+
+            // Try and extract NonLethals
+            AssignNonLethals(vn, set, agency);
+
+            // Try and extract Weapons
+            AssignWeapons(vn, set, agency);
+
+            // We have all required nodes
             return true;
         }
 
@@ -428,8 +426,7 @@ namespace AgencyDispatchFramework.Xml
                 // Extract the chance attribute
                 if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
                 {
-                    Log.Warning($"Agency.TryExtractVehicles(): Vehicle entry for '{agency.ScriptName}' has no chance attribute in Agencies.xml");
-                    continue;
+                    chance = 10;
                 }
 
                 // Create new meta
@@ -508,7 +505,9 @@ namespace AgencyDispatchFramework.Xml
                 {
                     // Extract the chance attribute
                     if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
-                        continue;
+                    {
+                        chance = 10;
+                    }
 
                     // Create new meta
                     meta = new OfficerModelMeta(chance, modelName);
@@ -520,7 +519,7 @@ namespace AgencyDispatchFramework.Xml
                 }
                 else
                 {
-                    Log.Error($"AgenciesFile.TryExtractPeds: Outfit variation found for model '{modelName}' but there is no dry variation!");
+                    Log.Error($"AgenciesFile.TryExtractPeds(): Outfit variation found for model '{modelName}' but there is no dry variation!");
                     return false;
                 }
 
@@ -579,22 +578,90 @@ namespace AgencyDispatchFramework.Xml
         /// <param name="set">The <see cref="VehicleSet"/> to append the data to</param>
         /// <param name="agency">The <see cref="Agency"/> we are currently extracting for</param>
         /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
-        private bool TryExtractNonLethals(XmlNode vn, VehicleSet set, Agency agency)
+        private void AssignNonLethals(XmlNode vn, VehicleSet set, Agency agency)
         {
             // Grab nodes
             var nodes = vn.SelectSingleNode("NonLethals")?.SelectNodes("NonLethal");
-            if (nodes == null || nodes.Count == 0)
-                return false;
-
-            // Loop through each Ped node
-            foreach (XmlNode node in nodes)
+            if (nodes == null)
             {
-                // Create new meta
-                var modelName = node.InnerText;
-                set.NonLethalWeapons.Add(modelName);
+                set.NonLethalWeapons.Add("WEAPON_STUNGUN");
             }
-            // Report success
-            return true;
+            else
+            {
+                // Loop through each Ped node
+                foreach (XmlNode node in nodes)
+                {
+                    // Create new meta
+                    var modelName = node.InnerText;
+                    set.NonLethalWeapons.Add(modelName);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extracts the HandGuns and LongGuns data from a VehicleSet XML node
+        /// </summary>
+        /// <param name="vn">The VehicleSet xml node</param>
+        /// <param name="set">The <see cref="VehicleSet"/> to append the data to</param>
+        /// <param name="agency">The <see cref="Agency"/> we are currently extracting for</param>
+        /// <returns>true on success, false if the sub XML nodes doesnt exist</returns>
+        private void AssignWeapons(XmlNode vn, VehicleSet set, Agency agency)
+        {
+            string[] options = new[] { "HandGun", "LongGun" };
+            foreach (var name in options)
+            {
+                // Grab meta set
+                var metaSet = name.Equals("HandGun") ? set.HandGunMetas : set.LongGunMetas;
+
+                // Grab nodes
+                var nodes = vn.SelectSingleNode($"{name}s")?.SelectNodes(name);
+                if (nodes == null)
+                {
+                    if (name.Equals("HandGun"))
+                    {
+                        // Add default pistol
+                        metaSet.Add(new WeaponMeta(100, "WEAPON_PISTOL"));
+                    }
+                    else
+                    {
+                        // Add default weapons
+                        metaSet.Add(new WeaponMeta(67, "WEAPON_CARBINERIFLE"));
+                        metaSet.Add(new WeaponMeta(33, "WEAPON_PUMPSHOTGUN"));
+                    }
+                }
+                else
+                {
+                    // Loop through each Ped node
+                    foreach (XmlNode node in nodes)
+                    {
+                        // Extract the chance attribute
+                        if (!Int32.TryParse(node.GetAttribute("chance"), out int chance) || chance == 0)
+                        {
+                            Log.Warning($"Agency.TryExtractWeapons(): Weapon entry for '{agency.ScriptName}' has no chance attribute in Agencies.xml");
+                            chance = 10;
+                        }
+
+                        // Create new meta
+                        var modelName = node.InnerText;
+                        var meta = new WeaponMeta(chance, modelName);
+
+                        // Extras
+                        var range = Enumerable.Range(1, 6);
+                        foreach (int num in range)
+                        {
+                            // Search for each component
+                            if (node.TryGetAttribute($"comp_{num}", out string compName))
+                            {
+                                // Add component
+                                meta.Components.Add(compName);
+                            }
+                        }
+
+                        // Add to meta set
+                        metaSet.Add(meta);
+                    }
+                }
+            }
         }
     }
 }

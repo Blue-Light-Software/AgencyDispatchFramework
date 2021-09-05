@@ -2,7 +2,6 @@
 using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
-using AgencyDispatchFramework.Simulation;
 using AgencyDispatchFramework.Xml;
 using LSPD_First_Response.Mod.API;
 using System;
@@ -10,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace AgencyDispatchFramework.Simulation
 {
@@ -33,6 +33,11 @@ namespace AgencyDispatchFramework.Simulation
         #endregion
 
         #region Instance Properties
+
+        /// <summary>
+        /// Our lock object to prevent multi-threading issues
+        /// </summary>
+        private object _threadLock = new object();
 
         /// <summary>
         /// Gets the full string name of this agency
@@ -84,7 +89,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Contains a list of all <see cref="AIOfficerUnit"/>s currently on duty
         /// </summary>
-        internal HashSet<AIOfficerUnit> OnDutyOfficers { get; set; }
+        protected HashSet<OfficerUnit> OnDutyOfficers { get; set; }
 
         /// <summary>
         /// 
@@ -274,7 +279,7 @@ namespace AgencyDispatchFramework.Simulation
             // Initiate vars
             CallsByPeriod = new Dictionary<TimePeriod, double>();
             Units = new Dictionary<UnitType, SpecializedUnit>();
-            OnDutyOfficers = new HashSet<AIOfficerUnit>();
+            OnDutyOfficers = new HashSet<OfficerUnit>();
         }
 
         /// <summary>
@@ -357,7 +362,7 @@ namespace AgencyDispatchFramework.Simulation
         {
             // Define which units create supervisors
             var supervisorUnits = new[] { UnitType.Patrol, UnitType.Traffic };
-            
+
             // For each unit type!
             foreach (SpecializedUnit unit in Units.Values)
             {
@@ -378,22 +383,16 @@ namespace AgencyDispatchFramework.Simulation
                         // Subtract an officer unit
                         toCreate -= 1;
 
-                        // Create instance
+                        // Create officer and add it to the shift roster
                         var officer = unit.CreateOfficerUnit(true, shift.Key);
-                        if (unit == null) break;
-
-                        // Add officer by shift
                         OfficersByShift[shift.Key].Add(officer);
                     }
 
                     // Create officer units
                     for (int i = 0; i < toCreate; i++)
                     {
-                        // Create instance
+                        // Create officer and add it to the shift roster
                         var officer = unit.CreateOfficerUnit(false, shift.Key);
-                        if (unit == null) break;
-
-                        // Add officer by shift
                         OfficersByShift[shift.Key].Add(officer);
                     }
                 }
@@ -406,8 +405,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="unit"></param>
         internal void AddUnit(SpecializedUnit unit)
         {
-            if (!Units.ContainsKey(unit.UnitType))
-                Units.Add(unit.UnitType, unit);
+            Units.AddOrUpdate(unit.UnitType, unit);
         }
 
         /// <summary>
@@ -438,6 +436,18 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
+        /// Removes the unit from the OnDuty list
+        /// </summary>
+        /// <param name="officerUnit"></param>
+        internal void RemoveOnDuty(OfficerUnit officerUnit)
+        {
+            lock (_threadLock)
+            {
+                OnDutyOfficers.Remove(officerUnit);
+            }
+        }
+
+        /// <summary>
         /// Disposes and clears all AI units
         /// </summary>
         private void DisposeAIUnits()
@@ -446,8 +456,8 @@ namespace AgencyDispatchFramework.Simulation
             if (OfficersByShift != null)
             {
                 foreach (var officerUnits in OfficersByShift.Values)
-                foreach (var officer in officerUnits)
-                    officer.Dispose();
+                    foreach (var officer in officerUnits)
+                        officer.Dispose();
             }
         }
 
@@ -474,31 +484,45 @@ namespace AgencyDispatchFramework.Simulation
 
                 // Adjust count
                 aiPatrolCount = locations.Length;
+                if (aiPatrolCount == 0) return;
             }
 
-            // Tell new units they are on duty
-            int i = 0;
-            foreach (var unit in OfficersByShift[shift])
+            // Prevent race conditions
+            lock (_threadLock)
             {
-                // Temporary @todo
-                if (i >= locations.Length)
-                    i = 0;
-
-                if (unit == null)
+                // Tell new units they are on duty
+                int i = 0;
+                foreach (var unit in OfficersByShift[shift])
                 {
-                    Log.Error("Officer unit if null, what the actual fuck?");
-                }
+                    // Temporary @todo
+                    if (i >= locations.Length)
+                        i = 0;
 
-                // Tell unit to get to work!
-                var spawnLocation = locations[i];
-                if (spawnLocation == null)
-                {
-                    Log.Error("Spawnlocation is null, what the actual fuck?");
-                }
+                    if (unit == null)
+                    {
+                        Log.Error("Officer unit if null, what the actual fuck?");
+                    }
+                    else if (!unit.IsAIUnit)
+                    {
+                        // Skip player
+                        continue;
+                    }
 
-                var vector = spawnLocation.Position;
-                unit.StartDuty(vector);
-                i++;
+                    // Tell unit to get to work!
+                    var spawnLocation = locations[i];
+                    if (spawnLocation == null)
+                    {
+                        Log.Error("Spawnlocation is null, what the actual fuck?");
+                    }
+
+                    var aiOfficer = (AIOfficerUnit)unit;
+                    var vector = spawnLocation.Position;
+                    aiOfficer.StartDuty(vector);
+
+                    // Add officer to the duty roster
+                    OnDutyOfficers.Add(aiOfficer);
+                    i++;
+                }
             }
         }
 
@@ -521,6 +545,17 @@ namespace AgencyDispatchFramework.Simulation
             locs.Shuffle();
 
             return locs.Take(desiredCount).ToArray();
+        }
+
+        /// <summary>
+        /// Gets an array of <see cref="OfficerUnit"/>s that are on duty. This method is thread safe
+        /// </summary>
+        public virtual OfficerUnit[] GetOnDutyOfficers()
+        {
+            lock (_threadLock)
+            {
+                return OnDutyOfficers.ToArray();
+            }
         }
 
         public override string ToString()

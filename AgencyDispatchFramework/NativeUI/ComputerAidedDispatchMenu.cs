@@ -243,7 +243,7 @@ namespace AgencyDispatchFramework.NativeUI
                         var items = new List<UIMenuItem>();
 
                         // Add each unit
-                        foreach (var unit in agency.OnDutyOfficers)
+                        foreach (var unit in agency.GetOnDutyOfficers())
                         {
                             items.Add(new UIMenuListScrollerItem<string>(unit.CallSign.Value, "", new[] { unit.Status.ToString() }) { ScrollingEnabled = false });
                         }

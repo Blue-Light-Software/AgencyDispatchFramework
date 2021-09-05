@@ -101,8 +101,7 @@ namespace AgencyDispatchFramework.Xml
                     }
 
                     // Extract button text attriibute
-                    string text = questionNode.Attributes["buttonText"]?.Value;
-                    if (String.IsNullOrWhiteSpace(text))
+                    if (!questionNode.TryGetAttribute("buttonText", out string text))
                     {
                         Log.Error($"DialogueFile.Parse(): Menu['{menuId}']->Question['{questionId}'] has no or empty 'buttonText' attribute");
                         continue;
@@ -110,8 +109,7 @@ namespace AgencyDispatchFramework.Xml
 
                     // Extract visible attriibute
                     bool isVisible = true;
-                    string val = questionNode.Attributes["visible"]?.Value;
-                    if (!String.IsNullOrWhiteSpace(text))
+                    if (questionNode.TryGetAttribute("visible", out string val))
                     {
                         if (!bool.TryParse(val, out isVisible))
                         {

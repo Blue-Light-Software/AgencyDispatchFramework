@@ -14,7 +14,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Gets the <see cref="UnitType"/> of this <see cref="SpecializedUnit"/>
         /// </summary>
-        public UnitType UnitType { get; private set; }
+        public UnitType UnitType { get; internal set; }
 
         /// <summary>
         /// Containts a <see cref="ProbabilityGenerator{T}"/> list of <see cref="VehicleSet"/> for this agency
@@ -108,28 +108,22 @@ namespace AgencyDispatchFramework.Simulation
             // Grab vehicle set
             if (!generator.TrySpawn(out VehicleSet vehicleSet))
             {
-                return null;
+                var name = Enum.GetName(typeof(UnitType), UnitType);
+                throw new Exception($"Unable to spawn a VehicleSet from Unit '{name}' as part of agency '{AssignedAgency.FullName}'; Supervisor={supervisor}");
             }
 
-            // Come up with a unique callsign for this unit
-            try
-            {
-                // Create @TODO
-                CallSign.TryParse("1A-1", out CallSign callSign);
-                var officer = new AIOfficerUnit(vehicleSet, AssignedAgency, callSign, shift, supervisor);
+            // Come up with a unique callsign for this unit @TODO
+            CallSign.TryParse("1A-1", out CallSign callSign);
 
-                // Add to roster
-                Roster.Add(officer);
-                OfficersByShift[shift].Add(officer);
+            // Create officer
+            var officer = new AIOfficerUnit(vehicleSet, AssignedAgency, callSign, shift, supervisor);
 
-                // Return the officer unit
-                return officer;
-            }
-            catch (Exception e)
-            {
-                Log.Exception(e);
-                return null;
-            }
+            // Add to roster
+            Roster.Add(officer);
+            OfficersByShift[shift].Add(officer);
+
+            // Return the officer unit
+            return officer;
         }
 
         /// <summary>

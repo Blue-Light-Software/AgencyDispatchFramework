@@ -8,12 +8,12 @@
         Day,
 
         /// <summary>
-        /// Swing shift ranges from 2pm to midnight
+        /// Swing shift ranges from 3pm to 1am
         /// </summary>
         Swing,
 
         /// <summary>
-        /// Night shift ranges from 10pm to 8am
+        /// Night shift ranges from 9pm to 7am
         /// </summary>
         Night,
     }

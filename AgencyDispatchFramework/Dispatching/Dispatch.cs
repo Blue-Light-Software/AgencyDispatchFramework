@@ -166,7 +166,6 @@ namespace AgencyDispatchFramework
         /// </summary>
         private static Dictionary<ShiftRotation, bool> ActiveShifts { get; set; }
 
-
         /// <summary>
         /// Our open calls list
         /// </summary>
@@ -1228,6 +1227,11 @@ namespace AgencyDispatchFramework
             CrimeGenerator.Begin();
             Log.Debug($"Setting current crime level: {CrimeGenerator.CurrentCrimeLevel}");
 
+            // Fire event
+            CurrentShift = GetNewestShiftByTime(World.TimeOfDay);
+            OnShiftStart?.Invoke(CurrentShift);
+            ActiveShifts[CurrentShift] = true;
+
             // Start simulation fiber
             AISimulationFiber = GameFiber.StartNew(Process);
 
@@ -1248,6 +1252,9 @@ namespace AgencyDispatchFramework
             {
                 AISimulationFiber.Abort();
             }
+
+            // Cancel CAD
+            ComputerAidedDispatchMenu.Dispose();
 
             // Register for LSPDFR events
             LSPD_First_Response.Mod.API.Events.OnCalloutDisplayed -= LSPDFR_OnCalloutDisplayed;
@@ -1290,7 +1297,7 @@ namespace AgencyDispatchFramework
                 var tod = GameWorld.CurrentTimePeriod;
 
                 // Check for Shift changes
-                var currentShift = GetCurrentShiftByTime(date.TimeOfDay);
+                var currentShift = GetNewestShiftByTime(date.TimeOfDay);
                 if (currentShift != CurrentShift)
                 {
                     CurrentShift = currentShift;
@@ -1325,14 +1332,14 @@ namespace AgencyDispatchFramework
                     // Do dispatching logic?
                     if (!skip)
                     {
-                        agency.Dispatcher.Process();
+                        agency.Dispatcher.Process(date);
                     }
 
                     // Be nice
                     GameFiber.Yield();
 
                     // On tick for every AI officer currently on duty
-                    foreach (var officer in agency.OnDutyOfficers)
+                    foreach (var officer in agency.GetOnDutyOfficers())
                     {
                         officer.OnTick(date);
                     }
@@ -1371,7 +1378,7 @@ namespace AgencyDispatchFramework
         /// </summary>
         /// <param name="time"></param>
         /// <returns></returns>
-        private static Dictionary<ShiftRotation, bool> GetActiveShifts(TimeSpan time)
+        internal static Dictionary<ShiftRotation, bool> GetActiveShifts(TimeSpan time)
         {
             return new Dictionary<ShiftRotation, bool>()
             {
@@ -1382,10 +1389,10 @@ namespace AgencyDispatchFramework
         }
 
         /// <summary>
-        /// 
+        /// Returns the primary shift by time of day
         /// </summary>
         /// <returns></returns>
-        private static ShiftRotation GetCurrentShiftByTime(TimeSpan time)
+        internal static ShiftRotation GetNewestShiftByTime(TimeSpan time)
         {
             if (time.Hours.InRange(6, 16))
             {

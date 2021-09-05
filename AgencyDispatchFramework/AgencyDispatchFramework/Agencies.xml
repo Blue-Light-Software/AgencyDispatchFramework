@@ -110,22 +110,18 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer">
-          <!-- Copies from the unit sub-node specified in the "derives" attribute. -->
+        <Supervisor derives="Patrol.Officer">
+          <!-- Copies from the unit node specified in the "derives" attribute. Anything specified inside this node will append what is specified in the "derives" node. -->
         </Supervisor>
       </Unit>
       <!-- LSPD does have a traffic unit, so we list it here -->
-      <Unit type="Traffic" derives="Patrol">
-        <!-- Copies from the unit node specified in the "derives" attribute. Anything specified inside this node will append what is specified in the "derives" node. -->
+      <Unit type="Traffic">
+        <Officer derives="Patrol.Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
       <!-- LSPD does have a K9 unit, so we list it here -->
-      <Unit type="K9" derives="Patrol">
-        <!-- 
-            Copies from the unit node specified in the "derives" attribute. Anything specified inside this node will append what is specified in the "derives" node.
-            
-            ** Anything within the Overrides node will overwrite what is defined in the base, instead of appending to it **
-        -->
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="SHEPHERD" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>POLICE3</Vehicle>
@@ -135,41 +131,48 @@
               <Ped chance="10">S_F_Y_COP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
       <!-- LSPD does have a swat unit, so we list it here -->
       <Unit type="Swat">
-        <VehicleSet>
-          <Vehicles>
-            <Vehicle pax="3" pax_chance="100" color="black">FBI2</Vehicle>
-          </Vehicles>
-          <Peds>
-            <Ped comp_decals="1" tex_decals="1" prop_hats="1">S_M_Y_SWAT_01</Ped>
-          </Peds>
-          <NonLethals>
-            <NonLethal>WEAPON_STUNGUN</NonLethal>
-            <NonLethal>WEAPON_NIGHTSTICK</NonLethal>
-          </NonLethals>
-          <HandGuns>
-            <HandGun chance="75">WEAPON_COMBATPISTOL</HandGun>
-            <HandGun chance="25">WEAPON_PISTOL</HandGun>
-          </HandGuns>
-          <LongGuns>
-            <LongGun chance="67">WEAPON_ADVANCEDRIFLE</LongGun>
-            <LongGun chance="33">WEAPON_ASSAULTSHOTGUN</LongGun>
-          </LongGuns>
-        </VehicleSet>
+        <Officer>
+          <VehicleSet>
+            <Vehicles>
+              <Vehicle pax="3" pax_chance="100" color="black">FBI2</Vehicle>
+            </Vehicles>
+            <Peds>
+              <Ped comp_decals="1" tex_decals="1" prop_hats="1">S_M_Y_SWAT_01</Ped>
+            </Peds>
+            <NonLethals>
+              <NonLethal>WEAPON_STUNGUN</NonLethal>
+              <NonLethal>WEAPON_NIGHTSTICK</NonLethal>
+            </NonLethals>
+            <HandGuns>
+              <HandGun chance="75">WEAPON_COMBATPISTOL</HandGun>
+              <HandGun chance="25">WEAPON_PISTOL</HandGun>
+            </HandGuns>
+            <LongGuns>
+              <LongGun chance="67">WEAPON_ADVANCEDRIFLE</LongGun>
+              <LongGun chance="33">WEAPON_ASSAULTSHOTGUN</LongGun>
+            </LongGuns>
+          </VehicleSet>
+        </Officer>
+        <Supervisor derives="Swat.Officer" />
       </Unit>
       <!-- LSPD does have a Air unit, so we list it here -->
       <Unit type="Air">
-        <VehicleSet>
-          <Vehicles>
-            <Vehicle livery="1" pax="1" pax_chance="100">POLMAV</Vehicle>
-          </Vehicles>
-          <Peds>
-            <Ped comp_tasks="2" prop_hats="1">S_M_Y_PILOT_01</Ped>
-          </Peds>
-        </VehicleSet>
+        <Officer>
+          <VehicleSet>
+            <Vehicles>
+              <Vehicle livery="1" pax="1" pax_chance="100">POLMAV</Vehicle>
+            </Vehicles>
+            <Peds>
+              <Ped comp_tasks="2" prop_hats="1">S_M_Y_PILOT_01</Ped>
+            </Peds>
+          </VehicleSet>
+        </Officer>
+        <Supervisor derives="Air.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -221,10 +224,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="SHEPHERD" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>POLICE3</Vehicle>
@@ -234,7 +237,8 @@
               <Ped chance="10">S_F_Y_COP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -286,10 +290,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="SHEPHERD" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>POLICE3</Vehicle>
@@ -299,7 +303,8 @@
               <Ped chance="10">S_F_Y_COP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -351,10 +356,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="SHEPHERD" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>POLICE3</Vehicle>
@@ -364,7 +369,8 @@
               <Ped chance="10">S_F_Y_COP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -416,10 +422,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="SHEPHERD" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>POLICE3</Vehicle>
@@ -429,7 +435,8 @@
               <Ped chance="10">S_F_Y_COP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>  
   </Agency>
@@ -481,10 +488,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="SHEPHERD" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>POLICE3</Vehicle>
@@ -494,7 +501,8 @@
               <Ped chance="10">S_F_Y_COP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -546,10 +554,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="SHEPHERD" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>POLICE3</Vehicle>
@@ -559,7 +567,8 @@
               <Ped chance="10">S_F_Y_COP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -599,10 +608,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="ROTTWEILER" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>SHERIFF2</Vehicle>
@@ -612,7 +621,8 @@
               <Ped chance="10">S_F_Y_SHERIFF_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -652,10 +662,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="ROTTWEILER" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>SHERIFF2</Vehicle>
@@ -665,7 +675,8 @@
               <Ped chance="10">S_F_Y_SHERIFF_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -705,10 +716,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="ROTTWEILER" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>SHERIFF2</Vehicle>
@@ -718,7 +729,8 @@
               <Ped chance="10">S_F_Y_SHERIFF_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
     </Units>
   </Agency>
@@ -758,10 +770,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="ROTTWEILER" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>SHERIFF2</Vehicle>
@@ -771,7 +783,8 @@
               <Ped chance="10">S_F_Y_SHERIFF_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
       <Unit type="Swat">
         <VehicleSet>
@@ -842,10 +855,10 @@
             </LongGuns>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Patrol.Officer" />
       </Unit>
-      <Unit type="K9" derives="Patrol">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="ROTTWEILER" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>SHERIFF2</Vehicle>
@@ -855,7 +868,8 @@
               <Ped chance="10">S_F_Y_SHERIFF_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
       <Unit type="Swat">
         <VehicleSet>
@@ -921,10 +935,10 @@
             </Peds>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor derives="Traffic.Officer" />
       </Unit>
-      <Unit type="K9" derives="Traffic">
-        <Overrides>
+      <Unit type="K9">
+        <Officer>
           <VehicleSet k9_model="HUSKY" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>FBI2</Vehicle>
@@ -933,7 +947,8 @@
               <Ped comp_pants="2" comp_decals="1" prop_hats="0">S_M_Y_HWAYCOP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor derives="K9.Officer" />
       </Unit>
       <Unit type="Air">
         <VehicleSet>
@@ -953,6 +968,7 @@
     <ScriptName>nysp</ScriptName>
     <AgencyType>HighwayPatrol</AgencyType>
     <StaffLevel>Full</StaffLevel>
+    <CallSignStyle>LAPD</CallSignStyle>
     <County />
     <CustomBackingAgency />
     <Units>
@@ -967,10 +983,10 @@
             </Peds>
           </VehicleSet>
         </Officer>
-        <Supervisor derives="Officer" />
+        <Supervisor copies="Officer" />
       </Unit>
       <Unit type="K9" derives="Traffic">
-        <Overrides>
+        <Officer>
           <VehicleSet k9_model="HUSKY" k9_tex_face="1" k9_tex_shirt="1" k9_tex_accessories="1">
             <Vehicles>
               <Vehicle>FBI2</Vehicle>
@@ -979,7 +995,8 @@
               <Ped comp_pants="2" comp_decals="1" prop_hats="0">S_M_Y_HWAYCOP_01</Ped>
             </Peds>
           </VehicleSet>
-        </Overrides>
+        </Officer>
+        <Supervisor copies="Officer" />
       </Unit>
       <Unit type="Air">
         <VehicleSet>

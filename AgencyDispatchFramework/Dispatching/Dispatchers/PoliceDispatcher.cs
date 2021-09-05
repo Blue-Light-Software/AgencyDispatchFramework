@@ -26,163 +26,160 @@ namespace AgencyDispatchFramework.Dispatching
         /// <summary>
         /// Method called every tick to manage calls
         /// </summary>
-        public override void Process()
+        public override void Process(DateTime currentTime)
         {
-            // Don't dispatch low priority calls if shift changes in less than 20 minutes!
-            bool shiftChangesSoon = GameWorld.GetTimeUntilNextTimePeriod() < TimeSpan.FromMinutes(20);
-            var currentTime = World.DateTime;
-            var expiredCalls = new List<PriorityCall>();
+            // Ordered call queue
+            IOrderedEnumerable<PriorityCall> calls;
 
-            // Stop calls from coming in for right now
+            // Prevent racing conditions
             lock (_threadLock)
             {
-                // If we have no calls
-                if (CallQueue.Count == 0)
-                    return;
+                // If we have no calls, quit here
+                if (CallQueue.Count == 0) return;
 
                 // Grab open calls
-                var calls = (
-                        from call in CallQueue
-                        where call.NeedsMoreOfficers
+                calls = from call in CallQueue where call.NeedsMoreOfficers
                         orderby (int)call.Priority ascending, call.CallCreated ascending // Oldest first
-                        select call
-                    );
+                        select call;
+            }
 
-                // Check priority 1 and 2 calls first and dispatch accordingly
-                foreach (var call in calls)
+            // Don't dispatch low priority calls if shift changes in less than 20 minutes!
+            var expiredCalls = new List<PriorityCall>();
+
+            // Grab available officers
+            var onDutyOfficers = Agency.GetOnDutyOfficers();
+
+            // Dispatch calls according to priority
+            foreach (var call in calls)
+            {
+                // Create officer pool, grouped by dispatching priority
+                var officerPool = CreateOfficerPriorityPool(call, onDutyOfficers, currentTime.TimeOfDay);
+
+                /******************************************************
+                 * Immediate Emergency Calls
+                 * 
+                 * Pull available officers from all agencies until we have enough officers,
+                 * prioritizing the primary agency
+                 */
+                if (call.Priority == CallPriority.Immediate)
                 {
-                    // Create officer pool, grouped by dispatching priority
-                    var officerPool = CreateOfficerPriorityPool(call);
-
-                    /******************************************************
-                     * Immediate Emergency Calls
-                     * 
-                     * Pull available officers from all agencies until we have enough officers,
-                     * prioritizing the primary agency
-                     */
-                    if (call.Priority == CallPriority.Immediate)
+                    // Select closest available officer
+                    var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
+                    if (availableOfficers.Count == 0)
                     {
-                        // Select closest available officer
-                        var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
-                        if (availableOfficers.Count == 0)
-                        {
-                            RaiseCall(call, new CallRaisedEventArgs() { NeedsPolice = true });
-                            break;
-                        }
-
-                        // Add other units to the call
-                        foreach (var officer in availableOfficers)
-                        {
-                            // We already dispatched the player
-                            if (!officer.IsAIUnit) continue;
-
-                            // Dispatch
-                            AssignUnitToCall(officer, call);
-                        }
-
-                        // If we have not officers, stop here
-                        if (availableOfficers.Count < call.NumberOfAdditionalUnitsRequired)
-                        {
-                            RaiseCall(call, new CallRaisedEventArgs() { NeedsPolice = true });
-                        }
+                        RaiseCall(call, new CallRaisedEventArgs() { NeedsPolice = true });
+                        break;
                     }
 
-                    /******************************************************
-                     * Emergency Calls / Dangerous Calls
-                     * 
-                     * Pull available officers from all agencies until we have enough officers,
-                     * prioritizing the primary agency
-                     */
-                    else if (call.Priority == CallPriority.Emergency)
+                    // Add other units to the call
+                    foreach (var officer in availableOfficers)
                     {
-                        // Select closest available officer
-                        var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
+                        // We already dispatched the player
+                        if (!officer.IsAIUnit) continue;
 
-                        // If we have no officers at all, then stop here and pass it up
-                        if (availableOfficers.Count == 0)
-                        {
-                            // Raise this up if we are not on scene yet!
-                            if (call.CallStatus != CallStatus.OnScene)
-                            {
-                                RaiseCall(call, new CallRaisedEventArgs() { NeedsPolice = true });
-                            }
-                            break;
-                        }
-
-                        // Add other units to the call
-                        foreach (var officer in availableOfficers)
-                        {
-                            // We already dispatched the player
-                            if (!officer.IsAIUnit) continue;
-
-                            // Dispatch
-                            AssignUnitToCall(officer, call);
-                        }
+                        // Dispatch
+                        AssignUnitToCall(officer, call);
                     }
 
-                    /******************************************************
-                     * Expedited Calls
-                     * 
-                     * These calls must be taken care of in a timely manner,
-                     * Pull officers in higher agencies after 15 minutes
-                     */
-                    else if (call.Priority == CallPriority.Expedited)
+                    // If we have not officers, stop here
+                    if (availableOfficers.Count < call.NumberOfAdditionalUnitsRequired)
                     {
-                        // Select closest available officer
-                        var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
-                        if (availableOfficers.Count == 0) break;
+                        RaiseCall(call, new CallRaisedEventArgs() { NeedsPolice = true });
+                    }
+                }
 
-                        // Add other units to the call
-                        foreach (var officer in availableOfficers)
+                /******************************************************
+                 * Emergency Calls / Dangerous Calls
+                 * 
+                 * Pull available officers from all agencies until we have enough officers,
+                 * prioritizing the primary agency
+                 */
+                else if (call.Priority == CallPriority.Emergency)
+                {
+                    // Select closest available officer
+                    var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
+
+                    // If we have no officers at all, then stop here and pass it up
+                    if (availableOfficers.Count == 0)
+                    {
+                        // Raise this up if we are not on scene yet!
+                        if (call.CallStatus != CallStatus.OnScene)
                         {
-                            // We already dispatched the player
-                            if (!officer.IsAIUnit) continue;
-
-                            // Dispatch
-                            AssignUnitToCall(officer, call);
-                        }
-
-                        // If after 20 minutes, we still have no officers to send from the
-                        // primary agency, pull officers from higher agencies
-                        if (call.PrimaryOfficer == null && (currentTime - call.CallCreated > TimeSpan.FromMinutes(30)))
-                        {
-                            // Raise this up!
                             RaiseCall(call, new CallRaisedEventArgs() { NeedsPolice = true });
                         }
+                        break;
                     }
 
-                    /******************************************************
-                     * Routine Calls
-                     * 
-                     * We don't really care about these. They will expire and
-                     * removed from the call list after 12 hours
-                     */
-                    else
+                    // Add other units to the call
+                    foreach (var officer in availableOfficers)
                     {
-                        // Remove if expired
-                        if (currentTime - call.CallCreated > TimeSpan.FromHours(8))
-                        {
-                            expiredCalls.Add(call);
-                            continue;
+                        // We already dispatched the player
+                        if (!officer.IsAIUnit) continue;
 
-                        }
-                        // If shifts end soon, do not dispatch
-                        if (!shiftChangesSoon)
-                        {
-                            // Select closest available officer
-                            var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
-                            if (availableOfficers.Count == 0) break;
+                        // Dispatch
+                        AssignUnitToCall(officer, call);
+                    }
+                }
 
-                            // Add other units to the call
-                            foreach (var officer in availableOfficers)
-                            {
-                                // We already dispatched the player
-                                if (!officer.IsAIUnit) continue;
+                /******************************************************
+                 * Expedited Calls
+                 * 
+                 * These calls must be taken care of in a timely manner,
+                 * Pull officers in higher agencies after 15 minutes
+                 */
+                else if (call.Priority == CallPriority.Expedited)
+                {
+                    // Select closest available officer
+                    var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
+                    if (availableOfficers.Count == 0) break;
 
-                                // Dispatch
-                                AssignUnitToCall(officer, call);
-                            }
-                        }
+                    // Add other units to the call
+                    foreach (var officer in availableOfficers)
+                    {
+                        // We already dispatched the player
+                        if (!officer.IsAIUnit) continue;
+
+                        // Dispatch
+                        AssignUnitToCall(officer, call);
+                    }
+
+                    // If after 20 minutes, we still have no officers to send from the
+                    // primary agency, pull officers from higher agencies
+                    if (call.PrimaryOfficer == null && (currentTime - call.CallCreated > TimeSpan.FromMinutes(30)))
+                    {
+                        // Raise this up!
+                        RaiseCall(call, new CallRaisedEventArgs() { NeedsPolice = true });
+                    }
+                }
+
+                /******************************************************
+                 * Routine Calls
+                 * 
+                 * We don't really care about these. They will expire and
+                 * removed from the call list after 8 hours
+                 */
+                else
+                {
+                    // Remove if expired
+                    if (currentTime - call.CallCreated > TimeSpan.FromHours(8))
+                    {
+                        expiredCalls.Add(call);
+                        continue;
+
+                    }
+                    
+                    // Select closest available officer
+                    var availableOfficers = GetClosestOfficersByPriority(officerPool, call);
+                    if (availableOfficers.Count == 0) break;
+
+                    // Add other units to the call
+                    foreach (var officer in availableOfficers)
+                    {
+                        // We already dispatched the player
+                        if (!officer.IsAIUnit) continue;
+
+                        // Dispatch
+                        AssignUnitToCall(officer, call);
                     }
                 }
             }
@@ -209,11 +206,11 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="priority"></param>
         /// <returns></returns>
-        private Dictionary<DispatchPriority, List<OfficerUnit>> CreateOfficerPriorityPool(PriorityCall call)
+        private Dictionary<DispatchPriority, List<OfficerUnit>> CreateOfficerPriorityPool(PriorityCall call, OfficerUnit[] onDutyOfficers, TimeSpan time)
         {
             // Create a new list
             var availableOfficers = new List<OfficerUnit>();
-            foreach (var officer in OnDutyOfficers)
+            foreach (var officer in onDutyOfficers)
             {
                 // Special checks for the player
                 if (!officer.IsAIUnit)
@@ -225,64 +222,93 @@ namespace AgencyDispatchFramework.Dispatching
                     }
                 }
 
-                // Set default
-                var currentPriority = 5;
-                bool isOnScene = false;
-
-                // If the officer is on a call, lets determine if our currrent call is more important
-                if (officer.CurrentCall != null)
+                // Is the officer nearing the end of his shift?
+                if (officer.IsNearingEndOfShift(time))
                 {
-                    currentPriority = (int)officer.CurrentCall.Priority;
-                    isOnScene = officer.Status != OfficerStatus.Dispatched;
-                }
-                else if (officer.Assignment != null)
-                {
-                    currentPriority = (int)officer.Assignment.Priority;
-                }
-
-                // Easy, if the call is less priority than what we are doing, forget it
-                if ((int)call.Priority >= currentPriority)
-                {
-                    continue;
-                }
-
-                // Lets do some dispatch logic and assign priorities
-                switch (currentPriority)
-                {
-                    case 1: // Already on an Immediate Emergency assignment
-                    case 2: // Already on an Emergency assignment
-                        break;
-                    case 3: // On Expdited assignment
-                        if (call.Priority == CallPriority.Immediate)
-                        {
-                            officer.Priority = (isOnScene) ? DispatchPriority.Moderate : DispatchPriority.High;
-                        }
-                        else
-                        {
-                            officer.Priority = (isOnScene) ? DispatchPriority.Low : DispatchPriority.Moderate;
-                        }
-                        availableOfficers.Add(officer);
-                        break;
-                    case 4: // On routine assignment
-                        if (call.Priority == CallPriority.Expedited)
-                        {
-                            // Do not pull someone off a routine call to preform a expedited call
-                            if (isOnScene) break;
+                    switch (call.Priority)
+                    {
+                        case CallPriority.Immediate:
+                        case CallPriority.Emergency:
+                            // Skip if this officer is busy doing important stuff
+                            if (officer.CurrentCall != null)
+                            {
+                                var p = (int)officer.CurrentCall.Priority;
+                                if (p < 3) continue;
+                            }
+                            else if (officer.Assignment != null)
+                            {
+                                var p = (int)officer.Assignment.Priority;
+                                if (p < 3) continue;
+                            }
 
                             officer.Priority = DispatchPriority.Low;
                             availableOfficers.Add(officer);
-                        }
-                        else
-                        {
-                            // Pull this officer off
-                            officer.Priority = (call.Priority == CallPriority.Immediate) ? DispatchPriority.High : DispatchPriority.Moderate;
+                            break;
+                        default:
+                            continue; // Skip
+                    }
+                }
+                else
+                {
+                    // Set default
+                    var currentPriority = 5;
+                    bool isOnScene = false;
+
+                    // If the officer is on a call, lets determine if our currrent call is more important
+                    if (officer.CurrentCall != null)
+                    {
+                        currentPriority = (int)officer.CurrentCall.Priority;
+                        isOnScene = officer.Status != OfficerStatus.Dispatched;
+                    }
+                    else if (officer.Assignment != null)
+                    {
+                        currentPriority = (int)officer.Assignment.Priority;
+                    }
+
+                    // Easy, if the call is less priority than what we are doing, forget it
+                    if ((int)call.Priority >= currentPriority)
+                    {
+                        continue;
+                    }
+
+                    // Lets do some dispatch logic and assign priorities
+                    switch (currentPriority)
+                    {
+                        case 1: // Already on an Immediate Emergency assignment
+                        case 2: // Already on an Emergency assignment
+                            break;
+                        case 3: // On Expdited assignment
+                            if (call.Priority == CallPriority.Immediate)
+                            {
+                                officer.Priority = (isOnScene) ? DispatchPriority.Moderate : DispatchPriority.High;
+                            }
+                            else
+                            {
+                                officer.Priority = (isOnScene) ? DispatchPriority.Low : DispatchPriority.Moderate;
+                            }
                             availableOfficers.Add(officer);
-                        }
-                        break;
-                    default: // Not busy at all
-                        officer.Priority = DispatchPriority.VeryHigh;
-                        availableOfficers.Add(officer);
-                        break;
+                            break;
+                        case 4: // On routine assignment
+                            if (call.Priority == CallPriority.Expedited)
+                            {
+                                // Do not pull someone off a routine call to preform a expedited call
+                                if (isOnScene) break;
+
+                                officer.Priority = DispatchPriority.Low;
+                                availableOfficers.Add(officer);
+                            }
+                            else
+                            {
+                                // Pull this officer off
+                                officer.Priority = (call.Priority == CallPriority.Immediate) ? DispatchPriority.High : DispatchPriority.Moderate;
+                                availableOfficers.Add(officer);
+                            }
+                            break;
+                        default: // Not busy at all
+                            officer.Priority = DispatchPriority.VeryHigh;
+                            availableOfficers.Add(officer);
+                            break;
+                    }
                 }
             }
 

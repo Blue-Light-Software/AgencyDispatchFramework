@@ -26,7 +26,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         /// <param name="text">Button label.</param>
         public UIMenuItem(T item, string text) : this(item, text, "")
-        {
+        { 
         }
 
         /// <summary>
@@ -38,6 +38,7 @@ namespace AgencyDispatchFramework.NativeUI
         {
             Enabled = true;
 
+            Tag = item;
             Text = text;
             Description = description;
         }

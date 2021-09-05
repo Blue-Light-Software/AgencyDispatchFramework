@@ -367,7 +367,7 @@ namespace AgencyDispatchFramework.NativeUI
             };
 
             // Create buttons
-            RandomWeatherBox = new UIMenuCheckboxItem("Randomize Weather", false, "If checked, the weather will be selected at random.");
+            RandomWeatherBox = new UIMenuCheckboxItem("Randomize Weather", false, "If checked, the weather will be selected at random.") { Enabled = false };
             ForceWeatherBox = new UIMenuCheckboxItem("Force Weather", false, "If checked, the selected weather will be forced at when this menu closes.");
             SaveWorldSettingsButton = new UIMenuItem("Save", "Saves the selected settings and goes back to the previous menu.");
 
@@ -389,7 +389,7 @@ namespace AgencyDispatchFramework.NativeUI
             }
 
             // Weather selections
-            WeatherMenuItem = new UIMenuListItem("Weather", "Sets the desired weather for the beggining of your shift");
+            WeatherMenuItem = new UIMenuListItem("Weather", "Sets the desired weather for the beggining of your shift") { Enabled = false };
             foreach (Weather weather in Enum.GetValues(typeof(Weather)))
             {
                 WeatherMenuItem.Collection.Add(weather, Enum.GetName(typeof(Weather), weather));
@@ -565,12 +565,6 @@ namespace AgencyDispatchFramework.NativeUI
                 // Being simulation
                 if (Simulation.Simulation.Begin(settings))
                 {
-                    // Yield to prevent freezing
-                    GameFiber.Yield();
-
-                    // Tell GameWorld to begin listening. Stops automatically when player goes off duty
-                    GameWorld.BeginFibers();
-
                     // Display notification to the player
                     Rage.Game.DisplayNotification(
                         "3dtextures",

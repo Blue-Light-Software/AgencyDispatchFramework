@@ -159,7 +159,8 @@ namespace AgencyDispatchFramework.NativeUI
             // Do we have an actual sub menu item focused within index range?
             if (Items.Count > 0)
             {
-                if (Items[Index].Focused)
+                var item = Items[Index];
+                if (item.Focused)
                 {
                     // If select is clicked while the call is focused, now we invoke the callout for the player
                     if (Common.IsDisabledControlJustPressed(0, GameControl.CellphoneCancel))
@@ -168,11 +169,11 @@ namespace AgencyDispatchFramework.NativeUI
                         if (Items[Index].CanBeFocused && Items[Index].Focused)
                         {
                             Parent.FocusLevel--;
-                            Items[Index].Focused = false;
+                            item.Focused = false;
                         }
                     }
 
-                    Items[Index].ProcessControls();
+                    item.ProcessControls();
                 }
                 else
                 {
@@ -181,15 +182,15 @@ namespace AgencyDispatchFramework.NativeUI
                     {
                         Common.PlaySound("SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET");
 
-                        if (Items[Index].CanBeFocused && !Items[Index].Focused)
+                        if (item.CanBeFocused && !item.Focused)
                         {
                             Parent.FocusLevel++;
-                            Items[Index].JustOpened = true;
-                            Items[Index].Focused = true;
+                            item.JustOpened = true;
+                            item.Focused = true;
                         }
                         else
                         {
-                            Items[Index].OnActivated();
+                            item.OnActivated();
                         }
                     }
                     

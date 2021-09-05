@@ -1,5 +1,6 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Game;
+using AgencyDispatchFramework.NativeUI;
 using Rage;
 using System;
 
@@ -13,9 +14,14 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="settings"></param>
         public static bool Begin(SimulationSettings settings)
         {
-            // Do we fade in the screen?
+            // Do we fade the screen?
             bool fadeScreen = settings.ForceWeather || settings.RandomWeather || settings.FastForward;
             bool changedTimeScale = false;
+
+            // local variables to fallback onto
+            int currentMult = TimeScale.GetCurrentTimeScaleMultiplier();
+            var time = World.TimeOfDay;
+            var weather = GameWorld.CurrentWeather;
 
             // Wrap to catch unexpected errors
             try
@@ -33,10 +39,15 @@ namespace AgencyDispatchFramework.Simulation
 
                 // Set timescale if not default first, since the RegionCrimeGenerator
                 // uses the TimeScale in game for its sleep timer
-                var currentMult = TimeScale.GetCurrentTimeScaleMultiplier();
                 if (settings.TimeScaleMult != currentMult)
                 {
                     changedTimeScale = TimeScale.SetTimeScaleMultiplier(settings.TimeScaleMult);
+                }
+
+                // Set world time
+                if (settings.FastForward)
+                {
+                    World.TimeOfDay = GetShiftStartTime(settings.SelectedShift);
                 }
 
                 // Initialize dispatch script
@@ -58,11 +69,8 @@ namespace AgencyDispatchFramework.Simulation
                     GameWorld.TransitionToWeather(settings.SelectedWeather, 0f);
                 }
 
-                // Set world time
-                if (settings.FastForward)
-                {
-                    World.TimeOfDay = GetShiftStartTime(settings.SelectedShift);
-                }
+                // Tell GameWorld to begin listening. Stops automatically when player goes off duty
+                GameWorld.BeginFibers();
 
                 // Fade the screen back in
                 if (fadeScreen)
@@ -111,6 +119,10 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         public static void Shutdown()
         {
+            // Tell dispatch to stop
+            Dispatch.Shutdown();
+
+            // Stop GameWorld fibers
 
         }
 

@@ -155,13 +155,7 @@ namespace AgencyDispatchFramework
             else
             {
                 // Stop generating calls
-                Dispatch.Shutdown();
-
-                // Stop the plugin menu
-                DevPluginMenu?.StopListening();
-
-                // Cancel CAD
-                ComputerAidedDispatchMenu.Dispose();
+                Simulation.Simulation.Shutdown();
             }
         }
 

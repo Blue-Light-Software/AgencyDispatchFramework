@@ -134,7 +134,7 @@ namespace AgencyDispatchFramework.Simulation
                 if (EndingDuty)
                 {
                     // Tell the agency! (this should be thread safe)
-                    Agency.OnDutyOfficers.Remove(this);
+                    Agency.RemoveOnDuty(this);
                     return;
                 }
 
