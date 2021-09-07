@@ -3,9 +3,10 @@
 <HORS>
   <Name>Vinewood Racetrack</Name>
   <Size>Small</Size>
-  <Type>Commercial</Type>
+  <Type>Commercial, Recreation</Type>
   <Class>UpperMiddle</Class>
   <Population>Dense</Population>
+  <County>LosSantos</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </HORS>

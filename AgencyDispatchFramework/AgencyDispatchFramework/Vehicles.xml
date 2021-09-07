@@ -1,5 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Vehicles>
+  <Commercial>
+    <Vehicle probability="5" seats="2" manufacturer="Vapid" name="Benson">BENSON</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="HVY" name="Biff">BIFF</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Jobuilt" name="Hauler">HAULER</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Maibatsu Corporation" name="Mule">MULE</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Maibatsu Corporation" name="Packer">PACKER</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Jobuilt" name="Phantom">PHANTOM</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="MTL" name="Pounder">POUNDER</Vehicle>
+    <Vehicle probability="3" seats="2" manufacturer="Brute" name="Stockade">STOCKADE</Vehicle>
+  </Commercial>
   <Compact>
     <Vehicle probability="5" seats="2" manufacturer="Dinka" name="Blista">BLISTA</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Grotti" name="Brioso R/A">BRIOSO</Vehicle>
@@ -21,6 +31,15 @@
     <Vehicle probability="5" seats="2" manufacturer="Übermacht" name="Zion">ZION</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Übermacht" name="Zion Cabrio">ZION2</Vehicle>
   </Coupe>
+  <Cycle>
+    <Vehicle probability="5" seats="1" manufacturer="BMX" name="BMX">BMX</Vehicle>
+    <Vehicle probability="4" seats="1" manufacturer="Cruiser" name="Cruiser">CRUISER</Vehicle>
+    <Vehicle probability="1" seats="1" manufacturer="Endurex" name="Endurex Race Bike">TRIBIKE2</Vehicle>
+    <Vehicle probability="4" seats="1" manufacturer="Fixter" name="Fixter">FIXTER</Vehicle>
+    <Vehicle probability="8" seats="1" manufacturer="Scorcher" name="Scorcher">SCORCHER</Vehicle>
+    <Vehicle probability="1" seats="1" manufacturer="Tri-Cycles" name="Tri-Cycles Race Bike">TRIBIKE3</Vehicle>
+    <Vehicle probability="1" seats="1" manufacturer="Whippet" name="Whippet Race Bike">TRIBIKE</Vehicle>
+  </Cycle>
   <!-- Emergency is Pickups! Not emergency vehicles-->
   <Emergency>
     <Vehicle probability="5" seats="6" manufacturer="Bravado" name="Bison">BISON</Vehicle>
@@ -28,12 +47,37 @@
     <Vehicle probability="4" seats="2" manufacturer="Karin" name="Rebel">REBEL2</Vehicle>
     <Vehicle probability="3" seats="2" manufacturer="Vapid" name="Sandking SWB">SANDKING2</Vehicle>
     <Vehicle probability="2" seats="2" manufacturer="Vapid" name="Sandking XL">SANDKING</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Vapid" name="Sadler">SADLER</Vehicle>
   </Emergency>
+  <Industrial>
+    <!--
+    <Vehicle probability="5" seats="1" manufacturer="HVY" name="Cutter">CUTTER</Vehicle>
+    <Vehicle probability="5" seats="1" manufacturer="HVY" name="Dock Handler">HANDLER</Vehicle>
+    <Vehicle probability="5" seats="1" manufacturer="HVY" name="Dozer">BULLDOZE</Vehicle>
+    <Vehicle probability="5" seats="1" manufacturer="HVY" name="Dozer">DUMP</Vehicle>
+    -->
+    <Vehicle probability="5" seats="2" manufacturer="MTL" name="Dozer">FLATBED</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="HVY" name="Mixer">­MIXER</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Jobuilt" name="Rubble">­RUBBLE</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Brute" name="Rubble">­TIPTRUCK2</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Vapid" name="Scrap Truck">SCRAP</Vehicle>
+  </Industrial>
   <Moped>
-    
+    <Vehicle probability="5" seats="2" manufacturer="Pegassi" name="Faggio">FAGGIO</Vehicle>
   </Moped>
   <Motorcycle>
-  
+    <Vehicle probability="5" seats="2" manufacturer="Dinka" name="Akuma">­AKUMA</Vehicle>
+    <Vehicle probability="7" seats="2" manufacturer="Western Motorcycle Company" name="Bagger">BAGGER</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Pegassi" name="Bati 801">BATI</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Pegassi" name="Bati 801RR">BATI2</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Western Motorcycle Company" name="Daemon">DAEMON</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Dinka" name="Double T">DOUBLE</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Steel Horse" name="Hexer">HEXER</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Principe" name="Nemesis">NEMESIS</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Shitzu" name="PCJ-600">PCJ</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Pegassi" name="Ruffian">RUFFIAN</Vehicle>
+    <Vehicle probability="3" seats="2" manufacturer="Maibatsu Corporation" name="Sanchez">­SANCHEZ2</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Shitzu" name="Vader">VADER</Vehicle>
   </Motorcycle>
   <Muscle>
     <Vehicle probability="5" seats="2" manufacturer="Albany" name="Buccaneer">BUCCANEER</Vehicle>
@@ -70,6 +114,12 @@
     <Vehicle probability="5" seats="4" manufacturer="Obey" name="Tailgater">TAILGATER</Vehicle>
     <Vehicle probability="5" seats="4" manufacturer="Albany" name="Washington">WASHINGTON</Vehicle>
   </Sedan>
+  <Service>
+    <Vehicle probability="5" seats="16" manufacturer="Brute" name="Bus">BUS</Vehicle>
+    <Vehicle probability="5" seats="16" manufacturer="Brute" name="Dashound">COACH</Vehicle>
+    <Vehicle probability="10" seats="4" manufacturer="Declasse" name="Taxi">TAXI</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Jobuilt" name="Trashmaster">TRASH</Vehicle>
+  </Service>
   <Sport>
     <Vehicle probability="5" seats="2" manufacturer="Bravado" name="Banshee">BANSHEE</Vehicle>
     <Vehicle probability="4" seats="4" manufacturer="Bravado" name="Buffalo">BUFFALO</Vehicle>
@@ -90,6 +140,16 @@
     <Vehicle probability="5" seats="4" manufacturer="Karin" name="Sultan">SULTAN</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Benefactor" name="Surano">SURANO</Vehicle>
   </Sport>
+  <SportClassic>
+    <Vehicle probability="5" seats="2" manufacturer="Invetero" name="Coquette Classic">COQUETTE2</Vehicle>
+    <Vehicle probability="1" seats="2" manufacturer="Dewbauchee" name="JB 700">JB700</Vehicle>
+    <Vehicle probability="8" seats="2" manufacturer="Albany" name="Manana">MANANA</Vehicle>
+    <Vehicle probability="3" seats="2" manufacturer="Pegassi" name="Monroe">MONROE</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Vapid" name="Peyote">PEYOTE</Vehicle>
+    <Vehicle probability="3" seats="2" manufacturer="Lampadati" name="Pigalle">PIGALLE</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Grotti" name="Stinger">STINGER</Vehicle>
+    <Vehicle probability="6" seats="2" manufacturer="Declasse" name="Tornado">TORNADO</Vehicle>
+  </SportClassic>
   <Super>
     <Vehicle probability="5" seats="2" manufacturer="Truffade" name="Adder">ADDER</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Vapid" name="Bullet">BULLET</Vehicle>
@@ -124,6 +184,20 @@
     <Vehicle probability="5" seats="4" manufacturer="Canis" name="Seminole">SEMINOLE</Vehicle>
     <Vehicle probability="5" seats="4" manufacturer="Benefactor" name="Serrano">SERRANO</Vehicle>
   </SUV>
+  <Utility>
+    <!--
+    <Vehicle probability="2" seats="2" manufacturer="HVY" name="Airtug">AIRTUG</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Nagasaki" name="Caddy">CADDY</Vehicle>
+    <Vehicle probability="2" seats="1" manufacturer="HVY" name="Docktug">DOCKTUG</Vehicle>
+    <Vehicle probability="2" seats="1" manufacturer="Stanley" name="Fieldmaster">TRACTOR2</Vehicle>
+    <Vehicle probability="2" seats="1" manufacturer="HVY" name="Forklift">FORK</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="HVY" name="Ripley">RIPLEY</Vehicle>
+    -->
+    <Vehicle probability="2" seats="2" manufacturer="Vapid" name="Tow Truck">TOWTRUCK</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">UTILTRUC</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">UTILTRUC2</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">UTILTRUC3</Vehicle>
+  </Utility>
   <Van>
     <Vehicle probability="3" seats="4" manufacturer="Declasse" name="Burrito">BURRITO3</Vehicle>
     <Vehicle probability="5" seats="4" manufacturer="Vapid" name="Minivan">MINIVAN</Vehicle>

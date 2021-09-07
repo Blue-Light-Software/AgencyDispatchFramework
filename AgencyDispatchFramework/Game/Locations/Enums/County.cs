@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AgencyDispatchFramework.Game
+namespace AgencyDispatchFramework.Game.Locations
 {
     public enum County
     {

@@ -80,7 +80,7 @@ namespace AgencyDispatchFramework.Dispatching
                     call.OnCallEnded += Call_OnCallEnded;
 
                     // Log
-                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.FullName}'");
+                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.DisplayName}'");
                     return true;
                 }
                 else
@@ -109,7 +109,7 @@ namespace AgencyDispatchFramework.Dispatching
                     call.OnCallEnded -= Call_OnCallEnded;
 
                     // Log
-                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Removed Call from Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.FullName}'");
+                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Removed Call from Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.DisplayName}'");
                 }
 
                 // Attempt to remove from raised

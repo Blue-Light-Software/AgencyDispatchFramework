@@ -1,12 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Alamo Sea -->
 <ALAMO>
   <Name>Alamo Sea</Name>
   <Size>Large</Size>
-  <!-- Uesd to determine number of patrols needed -->
   <Type>Water</Type>
   <Class>Working</Class>
   <Population>None</Population>
+  <County>Blaine</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -25,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </ALAMO>

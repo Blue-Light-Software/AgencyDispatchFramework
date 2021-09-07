@@ -1,6 +1,8 @@
-﻿using Rage;
+﻿using LiteDB;
+using Rage;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AgencyDispatchFramework.Game.Locations
 {
@@ -11,50 +13,60 @@ namespace AgencyDispatchFramework.Game.Locations
     public class RoadShoulder : WorldLocation
     {
         /// <summary>
-        /// Gets the <see cref="Locations.LocationTypeCode"/>
+        /// Gets the id of this location
         /// </summary>
-        public override LocationTypeCode LocationType => LocationTypeCode.RoadShoulder;
-
-        /// <summary>
-        /// Containts a list of spawn points for <see cref="Entity"/> types
-        /// </summary>
-        internal Dictionary<RoadShoulderPosition, SpawnPoint> SpawnPoints { get; set; }
+        [BsonId]
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets the heading of an object <see cref="Entity"/> at this location, if any
         /// </summary>
-        public float Heading { get; protected set; }
+        public float Heading { get; set; }
 
         /// <summary>
         /// Gets an array of RoadFlags that describe this <see cref="RoadShoulder"/>
         /// </summary>
-        public RoadFlags[] RoadFlags { get; internal set; }
+        public List<RoadFlags> Flags { get; set; }
 
         /// <summary>
         /// Gets an array of <see cref="IntersectionFlags"/> for an intersection in front
         /// of this <see cref="WorldLocation.Position"/>
         /// </summary>
-        public IntersectionFlags[] BeforeIntersectionFlags { get; internal set; }
+        public List<IntersectionFlags> BeforeIntersectionFlags { get;  set; }
 
         /// <summary>
         /// Gets an array of <see cref="IntersectionFlags"/> for an intersection behind
         /// this <see cref="WorldLocation.Position"/>
         /// </summary>
-        public IntersectionFlags[] AfterIntersectionFlags { get; internal set; }
+        public List<IntersectionFlags> AfterIntersectionFlags { get; set; }
 
         /// <summary>
         /// If the intersection in front this <see cref="RoadShoulder"/> location is a 
         /// <see cref="IntersectionFlags.ThreeWayIntersection"/>, then this property 
         /// describes the relative direction of the ajoining road.
         /// </summary>
-        public RelativeDirection BeforeIntersectionDirection { get; internal set; }
+        public RelativeDirection BeforeIntersectionDirection { get; set; }
 
         /// <summary>
         /// If the intersection behind this <see cref="RoadShoulder"/> location is a 
         /// <see cref="IntersectionFlags.ThreeWayIntersection"/>, then this property 
         /// describes the relative direction of the ajoining road.
         /// </summary>
-        public RelativeDirection AfterIntersectionDirection { get; internal set; }
+        public RelativeDirection AfterIntersectionDirection { get; set; }
+
+        /// <summary>
+        /// Containts a list of spawn points for <see cref="Entity"/> types
+        /// </summary>
+        public Dictionary<RoadShoulderPosition, SpawnPoint> SpawnPoints { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="Locations.LocationTypeCode"/>
+        /// </summary>
+        /// <summary>
+        /// Gets the <see cref="LocationType"/> for this <see cref="WorldLocation"/>
+        /// </summary>
+        [BsonIgnore]
+        public override LocationTypeCode LocationType => LocationTypeCode.RoadShoulder;
 
         /// <summary>
         /// Creates a new instance of <see cref="RoadShoulder"/>
@@ -62,10 +74,8 @@ namespace AgencyDispatchFramework.Game.Locations
         /// <param name="zone"></param>
         /// <param name="vector"></param>
         /// <param name="heading"></param>
-        public RoadShoulder(WorldZone zone, Vector3 vector, float heading) : base(vector)
+        public RoadShoulder()
         {
-            Zone = zone;
-            Heading = heading;
             SpawnPoints = new Dictionary<RoadShoulderPosition, SpawnPoint>();
         }
 
@@ -100,12 +110,25 @@ namespace AgencyDispatchFramework.Game.Locations
         }
 
         /// <summary>
+        /// Converts our <see cref="RoadFlags"/> to intergers and returns them
+        /// </summary>
+        /// <remarks>
+        /// Used for filtering locations based on flags
+        /// </remarks>
+        /// <returns>An array of filters as integers</returns>
+        public override int[] GetIntFlags()
+        {
+            return Flags?.Select(x => (int)x).ToArray();
+        }
+
+        /// <summary>
         /// Enables casting to a <see cref="Vector3"/>
         /// </summary>
         /// <param name="s"></param>
         public static implicit operator SpawnPoint(RoadShoulder s)
         {
-            return new SpawnPoint(s.Position, s.Heading);
+            //return new SpawnPoints.Position, s.Heading);
+            return null;
         }
 
         /// <summary>

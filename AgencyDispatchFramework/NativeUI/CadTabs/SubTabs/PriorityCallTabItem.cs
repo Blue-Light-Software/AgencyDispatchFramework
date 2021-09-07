@@ -1,4 +1,5 @@
 ﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Game;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
@@ -183,7 +184,8 @@ namespace AgencyDispatchFramework.NativeUI
             ResText.Draw($"~w~{Call.PrimaryOfficer?.CallSign.Value ?? "None"}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // add Agency
-            var agency = Call.PrimaryOfficer != null ? Call.PrimaryOfficer.Agency.ScriptName : Call.Location.Zone.PoliceAgencies[0].ScriptName;
+            var zone = WorldZone.GetZoneByName(Call.Location.Zone.ScriptName);
+            var agency = Call.PrimaryOfficer != null ? Call.PrimaryOfficer.Agency.ScriptName : zone.GetPoliceAgencies()[0].ScriptName;
             headerLoc = SafeSize.AddPoints(new Point(col3p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col3p, valueY));
             ResText.Draw("~y~Primary Agency", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));

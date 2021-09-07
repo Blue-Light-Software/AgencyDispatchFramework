@@ -48,6 +48,9 @@ namespace AgencyDispatchFramework.Game
                 document.Load(file);
             }
 
+            // Load all models in a HashTable for the O(1) lookup
+            var table = new HashSet<string>(Model.VehicleModels.Select(x => x.Name));
+
             // Add vehicles
             foreach (VehicleClass category in Enum.GetValues(typeof(VehicleClass)))
             {
@@ -68,7 +71,7 @@ namespace AgencyDispatchFramework.Game
                 foreach (XmlNode n in categoryNode.SelectNodes("Vehicle"))
                 {
                     // Fetch model name
-                    string modelName = n.InnerText;
+                    string modelName = n.InnerText.Trim('-', ' ');
                     if (String.IsNullOrWhiteSpace(modelName))
                     {
                         Log.Warning("VehicleInfo.Initialize(): Vehicle item has no model name in Vehicles.xml");
@@ -86,6 +89,13 @@ namespace AgencyDispatchFramework.Game
                     if (n.Attributes["probability"]?.Value == null || !int.TryParse(n.Attributes["probability"].Value, out int probability))
                     {
                         Log.Warning($"VehicleInfo.Initialize(): Unable to extract vehicle probability value for '{modelName}'");
+                        continue;
+                    }
+
+                    // Ensure it exists in the hash table
+                    if (!table.Contains(modelName))
+                    {
+                        Log.Warning($"Vehicle model '{modelName}' does not exist in the RagePluginHook VehicleModels array");
                         continue;
                     }
 

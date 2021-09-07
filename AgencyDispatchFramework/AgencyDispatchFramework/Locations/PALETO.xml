@@ -3,10 +3,11 @@
 <PALETO>
   <Name>Paleto Bay</Name>
   <Size>Large</Size>
-  <Type>Mixed</Type>
+  <Type>Residential, Commercial</Type>
   <Class>Working</Class>
   <Population>Dense</Population>
   <CrimeLevel>Moderate</CrimeLevel>
+  <County>Blaine</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -25,15 +26,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </PALETO>

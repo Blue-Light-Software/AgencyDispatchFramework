@@ -93,7 +93,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Button Events
             ResidenceCreateButton.Activated += ResidenceCreateButton_Activated;
-            ResidenceLoadBlipsButton.Activated += (s, e) => LoadZoneLocations("Residences", Color.Yellow);
+            ResidenceLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.Residences.Query(), Color.Yellow);
             ResidenceClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
 
             // Add buttons
@@ -345,10 +345,13 @@ namespace AgencyDispatchFramework.NativeUI
             // @todo Save file
             var pos = NewLocationPosition;
             string zoneName = ResidenceZoneButton.SelectedValue.ToString();
-            string path = Path.Combine(Main.FrameworkFolderPath, "Locations", $"{zoneName}.xml");
 
-            // Make sure the file exists!
-            if (!File.Exists(path))
+            // Be nice and prevent locking up
+            GameFiber.Yield();
+
+            // Grab zone instance
+            var zone = LocationsDB.WorldZones.FindOne(x => x.ScriptName == zoneName);
+            if (zone == null)
             {
                 // Display notification to the player
                 Rage.Game.DisplayNotification(
@@ -356,78 +359,56 @@ namespace AgencyDispatchFramework.NativeUI
                     "mpgroundlogo_cops",
                     "Agency Dispatch Framework",
                     "Add Residence",
-                    $"~o~Location file {zoneName}.xml does not exist!"
+                    $"~rSave Failed: ~o~Unable to find zone in the locations database!"
                 );
                 return;
             }
 
-            // Open the file, and add the location
-            using (var file = new WorldZoneFile(path))
+            // Wrap to prevent crashing
+            try
             {
-                // Create attributes
-                var vectorAttr = file.Document.CreateAttribute("coordinates");
-                vectorAttr.Value = $"{pos.Position.X}, {pos.Position.Y}, {pos.Position.Z}";
-
-                var headingAttr = file.Document.CreateAttribute("heading");
-                headingAttr.Value = $"{pos.Heading}";
-
-                // Create location node, and add attributes
-                var locationNode = file.Document.CreateElement("Location");
-                locationNode.Attributes.Append(vectorAttr);
-                locationNode.Attributes.Append(headingAttr);
-
-                // Create number node
-                var numberNode = file.Document.CreateElement("BuildingNumber");
-                numberNode.InnerText = ResidenceNumberButton.Description;
-                locationNode.AppendChild(numberNode);
-
-                // Create street node
-                var streetNode = file.Document.CreateElement("Street");
-                streetNode.InnerText = ResidenceStreetButton.Description;
-                locationNode.AppendChild(streetNode);
-
-                // Create hint node
-                var hintNode = file.Document.CreateElement("Unit");
-                hintNode.InnerText = ResidenceUnitButton.Description;
-                locationNode.AppendChild(hintNode);
-
-                // Pretty print
-                if (String.IsNullOrWhiteSpace(ResidenceUnitButton.Description))
+                // Create residence object
+                var home = new Residence()
                 {
-                    hintNode.IsEmpty = true;
-                }
+                    Position = NewLocationPosition,
+                    Heading = NewLocationPosition.Heading,
+                    BuildingNumber = ResidenceNumberButton.Description,
+                    StreetName = ResidenceStreetButton.Description,
+                    UnitId = ResidenceUnitButton.Description,
+                    Class = (SocialClass)ResidenceClassButton.SelectedValue,
+                    Flags = ResidenceFlagsItems.Where(x => x.Value.Checked).Select(x => x.Key).ToList(),
+                    SpawnPoints = ResidenceSpawnPointItems.ToDictionary(k => k.Key, v => v.Value.Tag),
+                    Zone = zone
+                };
 
-                // Create class node
-                var speedNode = file.Document.CreateElement("Class");
-                speedNode.InnerText = ResidenceClassButton.SelectedValue.ToString();
-                locationNode.AppendChild(speedNode);
+                // Be nice and prevent locking up
+                GameFiber.Yield();
 
-                // Flags
-                var flagsNode = file.Document.CreateElement("Flags");
-                var flags = ResidenceFlagsItems.Values.Where(x => x.Checked).Select(x => x.Text).ToArray();
-                flagsNode.InnerText = String.Join(", ", flags);
-                locationNode.AppendChild(flagsNode);
+                // Save location in the database
+                LocationsDB.Residences.Insert(home);
 
-                // Add residence spawn points
-                var positionsNode = CreatePositionsNodeWithSpawnPoints(file.Document, ResidenceSpawnPointItems);
-                locationNode.AppendChild(positionsNode);
-
-                // Ensure path exists then Add the new location node
-                var rootNode = UpdateOrCreateXmlNode(file.Document, zoneName, "Locations", "Residences");
-                rootNode.AppendChild(locationNode);
-
-                // Save
-                file.Document.Save(path);
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "~b~Add Residence",
+                    $"~g~Location saved Successfully."
+                );
             }
+            catch (Exception e)
+            {
+                Log.Exception(e);
 
-            // Display notification to the player
-            Rage.Game.DisplayNotification(
-                "3dtextures",
-                "mpgroundlogo_cops",
-                "Agency Dispatch Framework",
-                "~b~Add Residence",
-                $"~g~Location saved Successfully. It will be available next time you load up the game!"
-            );
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "~b~Add Residence",
+                    $"~rSave Failed: ~o~Please check your Game.log!"
+                );
+            }
 
             // Go back
             AddResidenceUIMenu.GoBack();

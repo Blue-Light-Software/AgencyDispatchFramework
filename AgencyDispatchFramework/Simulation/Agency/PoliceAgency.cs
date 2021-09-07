@@ -1,5 +1,6 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Game;
+using AgencyDispatchFramework.Game.Locations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,12 +49,7 @@ namespace AgencyDispatchFramework.Simulation
                 var name = zone.County == County.Blaine ? "bcso" : "lssd";
 
                 // Set agencies. Order is important here!
-                zone.PoliceAgencies = new List<Agency>()
-                {
-                    this,
-                    GetAgencyByName(name),
-                    GetAgencyByName("sahp")
-                };
+                zone.SetPoliceAgencies(this, GetAgencyByName(name), GetAgencyByName("sahp"));
             }
         }
 

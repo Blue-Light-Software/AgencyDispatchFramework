@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Fort Zancudo -->
 <ARMYB>
   <Name>Fort Zancudo</Name>
@@ -6,6 +6,7 @@
   <Type>Mixed</Type>
   <Class>Working</Class>
   <Population>Dense</Population>
+  <County>Blaine</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </ARMYB>

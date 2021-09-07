@@ -1,13 +1,11 @@
 ﻿using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
-using AgencyDispatchFramework.Xml;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 
 namespace AgencyDispatchFramework.NativeUI
@@ -102,7 +100,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Button Events
             RoadShoulderCreateButton.Activated += RoadShouldersCreateButton_Activated;
-            RoadShoulderLoadBlipsButton.Activated += (s, e) => LoadZoneLocations("RoadShoulders", Color.Red);
+            RoadShoulderLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.RoadShoulders.Query(), Color.Red);
             RoadShoulderClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
 
             // Add buttons
@@ -400,13 +398,13 @@ namespace AgencyDispatchFramework.NativeUI
                 }
             }
 
-            // @todo Save file
-            var pos = RoadShoulderLocation.Position;
-            string zoneName = RoadShoulderZoneButton.SelectedValue.ToString();
-            string path = Path.Combine(Main.FrameworkFolderPath, "Locations", $"{zoneName}.xml");
+            // Be nice and prevent locking up
+            GameFiber.Yield();
 
-            // Make sure the file exists!
-            if (!File.Exists(path))
+            // Grab zone instance
+            string zoneName = RoadShoulderZoneButton.SelectedValue.ToString();
+            var zone = LocationsDB.WorldZones.FindOne(x => x.ScriptName == zoneName);
+            if (zone == null)
             {
                 // Display notification to the player
                 Rage.Game.DisplayNotification(
@@ -414,104 +412,58 @@ namespace AgencyDispatchFramework.NativeUI
                     "mpgroundlogo_cops",
                     "Agency Dispatch Framework",
                     "Add Road Shoulder",
-                    $"~o~Location file {zoneName}.xml does not exist!"
+                    $"~rSave Failed: ~o~Unable to find zone in the locations database!"
                 );
                 return;
             }
 
-            // Open the file, and add the location
-            using (var file = new WorldZoneFile(path))
+            // Wrap to prevent crashing
+            try
             {
-                // Create attributes
-                var vectorAttr = file.Document.CreateAttribute("coordinates");
-                vectorAttr.Value = $"{pos.X}, {pos.Y}, {pos.Z}";
-
-                var headingAttr = file.Document.CreateAttribute("heading");
-                headingAttr.Value = $"{RoadShoulderLocation.Heading}";
-
-                // Create location node, and add attributes
-                var locationNode = file.Document.CreateElement("Location");
-                locationNode.Attributes.Append(vectorAttr);
-                locationNode.Attributes.Append(headingAttr);
-
-                // Create street node
-                var streetNode = file.Document.CreateElement("Street");
-                streetNode.InnerText = RoadShoulderStreetButton.Description;
-                locationNode.AppendChild(streetNode);
-
-                // Create street node
-                var hintNode = file.Document.CreateElement("Hint");
-                hintNode.InnerText = RoadShoulderHintButton.Description;
-                locationNode.AppendChild(hintNode);
-
-                // Create speed node
-                var speedNode = file.Document.CreateElement("Speed");
-                speedNode.InnerText = RoadShoulderSpeedButton.Value.ToString();
-                locationNode.AppendChild(speedNode);
-
-                // Flags
-                var flagsNode = file.Document.CreateElement("Flags");
-
-                // Road flags
-                var roadFlagsNode = file.Document.CreateElement("Road");
-                var items = RoadShouldFlagsItems.Values.Where(x => x.Checked).Select(x => x.Text).ToArray();
-                roadFlagsNode.InnerText = String.Join(", ", items);
-
-                // Before intersection flags
-                var beforeFlagsNode = file.Document.CreateElement("BeforeIntersection");
-                if (RoadShoulderBeforeListButton.Index != 0)
+                // Create new shoulder object
+                var shoulder = new RoadShoulder()
                 {
-                    // Create attribute
-                    var beforeAttr = file.Document.CreateAttribute("direction");
-                    beforeAttr.Value = RoadShoulderBeforeListButton.SelectedValue.ToString();
-                    beforeFlagsNode.Attributes.Append(beforeAttr);
-                }
-                items = BeforeIntersectionItems.Values.Where(x => x.Checked).Select(x => x.Text).ToArray();
-                beforeFlagsNode.InnerText = String.Join(", ", items);
+                    Position = RoadShoulderLocation.Position,
+                    Heading = RoadShoulderLocation.Heading,
+                    StreetName = RoadShoulderStreetButton.Description,
+                    Hint = RoadShoulderHintButton.Description,
+                    Flags = RoadShouldFlagsItems.Where(x => x.Value.Checked).Select(x => x.Key).ToList(),
+                    BeforeIntersectionFlags = BeforeIntersectionItems.Where(x => x.Value.Checked).Select(x => x.Key).ToList(),
+                    BeforeIntersectionDirection = (RelativeDirection)RoadShoulderBeforeListButton.SelectedValue,
+                    AfterIntersectionFlags = AfterIntersectionItems.Where(x => x.Value.Checked).Select(x => x.Key).ToList(),
+                    AfterIntersectionDirection = (RelativeDirection)RoadShoulderAfterListButton.SelectedValue,
+                    SpawnPoints = RoadShoulderSpawnPointItems.ToDictionary(k => k.Key, v => v.Value.Tag),
+                    Zone = zone
+                };
 
-                // After intersection flags
-                var afterFlagsNode = file.Document.CreateElement("AfterIntersection");
-                if (RoadShoulderAfterListButton.Index != 0)
-                {
-                    // Create attribute
-                    var afterAttr = file.Document.CreateAttribute("direction");
-                    afterAttr.Value = RoadShoulderAfterListButton.SelectedValue.ToString();
-                    afterFlagsNode.Attributes.Append(afterAttr);
-                }
-                items = AfterIntersectionItems.Values.Where(x => x.Checked).Select(x => x.Text).ToArray();
-                afterFlagsNode.InnerText = String.Join(", ", items);
+                // Be nice and prevent locking up
+                GameFiber.Yield();
 
-                // Pretty print
-                CloseElementTagShortIfEmpty(hintNode);
-                CloseElementTagShortIfEmpty(beforeFlagsNode);
-                CloseElementTagShortIfEmpty(afterFlagsNode);
+                // Save location in the database
+                LocationsDB.RoadShoulders.Insert(shoulder);
 
-                // Add
-                flagsNode.AppendChild(roadFlagsNode);
-                flagsNode.AppendChild(beforeFlagsNode);
-                flagsNode.AppendChild(afterFlagsNode);
-                locationNode.AppendChild(flagsNode);
-
-                // Add spawn points
-                var positionsNode = CreatePositionsNodeWithSpawnPoints(file.Document, RoadShoulderSpawnPointItems);
-                locationNode.AppendChild(positionsNode);
-
-                // Ensure path exists and add the new location node
-                var rootNode = UpdateOrCreateXmlNode(file.Document, zoneName, "Locations", "RoadShoulders");
-                rootNode.AppendChild(locationNode);
-
-                // Save
-                file.Document.Save(path);
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "~b~Add Road Shoulder.",
+                    $"~g~Location saved Successfully."
+                );
             }
+            catch (Exception e)
+            {
+                Log.Exception(e);
 
-            // Display notification to the player
-            Rage.Game.DisplayNotification(
-                "3dtextures",
-                "mpgroundlogo_cops",
-                "Agency Dispatch Framework",
-                "~b~Add Road Shoulder.",
-                $"~g~Location saved Successfully. It will be available next time you load up the game!"
-            );
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "~b~Add Road Shoulder.",
+                    $"~rSave Failed: ~o~Please check your Game.log!"
+                );
+            }
 
             // Go back
             AddRoadUIMenu.GoBack();
@@ -519,6 +471,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Are we currently showing checkpoints and blips?
             if (ZoneCheckpoints.Count > 0)
             {
+                var pos = RoadShoulderLocation.Position;
                 ZoneCheckpoints.Add(GameWorld.CreateCheckpoint(pos, Color.Yellow, forceGround: true));
                 ZoneBlips.Add(new Blip(pos) { Color = Color.Red });
             }

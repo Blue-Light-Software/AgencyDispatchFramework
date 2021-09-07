@@ -141,5 +141,47 @@ namespace AgencyDispatchFramework.Extensions
         {
             return !String.IsNullOrEmpty(node.GetAttribute(name));
         }
+
+        /// <summary>
+        /// Ensures a node path exists in an <see cref="XmlDocument"/> by creating it if
+        /// it does not exist.
+        /// </summary>
+        /// <param name="document">The document</param>
+        /// <param name="rootName">The root node name in the XmlDocument</param>
+        /// <param name="paths"></param>
+        /// <returns></returns>
+        public static XmlNode EnsureXmlNodePathExists(this XmlDocument document, string rootName, params string[] paths)
+        {
+            // Walk
+            XmlNode node = document.SelectSingleNode(rootName);
+            foreach (string path in paths)
+            {
+                XmlNode child = node.SelectSingleNode(path);
+                if (child != null)
+                {
+                    node = child;
+                }
+                else
+                {
+                    child = document.CreateElement(path);
+                    node.AppendChild(child);
+                    node = child;
+                }
+            }
+
+            return node;
+        }
+
+        /// <summary>
+        /// Closes an element tag with short hand if there is no inner text
+        /// </summary>
+        /// <param name="node"></param>
+        public static void CloseElementTagShortIfEmpty(this XmlElement node)
+        {
+            if (String.IsNullOrWhiteSpace(node.InnerText))
+            {
+                node.IsEmpty = true;
+            }
+        }
     }
 }

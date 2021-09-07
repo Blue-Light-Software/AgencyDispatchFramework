@@ -6,6 +6,7 @@
   <Type>Residential</Type>
   <Class>UpperMiddle</Class>
   <Population>Scarce</Population>
+  <County>LosSantos</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </DELBE>

@@ -1,6 +1,7 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game;
+using AgencyDispatchFramework.Game.Locations;
 using AgencyDispatchFramework.Simulation;
 using Rage;
 using System;
@@ -262,7 +263,7 @@ namespace AgencyDispatchFramework.Xml
                 }
                 else
                 {
-                    Log.Warning($"AgenciesFile.Parse(): Agency '{agency.ScriptName}' does not have any zones in its jurisdiction!");
+                    Log.Debug($"AgenciesFile.Parse(): Agency '{agency.ScriptName}' does not have any zones in its jurisdiction!");
                 }
 
                 // Add agency

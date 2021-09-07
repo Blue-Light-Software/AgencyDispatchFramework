@@ -3,9 +3,10 @@
 <MTJOSE>
   <Name>Mount Josiah</Name>
   <Size>Large</Size>
-  <Type>Forest</Type>
+  <Type>Forest, Mountain</Type>
   <Class>Working</Class>
   <Population>None</Population>
+  <County>Blaine</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </MTJOSE>

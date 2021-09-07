@@ -11,9 +11,22 @@ namespace AgencyDispatchFramework.Game.Locations
     {
         public override LocationTypeCode LocationType => LocationTypeCode.Road;
 
-        public Road(Vector3 coordinates) : base(coordinates)
+        public Road()
         {
 
+        }
+
+        /// <summary>
+        /// Converts our <see cref="ResidenceFlags"/> to intergers and returns them
+        /// </summary>
+        /// <remarks>
+        /// Used for filtering locations based on flags
+        /// </remarks>
+        /// <returns>An array of filters as integers</returns>
+        public override int[] GetIntFlags()
+        {
+            //return Flags.Select(x => (int)x).ToArray();
+            return null;
         }
     }
 }

@@ -57,6 +57,10 @@
     <Reference Include="Gwen">
       <HintPath>..\..\ComputerPlus\ComputerPlus\Dependencies\Gwen.dll</HintPath>
     </Reference>
+    <Reference Include="LiteDB, Version=5.0.11.0, Culture=neutral, PublicKeyToken=4ee40123013c9f27, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiteDB.5.0.11\lib\net45\LiteDB.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
     <Reference Include="LSPD First Response, Version=0.4.7297.8062, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\__Dependencies\v2020\LSPD First Response.dll</HintPath>
@@ -78,6 +82,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -98,6 +103,7 @@
     <Compile Include="Conversation\SequenceCollection.cs" />
     <Compile Include="Conversation\PedResponseEventHandler.cs" />
     <Compile Include="Conversation\Question.cs" />
+    <Compile Include="LocationsDB.cs" />
     <Compile Include="Dispatching\Delegates\ShiftUpdateHandler.cs" />
     <Compile Include="Dispatching\CallSigns\CallSignGenerator.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
@@ -181,7 +187,7 @@
     <Compile Include="Game\ContrabandItem.cs" />
     <Compile Include="Game\Delegates\TimePeriodChangedEventHandler.cs" />
     <Compile Include="Game\Delegates\WeatherChangedEventHandler.cs" />
-    <Compile Include="Game\Enums\County.cs" />
+    <Compile Include="Game\Locations\Enums\County.cs" />
     <Compile Include="Game\Enums\RelativeDirection.cs" />
     <Compile Include="Game\Enums\PedGender.cs" />
     <Compile Include="Game\Locations\Enums\IntersectionFlags.cs" />
@@ -225,7 +231,7 @@
     <Compile Include="Simulation\Enums\AgencyType.cs" />
     <Compile Include="Game\Locations\Enums\ResidencePosition.cs" />
     <Compile Include="Dispatching\Enums\PatrolType.cs" />
-    <Compile Include="Game\Enums\ZoneType.cs" />
+    <Compile Include="Game\Enums\ZoneFlags.cs" />
     <Compile Include="ProbableItem.cs" />
     <Compile Include="RandomName.cs" />
     <Compile Include="RandomNameGenerator.cs" />
@@ -684,9 +690,11 @@
     <EmbeddedResource Include="AgencyDispatchFramework.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <None Include="AgencyDispatchFramework\LocationData.db" />
     <None Include="AgencyDispatchFramework\Game.log">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

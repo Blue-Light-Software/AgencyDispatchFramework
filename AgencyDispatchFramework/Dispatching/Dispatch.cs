@@ -367,9 +367,9 @@ namespace AgencyDispatchFramework
         /// <typeparam name="T"></typeparam>
         /// <param name="pool"></param>
         /// <returns></returns>
-        public static T[] GetInactiveLocationsFromPool<T>(T[] pool) where T : WorldLocation
+        public static List<T> GetInactiveLocationsFromPool<T>(IEnumerable<T> pool) where T : WorldLocation
         {
-            return (from x in pool where !ActiveCrimeLocations.Contains(x) select x).ToArray();
+            return (from x in pool where !ActiveCrimeLocations.Contains(x) select x).ToList();
         }
 
         /// <summary>
@@ -603,7 +603,7 @@ namespace AgencyDispatchFramework
                     lock (_threadLock)
                     {
                         OpenCalls[call.OriginalPriority].Add(call);
-                        Log.Debug($"Dispatch: Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.FullName}'");
+                        Log.Debug($"Dispatch: Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.DisplayName}'");
 
                         // Invoke the next callout for player
                         InvokeForPlayer = call;
@@ -781,21 +781,24 @@ namespace AgencyDispatchFramework
                 if (ActiveCrimeLocations.Add(call.Location))
                 {
                     OpenCalls[call.OriginalPriority].Add(call);
-                    Log.Debug($"Dispatch.AddIncomingCall(): Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.FullName}'");
+                    Log.Debug($"Dispatch.AddIncomingCall(): Added Call to Queue '{call.ScenarioInfo.Name}' in zone '{call.Location.Zone.DisplayName}'");
                 }
                 else
                 {
                     // Failed to add?
-                    Log.Error($"Dispatch.AddIncomingCall(): Tried to add a call to Queue in zone '{call.Location.Zone.FullName}', but the location selected was already in use.");
+                    Log.Error($"Dispatch.AddIncomingCall(): Tried to add a call to Queue in zone '{call.Location.Zone.DisplayName}', but the location selected was already in use.");
                     return;
                 }
             }
+
+            // Grab cached zone
+            var zone = WorldZone.GetZoneByName(call.Location.Zone.ScriptName);
 
             // Decide which agency gets this call
             switch (call.ScenarioInfo.Targets)
             {
                 case CallTarget.Police:
-                    call.Location.Zone.PoliceAgencies[0].Dispatcher.AddCall(call);
+                    zone.GetPoliceAgencies()[0].Dispatcher.AddCall(call);
                     break;
                 case CallTarget.Fire:
                 case CallTarget.Medical:
@@ -995,17 +998,17 @@ namespace AgencyDispatchFramework
                 {
                     case AgencyType.CityPolice:
                         // Grab county agency
-                        newAgency = call.Location.Zone.PoliceAgencies.Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
+                        newAgency = call.Location.Zone.GetPoliceAgencies().Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
                         break;
                     case AgencyType.StateParks:
                     case AgencyType.CountySheriff:
                         // Grab state agency
-                        newAgency = call.Location.Zone.PoliceAgencies.Where(x => x.IsStateAgency && x.AgencyType != AgencyType.StateParks).FirstOrDefault();
+                        newAgency = call.Location.Zone.GetPoliceAgencies().Where(x => x.IsStateAgency && x.AgencyType != AgencyType.StateParks).FirstOrDefault();
                         break;
                     case AgencyType.HighwayPatrol:
                     case AgencyType.StatePolice:
                         // We need to grab the county that has jurisdiction here
-                        newAgency = call.Location.Zone.PoliceAgencies.Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
+                        newAgency = call.Location.Zone.GetPoliceAgencies().Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
                         break;
                     default:
                         throw new NotSupportedException();

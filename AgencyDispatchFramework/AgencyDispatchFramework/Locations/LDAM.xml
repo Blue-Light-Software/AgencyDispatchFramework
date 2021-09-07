@@ -3,9 +3,10 @@
 <LDAM>
   <Name>Land Act Dam</Name>
   <Size>VerySmall</Size>
-  <Type>Industrial</Type>
+  <Type>Industrial, Rural</Type>
   <Class>Working</Class>
   <Population>None</Population>
+  <County>LosSantos</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </LDAM>

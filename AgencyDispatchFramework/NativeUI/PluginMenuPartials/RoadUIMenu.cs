@@ -51,7 +51,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Button Events
             RoadShoulderCreateButton.Activated += RoadShouldersCreateButton_Activated;
-            RoadShoulderLoadBlipsButton.Activated += (s, e) => LoadZoneLocations("Roads", Color.Red);
+            RoadShoulderLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.Residences.Query(), Color.Red);
             RoadShoulderClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
 
             // Add buttons

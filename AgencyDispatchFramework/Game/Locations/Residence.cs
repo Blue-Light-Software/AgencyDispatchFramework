@@ -1,6 +1,8 @@
-﻿using Rage;
+﻿using LiteDB;
+using Rage;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AgencyDispatchFramework.Game.Locations
 {
@@ -10,43 +12,53 @@ namespace AgencyDispatchFramework.Game.Locations
     public class Residence : WorldLocation
     {
         /// <summary>
-        /// Containts a list of spawn points for <see cref="Entity"/> types
+        /// Gets the id of this location
         /// </summary>
-        internal Dictionary<ResidencePosition, SpawnPoint> SpawnPoints { get; set; }
+        [BsonId]
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets the numerical buiding number of the address to be used in the CAD, if any
         /// </summary>
-        public string BuildingNumber { get; internal set; } = String.Empty;
+        public string BuildingNumber { get; set; } = String.Empty;
 
         /// <summary>
         /// Gets the <see cref="SocialClass"/> of this home
         /// </summary>
-        public SocialClass Class { get; internal set; }
+        public SocialClass Class { get; set; }
 
         /// <summary>
         /// Gets the Appartment/Suite/Room number of the address to be used in the CAD, if any
         /// </summary>
-        public string UnitId { get; internal set; } = String.Empty;
-
-        /// <summary>
-        /// Gets the <see cref="Locations.LocationTypeCode"/> for this <see cref="WorldLocation"/>
-        /// </summary>
-        public override LocationTypeCode LocationType => LocationTypeCode.Residence;
+        public string UnitId { get; set; } = String.Empty;
 
         /// <summary>
         /// Gets an array of Flags that describe this <see cref="Residence"/>
         /// </summary>
-        public ResidenceFlags[] ResidenceFlags { get; internal set; }
+        public List<ResidenceFlags> Flags { get; set; }
+
+        /// <summary>
+        /// Containts a list of spawn points for <see cref="Entity"/> types
+        /// </summary>
+        public Dictionary<ResidencePosition, SpawnPoint> SpawnPoints { get; set; }
+
+        /// <summary>
+        /// Gets the heading of the <see cref="Residence"/>'s front door from the street.
+        /// </summary>
+        public float Heading { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="Locations.LocationTypeCode"/> for this <see cref="WorldLocation"/>
+        /// </summary>
+        [BsonIgnore]
+        public override LocationTypeCode LocationType => LocationTypeCode.Residence;
 
         /// <summary>
         /// Creates a new instance of <see cref="Residence"/>
         /// </summary>
         /// <param name="position"></param>
-        internal Residence(WorldZone zone, Vector3 position) : base(position)
+        internal Residence()
         {
-            // @todo
-            Zone = zone;
             SpawnPoints = new Dictionary<ResidencePosition, SpawnPoint>(21);
         }
 
@@ -78,6 +90,18 @@ namespace AgencyDispatchFramework.Game.Locations
                 return null;
 
             return SpawnPoints[id];
+        }
+
+        /// <summary>
+        /// Converts our <see cref="ResidenceFlags"/> to intergers and returns them
+        /// </summary>
+        /// <remarks>
+        /// Used for filtering locations based on flags
+        /// </remarks>
+        /// <returns>An array of filters as integers</returns>
+        public override int[] GetIntFlags()
+        {
+            return Flags?.Select(x => (int)x).ToArray();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Rage;
+﻿using LiteDB;
+using Rage;
 using System;
 using System.Linq;
 using System.Text;
@@ -6,55 +7,78 @@ using System.Text;
 namespace AgencyDispatchFramework.Game.Locations
 {
     /// <summary>
-    /// Represents a <see cref="Vector3"/> position within the GTA V world
+    /// Contains a <see cref="Vector3"/> position within the GTA V world, and information
+    /// about the surrounding area.
     /// </summary>
     public abstract class WorldLocation : ISpatial, IEquatable<WorldLocation>
     {
         /// <summary>
+        /// Gets the <see cref="LocationType"/> for this <see cref="WorldLocation"/>
+        /// </summary>
+        [BsonIgnore]
+        public abstract LocationTypeCode LocationType { get; }
+
+        /// <summary>
         /// Gets the <see cref="Vector3"/> coordinates of this location
         /// </summary>
-        public Vector3 Position { get; set; }
+        [BsonIgnore]
+        public Vector3 Position
+        {
+            get => new Vector3(X, Y,Z);
+            set
+            {
+                X = value.X;
+                Y = value.Y;
+                Z = value.Z;
+            }
+        }
+
+        /// <summary>
+        /// Gets the X value coordinate of this location
+        /// </summary>
+        public float X { get; set; }
+
+        /// <summary>
+        /// Gets the Y value coordinate of this location
+        /// </summary>
+        public float Y { get; set; }
+
+        /// <summary>
+        /// Gets the Z value coordinate of this location
+        /// </summary>
+        public float Z { get; set; }
 
         /// <summary>
         /// Gets the address to be used in the CAD
         /// </summary>
-        public string StreetName { get; internal set; } = String.Empty;
+        public string StreetName { get; set; } = String.Empty;
 
         /// <summary>
         /// Gets the hint or description text of this location if any
         /// </summary>
-        public string Hint { get; internal set; } = String.Empty;
-
-        /// <summary>
-        /// Gets the postal address if any
-        /// </summary>
-        public Postal Postal { get; internal set; }
+        public string Hint { get; set; } = String.Empty;
 
         /// <summary>
         /// Gets the zone of this location, if known
         /// </summary>
-        public WorldZone Zone { get; internal set; }
+        [BsonRef("WorldZones")]
+        public WorldZone Zone { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="LocationType"/> for this <see cref="WorldLocation"/>
+        /// Gets the postal address if any
         /// </summary>
-        public abstract LocationTypeCode LocationType { get; }
+        [BsonIgnore]
+        public Postal Postal => Postal.FromVector(Position);
 
         /// <summary>
         /// Gets an array of flags used to describe this <see cref="WorldLocation"/>
         /// </summary>
-        public int[] Flags { get; internal set; }
+        public abstract int[] GetIntFlags();
 
         /// <summary>
-        /// Creates a new instance of <see cref="WorldLocation"/>
+        /// 
         /// </summary>
-        /// <param name="coordinates"></param>
-        internal WorldLocation(Vector3 coordinates)
-        {
-            Position = coordinates;
-            Postal = Postal.FromVector(Position);
-        }
-
+        /// <returns></returns>
         public virtual string GetAddress()
         {
             StringBuilder builder = new StringBuilder();
@@ -73,7 +97,8 @@ namespace AgencyDispatchFramework.Game.Locations
         /// <returns></returns>
         public bool HasAllFlags(int[] requiredFlags)
         {
-            return requiredFlags.All(i => Flags.Contains(i));
+            var flags = GetIntFlags();
+            return requiredFlags.All(i => flags.Contains(i));
         }
 
         /// <summary>
@@ -84,7 +109,8 @@ namespace AgencyDispatchFramework.Game.Locations
         /// <returns></returns>
         public bool HasAnyFlag(int[] flags)
         {
-            return flags.Any(i => Flags.Contains(i));
+            var f = GetIntFlags();
+            return flags.Any(i => f.Contains(i));
         }
 
         /// <summary>
@@ -104,7 +130,7 @@ namespace AgencyDispatchFramework.Game.Locations
         public bool Equals(WorldLocation other)
         {
             if (other == null) return false;
-            return (other.Position.X == Position.X && other.Position.Y == Position.Y && other.Position.Z == Position.Z);
+            return (other.X == X && other.Y == Y && other.Z == Z);
         }
 
         /// <summary>
@@ -121,13 +147,13 @@ namespace AgencyDispatchFramework.Game.Locations
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => Position.ToString();
+        public override string ToString() => $"{X}, {Y}, {Z}";
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        public override int GetHashCode() => (Position.X, Position.Y, Position.Z).GetHashCode();
+        public override int GetHashCode() => (X, Y, Z).GetHashCode();
 
         #region ISpatial contracts
 

@@ -3,9 +3,10 @@
 <VINE>
   <Name>Vinewood</Name>
   <Size>Large</Size>
-  <Type>Mixed</Type>
+  <Type>Residential, Commercial</Type>
   <Class>LowerMiddle</Class>
   <Population>None</Population>
+  <County>LosSantos</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </VINE>

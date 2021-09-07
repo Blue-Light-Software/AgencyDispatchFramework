@@ -3,9 +3,10 @@
 <HARMO>
   <Name>Harmony</Name>
   <Size>Small</Size>
-  <Type>Mixed</Type>
+  <Type>Commercial, Residential</Type>
   <Class>Lower</Class>
   <Population>Dense</Population>
+  <County>Blaine</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </HARMO>

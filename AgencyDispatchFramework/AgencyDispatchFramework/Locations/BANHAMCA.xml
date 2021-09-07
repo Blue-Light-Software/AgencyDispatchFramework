@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- https://gta.fandom.com/wiki/Banham_Canyon -->
 <BANHAMCA>
   <Name>Banham Canyon</Name>
@@ -6,6 +6,7 @@
   <Type>Rural</Type>
   <Class>Working</Class>
   <Population>None</Population>
+  <County>LosSantos</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </BANHAMCA>

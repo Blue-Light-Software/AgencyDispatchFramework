@@ -374,7 +374,7 @@ namespace AgencyDispatchFramework.Simulation
                     WorldLocation location = GetScenarioLocationFromZone(zone, scenario);
                     if (location == null)
                     {
-                        Log.Warning($"RegionCrimeGenerator.CreateCallFromScenario(): Zone '{zone.FullName}' does not have any available '{scenario.LocationTypeCode}' locations");
+                        Log.Warning($"RegionCrimeGenerator.CreateCallFromScenario(): Zone '{zone.DisplayName}' does not have any available '{scenario.LocationTypeCode}' locations");
                         continue;
                     }
 
@@ -413,7 +413,7 @@ namespace AgencyDispatchFramework.Simulation
                     CallCategory type = zone.GetNextRandomCrimeType();
                     if (!ScenarioPool.ScenariosByCalloutType[type].TrySpawn(out CalloutScenarioInfo scenario))
                     {
-                        Log.Warning($"RegionCrimeGenerator.GenerateCall(): Unable to find a CalloutScenario of CalloutType '{type}' in '{zone.FullName}'");
+                        Log.Warning($"RegionCrimeGenerator.GenerateCall(): Unable to find a CalloutScenario of CalloutType '{type}' in '{zone.DisplayName}'");
                         continue;
                     }
 
@@ -422,7 +422,7 @@ namespace AgencyDispatchFramework.Simulation
                     if (location == null)
                     {
                         // Log this as a warning... May need to add more locations!
-                        Log.Warning($"RegionCrimeGenerator.GenerateCall(): Zone '{zone.FullName}' does not have any available '{scenario.LocationTypeCode}' locations");
+                        Log.Warning($"RegionCrimeGenerator.GenerateCall(): Zone '{zone.DisplayName}' does not have any available '{scenario.LocationTypeCode}' locations");
                         continue;
                     }
 

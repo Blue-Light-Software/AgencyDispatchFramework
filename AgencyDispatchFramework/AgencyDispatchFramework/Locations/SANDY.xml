@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- 
   Reference: https://gta.fandom.com/wiki/Sandy_Shores
   
@@ -7,9 +7,10 @@
 <SANDY>
   <Name>Sandy Shores</Name>
   <Size>Large</Size>
-  <Type>Mixed</Type>
+  <Type>Residential, Commercial</Type>
   <Class>Lower</Class>
   <Population>Moderate</Population>
+  <County>Blaine</County>
   <Crime>
     <AverageCalls value="20">
       <Night probability="10" />
@@ -28,36 +29,4 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-      
-    </Residences>
-    <Businesses>
-      
-    </Businesses>
-    <RoadShoulders>
-      <Location coordinates="1744.697, 3668.555, 33.64974" heading="118.858">
-        <Street>Zancudo Ave</Street>
-        <Hint>near Lolita Ave</Hint>
-        <Speed>25</Speed>
-        <Flags>
-          <Road>AfterNoStopIntersection, TwoLaneRoad, DrivewaysLeft, DrivewaysRight</Road>
-          <BeforeIntersection />
-          <AfterIntersection>CrossIntersection, RightOfWayYield</AfterIntersection>
-        </Flags>
-        <Positions>
-          <SpawnPoint id="SidewalkGroup1" coordinates="1741.578, 3672.83, 33.61052" heading="298.858" />
-          <SpawnPoint id="SidewalkGroup2" coordinates="1747.21, 3675.891, 33.55115" heading="125.5519" />
-        </Positions>
-      </Location>
-    </RoadShoulders>
-    <Roads>
-      <Location coordinates="1744.697, 3668.555, 33.64974" heading="118.858" nodeId="1230">
-        <Street>Zancudo Ave</Street>
-        <Hint>near Lolita Ave</Hint>
-        <Speed>25</Speed>
-        <Flags>TwoLaneRoad</Flags>
-      </Location>
-    </Roads>
-  </Locations>
 </SANDY>

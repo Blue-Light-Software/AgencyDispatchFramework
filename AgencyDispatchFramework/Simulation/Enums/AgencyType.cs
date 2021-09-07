@@ -11,5 +11,9 @@
         HighwayPatrol, 
         
         StatePolice,
+
+        Swat,
+
+        Air
     }
 }

@@ -156,6 +156,9 @@ namespace AgencyDispatchFramework
             {
                 // Stop generating calls
                 Simulation.Simulation.Shutdown();
+
+                // Close database
+                LocationsDB.Shutdown();
             }
         }
 
@@ -232,6 +235,12 @@ namespace AgencyDispatchFramework
                         // Clear scenario pool
                         ScenarioPool.Reset();
                     }
+
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
+                    // Load locations database
+                    LocationsDB.Initialize();
 
                     // Yield to prevent freezing
                     GameFiber.Yield();

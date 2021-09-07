@@ -3,9 +3,10 @@
 <SANCHIA>
   <Name>San Chianski Mountain Range</Name>
   <Size>VeryLarge</Size>
-  <Type>Forest</Type>
+  <Type>Industrial</Type>
   <Class>Lower</Class>
   <Population>None</Population>
+  <County>Blaine</County>
   <Crime>
     <AverageCalls value="0">
       <Night probability="10" />
@@ -24,15 +25,5 @@
       <Other possible="false" />
     </Probabilities>
   </Crime>
-  <Locations>
-    <Residences>
-
-    </Residences>
-    <Businesses>
-
-    </Businesses>
-    <RoadShoulders>
-
-    </RoadShoulders>
-  </Locations>
+  
 </SANCHIA>

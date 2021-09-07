@@ -55,7 +55,7 @@ namespace AgencyDispatchFramework.Game.Locations
         /// <summary>
         /// Gets a hashset of all loaded postals
         /// </summary>
-        internal static HashSet<Postal> Postals { get; set; }
+        internal static List<Postal> Postals { get; set; }
 
         /// <summary>
         /// Loads the postals xml file
@@ -63,7 +63,7 @@ namespace AgencyDispatchFramework.Game.Locations
         internal static void Initialize()
         {
             // Clear
-            Postals = new HashSet<Postal>();
+            Postals = new List<Postal>();
 
             // Load XML document
             var document = new XmlDocument();
@@ -85,7 +85,17 @@ namespace AgencyDispatchFramework.Game.Locations
             {
                 // Grab postal code
                 string value = node.SelectSingleNode("code")?.InnerText;
-                if (value == null || !Int32.TryParse(value, out int code))
+                if (value == null)
+                    continue;
+
+                // Some postals are formatted as "code-[A|B]"
+                if (value.Contains('-'))
+                {
+                    var parts = value.Split('-');
+                    value = parts[0];
+                }
+
+                if (!Int32.TryParse(value, out int code))
                 {
                     Log.Warning($"Postal.Initialize(): Unable to parse code value '{value ?? "null" }'");
                     continue;

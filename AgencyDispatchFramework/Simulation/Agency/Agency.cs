@@ -523,7 +523,7 @@ namespace AgencyDispatchFramework.Simulation
             var locs = new List<RoadShoulder>(desiredCount);
             foreach (var zone in Zones)
             {
-                locs.AddRange(zone.RoadShoulders);
+                //locs.AddRange(zone.RoadShoulders);
             }
 
             // Shuffle

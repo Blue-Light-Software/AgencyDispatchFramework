@@ -3,6 +3,7 @@ using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game.Locations;
 using AgencyDispatchFramework.Simulation;
 using AgencyDispatchFramework.Xml;
+using LiteDB;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,22 +30,29 @@ namespace AgencyDispatchFramework.Game
         /// <summary>
         /// Gets the crime level probability of this zone based on current time of day
         /// </summary>
+        [BsonIgnore]
         public int Probability => (int)(CrimeInfo.GetTrueAverageCallCount(GameWorld.CurrentTimePeriod) * 1000);
 
         /// <summary>
         /// Gets the average daily crime calls
         /// </summary>
-        public CrimeProjection CrimeInfo { get; internal set; }
+        [BsonId]
+        public int Id { get; internal set; }
 
         /// <summary>
         /// Gets the Zone script name (ex: SANDY)
         /// </summary>
-        public string ScriptName { get; internal set; }
+        public string ScriptName { get; private set; }
 
         /// <summary>
         /// Gets the full Zone name (Ex: Sandy Shores)
         /// </summary>
-        public string FullName { get; internal set; }
+        public string DisplayName { get; internal set; }
+
+        /// <summary>
+        /// Gets the <see cref="Game.County"/> in game this zone belongs in
+        /// </summary>
+        public County County { get; internal set; }
 
         /// <summary>
         /// Gets the population density of the zone
@@ -57,56 +65,118 @@ namespace AgencyDispatchFramework.Game
         public ZoneSize Size { get; internal set; }
 
         /// <summary>
-        /// Gets the primary zone type for this zone
-        /// </summary>
-        public ZoneType ZoneType { get; internal set; }
-
-        /// <summary>
         /// Gets the social class of this zones citizens
         /// </summary>
         public SocialClass SocialClass { get; internal set; }
 
         /// <summary>
-        /// Containts a list <see cref="Residence"/>(s) in this zone
+        /// Gets the primary zone type for this zone
         /// </summary>
-        public Residence[] Residences { get; internal set; }
+        public List<ZoneFlags> Flags { get; internal set; }
 
         /// <summary>
-        /// Containts an array of Road Shoulder locations
+        /// Gets the average daily crime calls
         /// </summary>
-        public RoadShoulder[] RoadShoulders { get; internal set; }
+        [BsonIgnore]
+        public CrimeProjection CrimeInfo { get; internal set; }
 
         /// <summary>
         /// Spawns a <see cref="CallCategory"/> based on the <see cref="WorldStateMultipliers"/> probabilites set
         /// </summary>
+        [BsonIgnore]
         internal WorldStateProbabilityGenerator<CallCategory> CallCategoryGenerator { get; set; }
 
         /// <summary>
         /// Contains a list of police <see cref="Agency"/> instances that have jurisdiction in this <see cref="WorldZone"/>
         /// </summary>
-        public List<Agency> PoliceAgencies { get; internal set; }
+        /// <remarks>
+        /// Ensure you are grabbing the zone from <see cref="WorldZone.GetZoneByName(string)"/> otherwise this will be null
+        /// </remarks>
+        [BsonIgnore]
+        private List<Agency> PoliceAgencies { get; set; }
 
         /// <summary>
         /// Gets the medical <see cref="Agency"/> that services this <see cref="WorldZone"/>
         /// </summary>
-        public Agency EmsAgency { get; internal set; }
+        /// <remarks>
+        /// Ensure you are grabbing the zone from <see cref="WorldZone.GetZoneByName(string)"/> otherwise this will be null
+        /// </remarks>
+        [BsonIgnore]
+        private Agency EmsAgency { get; set; }
 
         /// <summary>
         /// Gets the fire <see cref="Agency"/> that services this <see cref="WorldZone"/>
         /// </summary>
-        public Agency FireAgeny { get; internal set; }
+        /// <remarks>
+        /// Ensure you are grabbing the zone from <see cref="WorldZone.GetZoneByName(string)"/> otherwise this will be null
+        /// </remarks>
+        [BsonIgnore]
+        private Agency FireAgeny { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="Game.County"/> in game this zone belongs in
+        /// Creates a new instance of <see cref="WorldZone"/>. This constructor is designed to be used by <see cref="LiteDB"/>
         /// </summary>
-        public County County { get; internal set; }
-
-        /// <summary>
-        /// Creates a new instance of <see cref="WorldZone"/>
-        /// </summary>
-        public WorldZone()
+        [BsonCtor]
+        public WorldZone(int _id, string scriptName, string displayName, County county, Population population, ZoneSize size, SocialClass socialClass, BsonArray flags)
         {
-            PoliceAgencies = new List<Agency>();
+            // Set properties
+            Id = _id;
+            ScriptName = scriptName ?? throw new ArgumentNullException("scriptName");
+            DisplayName = displayName ?? throw new ArgumentNullException("displayName");
+            County = county;
+            Population = population;
+            Size = size;
+            SocialClass = socialClass;
+            Flags = flags.Select(x => (ZoneFlags)Enum.Parse(typeof(ZoneFlags), x.AsString)).ToList();
+
+            // Add to cache if not existing already
+            if (!ZoneCache.ContainsKey(scriptName))
+            {
+                ZoneCache.Add(scriptName, this);
+                PoliceAgencies = new List<Agency>();
+            }
+        }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="WorldZone"/>.
+        /// </summary>
+        public WorldZone(string scriptName, string displayName, County county, Population population, ZoneSize size, SocialClass socialClass, List<ZoneFlags> flags)
+        {
+            // Set properties
+            ScriptName = scriptName?.ToUpper() ?? throw new ArgumentNullException("scriptName");
+            DisplayName = displayName ?? throw new ArgumentNullException("displayName");
+            County = county;
+            Population = population;
+            Size = size;
+            SocialClass = socialClass;
+            Flags = flags;
+
+            // Add to cache if not existing already
+            if (!ZoneCache.ContainsKey(scriptName))
+            {
+                ZoneCache.Add(scriptName, this);
+                PoliceAgencies = new List<Agency>();
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of Police agencies that service this zone, in order or primary jurisdiction
+        /// </summary>
+        /// <returns></returns>
+        public List<Agency> GetPoliceAgencies()
+        {
+            // Maybe we are not the cached version?
+            return ZoneCache[ScriptName].PoliceAgencies;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="agencies"></param>
+        internal void SetPoliceAgencies(params Agency[] agencies)
+        {
+            // Maybe we are not the cached version?
+            ZoneCache[ScriptName].PoliceAgencies = new List<Agency>(agencies);
         }
 
         /// <summary>
@@ -118,7 +188,7 @@ namespace AgencyDispatchFramework.Game
         {
             if (agency.IsLawEnforcementAgency)
             {
-                return PoliceAgencies.Contains(agency);
+                return ZoneCache[ScriptName].PoliceAgencies.Contains(agency);
             }
 
             return false;
@@ -131,8 +201,8 @@ namespace AgencyDispatchFramework.Game
         public int GetTotalNumberOfLocations()
         {
             // Add up location counts
-            var count = RoadShoulders?.Length ?? 0;
-                count += Residences?.Length ?? 0;
+            var count = LocationsDB.RoadShoulders.Query().Where(x => x.Zone.Id == Id).Count();
+                count += LocationsDB.Residences.Query().Where(x => x.Zone.Id == Id).Count();
 
             // Final count
             return count;
@@ -164,24 +234,26 @@ namespace AgencyDispatchFramework.Game
         /// <param name="locationPool"></param>
         /// <param name="inactiveOnly">If true, will only return a <see cref="WorldLocation"/> that is not currently in use</param>
         /// <returns></returns>
-        private T GetRandomLocationFromPool<T>(T[] locationPool, FlagFilterGroup filters, bool inactiveOnly) where T : WorldLocation
+        /// <seealso cref="https://github.com/mbdavid/LiteDB/issues/1666"/>
+        private T GetRandomLocationFromPool<T>(ILiteQueryable<T> locationPool, FlagFilterGroup filters, bool inactiveOnly) where T : WorldLocation
         {
             // If we have no locations, return null
-            if (locationPool == null || locationPool.Length == 0)
+            if (!locationPool?.Exists() ?? false)
             {
-                Log.Debug($"WorldZone.GetRandomLocationFromPool<T>(): Unable to pull a {typeof(T).Name} from zone '{ScriptName}' because no locations were provided in the list");
+                Log.Debug($"WorldZone.GetRandomLocationFromPool<T>(): Unable to pull a {typeof(T).Name} from zone '{ScriptName}' because there are no locations in the database");
                 return null;
             }
 
-            var type = locationPool[0].LocationType;
+            // Filter results
+            var locations = locationPool.Include(x => x.Zone).Where(x => x.Zone.Id == Id).ToList();
 
             // Filtering by flags? Do this first so we can log debugging info if there are no available locations with these required flags in this zone
             if (filters != null && filters.Requirements.Count > 0)
             {
-                locationPool = locationPool.Filter(filters).ToArray();
-                if (locationPool.Length == 0)
+                locations = locations.Filter(filters).ToList();
+                if (locations.Count == 0)
                 {
-                    Log.Warning($"WorldZone.GetRandomLocationFromPool<T>(): There are no locations of type '{type}' in zone '{ScriptName}' using the following flags:");
+                    Log.Warning($"WorldZone.GetRandomLocationFromPool<T>(): There are no locations of type '{typeof(T).Name}' in zone '{ScriptName}' using the following flags:");
                     Log.Warning($"\t{filters}");
                     return null;
                 }
@@ -193,7 +265,7 @@ namespace AgencyDispatchFramework.Game
                 try
                 {
                     // Find all locations not in use
-                    locationPool = Dispatch.GetInactiveLocationsFromPool(locationPool);
+                    locations = Dispatch.GetInactiveLocationsFromPool(locations);
                 }
                 catch (InvalidCastException ex)
                 {
@@ -203,17 +275,15 @@ namespace AgencyDispatchFramework.Game
             }
 
             // If no locations are available
-            if (locationPool.Length == 0)
+            if (locations.Count == 0)
             {
-                Log.Debug($"WorldZone.GetRandomLocationFromPool<T>(): Unable to pull an available '{type}' location from zone '{ScriptName}' because they are all in use");
+                Log.Debug($"WorldZone.GetRandomLocationFromPool<T>(): Unable to pull an available '{typeof(T).Name}' location from zone '{ScriptName}' because they are all in use");
                 return null;
             }
 
             // Load randomizer
             var random = new CryptoRandom();
-
-            // We are good to go!
-            return random.PickOne(locationPool);
+            return random.PickOne(locations.ToArray());
         }
 
         /// <summary>
@@ -224,7 +294,8 @@ namespace AgencyDispatchFramework.Game
         public RoadShoulder GetRandomRoadShoulder(FlagFilterGroup filters, bool inactiveOnly = false)
         {
             // Get random location
-            return GetRandomLocationFromPool(RoadShoulders, filters, inactiveOnly);
+            var queryable = LocationsDB.RoadShoulders.Query();
+            return GetRandomLocationFromPool(queryable, filters, inactiveOnly);
         }
 
         /// <summary>
@@ -235,16 +306,17 @@ namespace AgencyDispatchFramework.Game
         public Residence GetRandomResidence(FlagFilterGroup filters, bool inactiveOnly = false)
         {
             // Get random location
-            return GetRandomLocationFromPool(Residences, filters, inactiveOnly);
+            var queryable = LocationsDB.Residences.Query();
+            return GetRandomLocationFromPool(queryable, filters, inactiveOnly);
         }
 
         /// <summary>
-        /// Loads the specified zones and of thier position data from the Locations.xml into
-        /// memory, and returns the number of locations added.
+        /// Loads the specified zones from the database and from the Locations.xml into
+        /// memory, caches the instances, and returns the total number of locations.
         /// </summary>
         /// <param name="names">An array of zones to load (should be all uppercase)</param>
         /// <returns>returns the number of locations loaded</returns>
-        /// <param name="loaded">Returns the number of zones loaded directly from the XML files.</param>
+        /// <param name="loaded">Returns the number of zones that were loaded (not cached yet).</param>
         public static WorldZone[] GetZonesByName(string[] names, out int loaded, out int totalLocations)
         {
             // Create instance of not already!
@@ -253,6 +325,7 @@ namespace AgencyDispatchFramework.Game
                 ZoneCache = new Dictionary<string, WorldZone>();
             }
 
+            // Local return variables
             totalLocations = 0;
             int zonesAdded = 0;
             List<WorldZone> zones = new List<WorldZone>();
@@ -260,47 +333,31 @@ namespace AgencyDispatchFramework.Game
             // Cycle through each child node (Zone)
             foreach (string zoneName in names)
             {
-                // If we have loaded this zone already, skip it
-                if (ZoneCache.ContainsKey(zoneName))
+                // Create our spawn point collection and store it
+                try
                 {
-                    zones.Add(ZoneCache[zoneName]);
+                    var dbZone = GetZoneByName(zoneName);
+
+                    // Add zone to return
+                    zones.Add(dbZone);
+
+                    // Up the location counters
+                    totalLocations += dbZone.GetTotalNumberOfLocations();
+                    zonesAdded++;
+                }
+                catch (FormatException e)
+                {
+                    Log.Error($"WorldZone.LoadZones(): Unable to load location data for zone '{zoneName}'. Missing node/attribute '{e.Message}'");
                     continue;
                 }
-
-                // Check file exists
-                string path = Path.Combine(Main.FrameworkFolderPath, "Locations", $"{zoneName}.xml");
-                if (!File.Exists(path))
+                catch (FileNotFoundException)
                 {
                     Log.Warning($"WorldZone.LoadZones(): Missing xml file for zone '{zoneName}'");
                     continue;
                 }
-
-                // Create our spawn point collection and store it
-                try
-                {
-                    // Load XML document
-                    using (var file = new WorldZoneFile(path))
-                    {
-                        // Parse the XML contents
-                        file.Parse();
-
-                        zones.Add(file.Zone);
-
-                        // Save
-                        ZoneCache.Add(zoneName, file.Zone);
-                        totalLocations += file.Zone.GetTotalNumberOfLocations();
-                        zonesAdded++;
-                    }
-                }
-                catch (ArgumentException e)
-                {
-                    Log.Error($"WorldZone.LoadZones(): Unable to load location data for zone '{zoneName}'. Missing node '{e.ParamName}'");
-                    continue;
-                }
                 catch (Exception fe)
                 {
-                    // Error should already
-                    Log.Error($"WorldZone.LoadZones(): {fe.Message}");
+                    Log.Exception(fe);
                     continue;
                 }
             }
@@ -310,19 +367,53 @@ namespace AgencyDispatchFramework.Game
         }
 
         /// <summary>
-        /// Gets a <see cref="WorldZone"/> for a zone by name
+        /// Gets a <see cref="WorldZone"/> instance by name from the database and fills its <see cref="CrimeProjection"/>
         /// </summary>
-        /// <param name="name">The short name (or ingame name) of the zone as written in the Locations.xml</param>
+        /// <param name="name">The script name of the zone as written in the Locations.xml</param>
         /// <returns>return a <see cref="WorldZone"/>, or null if the zone has not been loaded yet</returns>
+        /// <exception cref="FileNotFoundException">thrown if the XML file for the zone does not exist"</exception>
+        /// <exception cref="FormatException">thrown in the XML file is missing nodes and/or attributes</exception>
         public static WorldZone GetZoneByName(string name)
         {
-            // Ensure zone exists
-            if (ZoneCache.TryGetValue(name, out WorldZone zone))
+            // If we have loaded this zone already, skip it
+            if (ZoneCache.ContainsKey(name))
             {
-                return zone;
+                return ZoneCache[name];
             }
 
-            return null;
+            // Check file exists
+            string path = Path.Combine(Main.FrameworkFolderPath, "Locations", $"{name}.xml");
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"WorldZone.LoadZones(): Missing xml file for zone '{name}'");  
+            }
+
+            // Indicates whether the zone exists in the database
+            var needToAdd = false;
+
+            // Grab zone from database
+            var dbZone = LocationsDB.WorldZones.FindOne(x => x.ScriptName.Equals(name));
+            if (dbZone == null)
+            {
+                Log.Warning($"Attempted to fetch zone named '{name}' from database but it did not exist");
+                needToAdd = true;
+            }
+
+            // Load XML document
+            using (var file = new WorldZoneFile(path))
+            {
+                // Parse the XML contents. It is OK to pass null here!
+                file.Parse(dbZone);
+
+                // Do we need to add?
+                if (needToAdd)
+                {
+                    var id = LocationsDB.WorldZones.Insert(dbZone);
+                    dbZone.Id = id.AsInt32;
+                }
+
+                return dbZone;
+            }
         }
 
         /// <summary>

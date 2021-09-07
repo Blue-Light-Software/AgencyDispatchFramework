@@ -19,11 +19,7 @@ namespace AgencyDispatchFramework.Simulation
             foreach (var zone in Zones)
             {
                 // Set agencies. Order is important here!
-                zone.PoliceAgencies = new List<Agency>()
-                {
-                    this,
-                    GetAgencyByName("sahp")
-                };
+                zone.SetPoliceAgencies(this, GetAgencyByName("sahp"));
             }
         }
     }

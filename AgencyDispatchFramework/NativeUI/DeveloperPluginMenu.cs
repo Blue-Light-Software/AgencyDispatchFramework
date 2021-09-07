@@ -3,6 +3,7 @@ using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
 using AgencyDispatchFramework.Xml;
+using LiteDB;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
@@ -379,84 +380,6 @@ namespace AgencyDispatchFramework.NativeUI
         #endregion Events
 
         /// <summary>
-        /// Ensures a node path exists in an <see cref="XmlDocument"/>
-        /// </summary>
-        /// <param name="document">The document</param>
-        /// <param name="rootName">The root node name in the XmlDocument</param>
-        /// <param name="paths"></param>
-        /// <returns></returns>
-        private static XmlNode UpdateOrCreateXmlNode(XmlDocument document, string rootName, params string[] paths)
-        {
-            // Walk
-            XmlNode node = document.SelectSingleNode(rootName);
-            foreach (string path in paths)
-            {
-                XmlNode child = node.SelectSingleNode(path);
-                if (child != null)
-                {
-                    node = child;
-                }
-                else
-                {
-                    child = document.CreateElement(path);
-                    node.AppendChild(child);
-                    node = child;
-                }
-            }
-
-            return node;
-        }
-
-        /// <summary>
-        /// Creates a {Positions} node with child {SpawnPoint} nodes
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="document"></param>
-        /// <param name="items"></param>
-        /// <returns></returns>
-        private static XmlElement CreatePositionsNodeWithSpawnPoints<T>(XmlDocument document, Dictionary<T, UIMenuItem<SpawnPoint>> items)
-        {
-            // Add spawn points
-            var positionsNode = document.CreateElement("Positions");
-            foreach (UIMenuItem<SpawnPoint> p in items.Values)
-            {
-                var spawnPointNode = document.CreateElement("SpawnPoint");
-
-                var idAttr = document.CreateAttribute("id");
-                idAttr.Value = p.Text;
-
-                var coordAttr = document.CreateAttribute("coordinates");
-                coordAttr.Value = $"{p.Tag.Position.X}, {p.Tag.Position.Y}, {p.Tag.Position.Z}";
-
-                var hAttr = document.CreateAttribute("heading");
-                hAttr.Value = $"{p.Tag.Heading}";
-
-                // Set attributes
-                spawnPointNode.Attributes.Append(idAttr);
-                spawnPointNode.Attributes.Append(coordAttr);
-                spawnPointNode.Attributes.Append(hAttr);
-
-                // Add spawn point
-                spawnPointNode.IsEmpty = true;
-                positionsNode.AppendChild(spawnPointNode);
-            }
-
-            return positionsNode;
-        }
-
-        /// <summary>
-        /// Closes an element tag with short hand if there is no inner text
-        /// </summary>
-        /// <param name="node"></param>
-        private void CloseElementTagShortIfEmpty(XmlElement node)
-        {
-            if (String.IsNullOrWhiteSpace(node.InnerText))
-            {
-                node.IsEmpty = true;
-            }
-        }
-
-        /// <summary>
         /// Resets all check points just added by this position
         /// </summary>
         private void ResetCheckPoints()
@@ -502,11 +425,11 @@ namespace AgencyDispatchFramework.NativeUI
 
         /// <summary>
         /// Loads checkpoints and map blips of all zone locations of the 
-        /// specified type
+        /// specified type in the game and on the map
         /// </summary>
-        /// <param name="nodeName"></param>
-        /// <param name="color"></param>
-        private void LoadZoneLocations(string nodeName, Color color)
+        /// <param name="queryable">The querable database instance to pull the locations from</param>
+        /// <param name="color">The color to make the checkpoints in game</param>
+        private void LoadZoneLocations<T>(ILiteQueryable<T> queryable, Color color) where T : WorldLocation
         {
             // Clear old shit
             ClearZoneLocations();
@@ -514,47 +437,46 @@ namespace AgencyDispatchFramework.NativeUI
             // Get players current zone name
             var pos = GamePed.Player.Position;
             var zoneName = GameWorld.GetZoneNameAtLocation(pos);
-            string path = Path.Combine(Main.FrameworkFolderPath, "Locations", $"{zoneName}.xml");
+            var enumName = typeof(T).Name;
 
-            // Make sure the file exists!
-            if (!File.Exists(path))
+            // Grab zone
+            var zone = LocationsDB.WorldZones.FindOne(x => x.ScriptName.Equals(zoneName));
+            if (zone == null)
             {
                 // Display notification to the player
                 Rage.Game.DisplayNotification(
                     "3dtextures",
                     "mpgroundlogo_cops",
                     "Agency Dispatch Framework",
-                    "Add Residence",
-                    $"~o~Location file {zoneName}.xml does not exist!"
+                    "Add Location",
+                    $"~rFailed: ~o~Unable to find WorldZone ~y~{zoneName} ~o~in the locations database!"
                 );
                 return;
             }
 
-            // Open the file, and add the location
-            using (var file = new WorldZoneFile(path))
+            // Now grab locations
+            var items = queryable.Include(x => x.Zone).Where(x => x.Zone.Id == zone.Id).ToArray();
+            if (items == null || items.Length == 0)
             {
-                // Grab root locations node
-                var rootNode = UpdateOrCreateXmlNode(file.Document, zoneName, "Locations", nodeName);
-                foreach (XmlNode node in rootNode.SelectNodes("Location"))
-                {
-                    // Ensure we have attributes
-                    if (node.Attributes == null)
-                    {
-                        // Just skip
-                        continue;
-                    }
+                // Display notification to the player
+                Rage.Game.DisplayNotification(
+                    "3dtextures",
+                    "mpgroundlogo_cops",
+                    "Agency Dispatch Framework",
+                    "Add Location",
+                    $"There are no {enumName} locations in the database"
+                );
+                return;
+            }
 
-                    // Try and extract probability value
-                    if (!Vector3Extensions.TryParse(node.Attributes["coordinates"]?.Value, out Vector3 vector))
-                    {
-                        // Just skip
-                        continue;
-                    }
+            // Add each checkpoint
+            foreach (T location in items)
+            {
+                var vector = location.Position;
 
-                    // Add checkpoint and blip
-                    ZoneCheckpoints.Add(GameWorld.CreateCheckpoint(vector, color, forceGround: true));
-                    ZoneBlips.Add(new Blip(vector) { Color = Color.Red });
-                }
+                // Add checkpoint and blip
+                ZoneCheckpoints.Add(GameWorld.CreateCheckpoint(vector, color, forceGround: true));
+                ZoneBlips.Add(new Blip(vector) { Color = Color.Red });
             }
         }
 
