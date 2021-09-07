@@ -242,10 +242,10 @@ namespace AgencyDispatchFramework.NativeUI
             //
             // Reset everything!
             //
-            if (NewLocationCheckpointHandle != -123456789)
+            if (NewLocationCheckpoint != null)
             {
-                GameWorld.DeleteCheckpoint(NewLocationCheckpointHandle);
-                NewLocationCheckpointHandle = -123456789;
+                NewLocationCheckpoint.Dispose();
+                NewLocationCheckpoint = null;
             }
 
             // Grab player location
@@ -277,7 +277,7 @@ namespace AgencyDispatchFramework.NativeUI
             RoadShoulderAfterListButton.Index = 0;
 
             // Create checkpoint at the player location
-            NewLocationCheckpointHandle = GameWorld.CreateCheckpoint(cpPos, Color.Red);
+            NewLocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Red);
 
             // Get current Postal
             RoadShoulderPostalButton.Collection.Clear();
@@ -327,7 +327,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         private void RoadShoulderSpawnPointButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
-            int handle = 0;
+            Checkpoint handle;
             var pos = GamePed.Player.Position;
             var heading = GamePed.Player.Heading;
             var value = (RoadShoulderPosition)Enum.Parse(typeof(RoadShoulderPosition), selectedItem.Text);
@@ -338,7 +338,7 @@ namespace AgencyDispatchFramework.NativeUI
             if (SpawnPointHandles.ContainsKey(index))
             {
                 handle = SpawnPointHandles[index];
-                GameWorld.DeleteCheckpoint(handle);
+                handle.Dispose();
             }
 
             // Create new checkpoint !!important, need to subtract 2 from the Z since checkpoints spawn at waist level

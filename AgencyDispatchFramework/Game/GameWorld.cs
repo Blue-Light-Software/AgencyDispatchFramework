@@ -523,7 +523,7 @@ namespace AgencyDispatchFramework.Game
         /// <param name="radius">The radius of the checkpoint cylinder</param>
         /// <param name="color">The color of the checkpoint</param>
         /// <returns>returns the handle of the checkpoint</returns>
-        public static int CreateCheckpoint(Vector3 pos, Color color, int checkPointType = 47, float radius = 5f, float nearHeight = 3f, float farHeight = 3f, bool forceGround = false, int number = 0)
+        public static Checkpoint CreateCheckpoint(Vector3 pos, Color color, int checkPointType = 47, float radius = 5f, float nearHeight = 3f, float farHeight = 3f, bool forceGround = false, int number = 0)
         {
             if (forceGround)
             {
@@ -531,7 +531,7 @@ namespace AgencyDispatchFramework.Game
                 if (level.HasValue)
                     pos.Z = level.Value;
             }
-
+            
             // Create checkpoint
             int handle = Natives.CreateCheckpoint<int>(checkPointType, pos.X, pos.Y, pos.Z, pos.X, pos.Y, pos.Z, 1f, color.R, color.G, color.B, color.A, number);
 
@@ -539,16 +539,7 @@ namespace AgencyDispatchFramework.Game
             Natives.SetCheckpointCylinderHeight(handle, nearHeight, farHeight, radius);
 
             // return handle
-            return handle;
-        }
-
-        /// <summary>
-        /// Deletes a checkpoint with the specified handle
-        /// </summary>
-        /// <param name="handle"></param>
-        public static void DeleteCheckpoint(int handle)
-        {
-            Natives.DeleteCheckpoint(handle);
+            return new Checkpoint(handle, pos, pos, color);
         }
     }
 }

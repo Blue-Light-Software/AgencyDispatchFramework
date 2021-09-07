@@ -46,7 +46,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
         private ResidencePosition SpawnId;
 
         private Vector3 CheckpointPosition;
-        private int CheckpointHandle = 0;
+        private Checkpoint CheckpointHandle;
 
         private ScenarioProgress SceneProgress;
 
@@ -206,7 +206,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
                     break;
                 case ScenarioProgress.Arrived:
                     // Remove the checkpoint!
-                    GameWorld.DeleteCheckpoint(CheckpointHandle);
+                    CheckpointHandle?.Dispose();
 
                     // Remove address blip if still active
                     if (AddressBlip != null && AddressBlip.Exists() && AddressBlip.IsValid())
@@ -289,7 +289,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
 
             // Erase the checkpoint if it exists
             if (SceneProgress == ScenarioProgress.BeforeArrival)
-                GameWorld.DeleteCheckpoint(CheckpointHandle);
+                CheckpointHandle?.Dispose();
 
             SuspectDialogue?.Dispose();
             VictimDialogue?.Dispose();

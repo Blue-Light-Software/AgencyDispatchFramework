@@ -191,10 +191,10 @@ namespace AgencyDispatchFramework.NativeUI
             //
             // Reset everything!
             //
-            if (NewLocationCheckpointHandle != -123456789)
+            if (NewLocationCheckpoint != null)
             {
-                GameWorld.DeleteCheckpoint(NewLocationCheckpointHandle);
-                NewLocationCheckpointHandle = -123456789;
+                NewLocationCheckpoint.Dispose();
+                NewLocationCheckpoint = null;
             }
 
             // Reset flags
@@ -244,9 +244,9 @@ namespace AgencyDispatchFramework.NativeUI
         private void ResidencePositionButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
             // Delete old handle
-            if (NewLocationCheckpointHandle != -123456789)
+            if (NewLocationCheckpoint != null)
             {
-                GameWorld.DeleteCheckpoint(NewLocationCheckpointHandle);
+                NewLocationCheckpoint.Dispose();
             }
 
             // Set new location
@@ -256,7 +256,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Create checkpoint here
             var pos = GamePed.Player.Position;
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
-            NewLocationCheckpointHandle = GameWorld.CreateCheckpoint(cpPos, Color.Purple);
+            NewLocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Purple);
 
             // Set street name default
             var streetName = GameWorld.GetStreetNameAtLocation(GamePed.Player.Position);
@@ -272,7 +272,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         private void ResidenceSpawnPointButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
-            int handle = 0;
+            Checkpoint checkpoint;
             var pos = GamePed.Player.Position;
             var value = (ResidencePosition)Enum.Parse(typeof(ResidencePosition), selectedItem.Text);
             int index = (int)value;
@@ -281,17 +281,17 @@ namespace AgencyDispatchFramework.NativeUI
             // Check, do we have a check point already for this position?
             if (SpawnPointHandles.ContainsKey(index))
             {
-                handle = SpawnPointHandles[index];
-                GameWorld.DeleteCheckpoint(handle);
+                checkpoint = SpawnPointHandles[index];
+                checkpoint.Dispose();
             }
 
             // Create new checkpoint !!important, need to subtract 2 from the Z since checkpoints spawn at waist level
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
-            handle = GameWorld.CreateCheckpoint(cpPos, GetResidencePositionColor(value), radius: 1f);
+            checkpoint = GameWorld.CreateCheckpoint(cpPos, GetResidencePositionColor(value), radius: 1f);
             if (SpawnPointHandles.ContainsKey(index))
-                SpawnPointHandles[index] = handle;
+                SpawnPointHandles[index] = checkpoint;
             else
-                SpawnPointHandles.Add(index, handle);
+                SpawnPointHandles.Add(index, checkpoint);
 
             // Create spawn point
             menuItem.Tag = new SpawnPoint(cpPos, GamePed.Player.Heading);

@@ -103,6 +103,7 @@
     <Compile Include="Conversation\SequenceCollection.cs" />
     <Compile Include="Conversation\PedResponseEventHandler.cs" />
     <Compile Include="Conversation\Question.cs" />
+    <Compile Include="Game\Checkpoint.cs" />
     <Compile Include="LocationsDB.cs" />
     <Compile Include="Dispatching\Delegates\ShiftUpdateHandler.cs" />
     <Compile Include="Dispatching\CallSigns\CallSignGenerator.cs" />

@@ -82,7 +82,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// flagcode => handle
         /// </summary>
-        private Dictionary<int, int> SpawnPointHandles { get; set; }
+        private Dictionary<int, Checkpoint> SpawnPointHandles { get; set; }
 
         /// <summary>
         /// Gets a list of all currently active <see cref="Blip"/>s in this <see cref="WorldZone"/>
@@ -92,7 +92,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Gets a list of all currently active checkpoint handles in this <see cref="WorldZone"/>
         /// </summary>
-        private List<int> ZoneCheckpoints { get; set; }
+        private List<Checkpoint> ZoneCheckpoints { get; set; }
 
         /// <summary>
         /// Gets or sets the current coordinates of the location we are editing
@@ -102,7 +102,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Gets or sets the checkpoint handle that marks the current location being edited in game
         /// </summary>
-        private int NewLocationCheckpointHandle { get; set; }
+        private Checkpoint NewLocationCheckpoint { get; set; }
 
         /// <summary>
         /// Indicates to stop processing the controls of this menu while the keyboard is open
@@ -186,9 +186,9 @@ namespace AgencyDispatchFramework.NativeUI
             AllMenus.RefreshIndex();
 
             // Create needed checkpoints
-            SpawnPointHandles = new Dictionary<int, int>(20);
+            SpawnPointHandles = new Dictionary<int, Checkpoint>(20);
             ZoneBlips = new List<Blip>(40);
-            ZoneCheckpoints = new List<int>(40);
+            ZoneCheckpoints = new List<Checkpoint>(40);
         }
 
         private void BuildLocationsMenu()
@@ -385,19 +385,19 @@ namespace AgencyDispatchFramework.NativeUI
         private void ResetCheckPoints()
         {
             // Delete all checkpoints
-            foreach (int handle in SpawnPointHandles.Values)
+            foreach (var checkpoint in SpawnPointHandles.Values)
             {
-                GameWorld.DeleteCheckpoint(handle);
+                checkpoint.Dispose();
             }
 
             // Clear checkpoint handles
             SpawnPointHandles.Clear();
 
             // Clear location check point
-            if (NewLocationCheckpointHandle != -123456789)
+            if (NewLocationCheckpoint != null)
             {
-                GameWorld.DeleteCheckpoint(NewLocationCheckpointHandle);
-                NewLocationCheckpointHandle = -123456789;
+                NewLocationCheckpoint.Dispose();
+                NewLocationCheckpoint = null;
             }
         }
 
@@ -406,9 +406,9 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         private void ClearZoneLocations()
         {
-            foreach (int handle in ZoneCheckpoints)
+            foreach (var checkpoint in ZoneCheckpoints)
             {
-                GameWorld.DeleteCheckpoint(handle);
+                checkpoint.Dispose();
             }
 
             foreach (Blip blip in ZoneBlips)
