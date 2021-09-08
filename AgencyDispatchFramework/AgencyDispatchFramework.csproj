@@ -176,7 +176,7 @@
     <Compile Include="Simulation\WorldStateCrimeProjection.cs" />
     <Compile Include="Game\Enums\PedComponent.cs" />
     <Compile Include="Game\Enums\PedPropIndex.cs" />
-    <Compile Include="Game\Locations\Road.cs" />
+    <Compile Include="Game\Locations\RoadPosition.cs" />
     <Compile Include="Integration\UltimateBackupAPI.cs" />
     <Compile Include="Linq\ExpressionResult.cs" />
     <Compile Include="Extensions\CharExtensions.cs" />

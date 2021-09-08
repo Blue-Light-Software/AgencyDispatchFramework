@@ -23,14 +23,19 @@ namespace AgencyDispatchFramework.Game.Locations
         public string BuildingNumber { get; set; } = String.Empty;
 
         /// <summary>
-        /// Gets the <see cref="SocialClass"/> of this home
-        /// </summary>
-        public SocialClass Class { get; set; }
-
-        /// <summary>
         /// Gets the Appartment/Suite/Room number of the address to be used in the CAD, if any
         /// </summary>
         public string UnitId { get; set; } = String.Empty;
+
+        /// <summary>
+        /// Gets the heading of the <see cref="Residence"/>'s front door from the street.
+        /// </summary>
+        public float Heading { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="SocialClass"/> of this home
+        /// </summary>
+        public SocialClass Class { get; set; }
 
         /// <summary>
         /// Gets an array of Flags that describe this <see cref="Residence"/>
@@ -41,11 +46,6 @@ namespace AgencyDispatchFramework.Game.Locations
         /// Containts a list of spawn points for <see cref="Entity"/> types
         /// </summary>
         public Dictionary<ResidencePosition, SpawnPoint> SpawnPoints { get; set; }
-
-        /// <summary>
-        /// Gets the heading of the <see cref="Residence"/>'s front door from the street.
-        /// </summary>
-        public float Heading { get; set; }
 
         /// <summary>
         /// Gets the <see cref="Locations.LocationTypeCode"/> for this <see cref="WorldLocation"/>

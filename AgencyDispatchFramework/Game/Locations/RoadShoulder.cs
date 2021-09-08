@@ -24,6 +24,11 @@ namespace AgencyDispatchFramework.Game.Locations
         public float Heading { get; set; }
 
         /// <summary>
+        /// Gets or sets the Speed limit on the <see cref="RoadPosition"/> attached to this <see cref="RoadShoulder"/>
+        /// </summary>
+        public int SpeedLimit { get; set; }
+
+        /// <summary>
         /// Gets an array of RoadFlags that describe this <see cref="RoadShoulder"/>
         /// </summary>
         public List<RoadFlags> Flags { get; set; }

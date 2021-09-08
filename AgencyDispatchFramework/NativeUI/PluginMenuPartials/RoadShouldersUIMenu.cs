@@ -425,6 +425,7 @@ namespace AgencyDispatchFramework.NativeUI
                 {
                     Position = RoadShoulderLocation.Position,
                     Heading = RoadShoulderLocation.Heading,
+                    SpeedLimit = RoadShoulderSpeedButton.Value,
                     StreetName = RoadShoulderStreetButton.Description,
                     Hint = RoadShoulderHintButton.Description,
                     Flags = RoadShouldFlagsItems.Where(x => x.Value.Checked).Select(x => x.Key).ToList(),

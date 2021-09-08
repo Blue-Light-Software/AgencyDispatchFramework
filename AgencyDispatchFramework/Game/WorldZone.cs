@@ -20,7 +20,7 @@ namespace AgencyDispatchFramework.Game
         /// Contains a hash table of zones
         /// </summary>
         /// <remarks>[ ZoneScriptName => ZoneInfo class ]</remarks>
-        private static Dictionary<string, WorldZone> ZoneCache { get; set; }
+        private static Dictionary<string, WorldZone> ZoneCache { get; set; } = new Dictionary<string, WorldZone>();
 
         /// <summary>
         /// Containts a hash table of regions, and thier zones
