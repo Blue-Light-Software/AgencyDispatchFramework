@@ -367,7 +367,8 @@ namespace AgencyDispatchFramework.Game
         }
 
         /// <summary>
-        /// Gets a <see cref="WorldZone"/> instance by name from the database and fills its <see cref="CrimeProjection"/>
+        /// Gets a <see cref="WorldZone"/> instance by name from the database and fills its <see cref="CrimeProjection"/> 
+        /// from the XML file.
         /// </summary>
         /// <param name="name">The script name of the zone as written in the Locations.xml</param>
         /// <returns>return a <see cref="WorldZone"/>, or null if the zone has not been loaded yet</returns>

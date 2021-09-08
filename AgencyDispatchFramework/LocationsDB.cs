@@ -132,7 +132,7 @@ namespace AgencyDispatchFramework
         /// </summary>
         public static void Shutdown()
         {
-            Database.Dispose();
+            Database?.Dispose();
             Database = null;
         }
 

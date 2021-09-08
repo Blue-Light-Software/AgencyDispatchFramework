@@ -8,7 +8,7 @@ namespace AgencyDispatchFramework.Game
     /// <summary>
     /// Represents a checkpoint within the game world and methods to manipulate it.
     /// </summary>
-    public class Checkpoint : IDisposable
+    public class Checkpoint : IDisposable, ISpatial, IDeletable
     {
         /// <summary>
         /// Gets or sets the reference handle of the checkpoint
@@ -34,6 +34,7 @@ namespace AgencyDispatchFramework.Game
         /// Indicates whether this checkpoint has been deleted in game already.
         /// </summary>
         public bool IsDisposed { get; protected set; }
+        Vector3 ISpatial.Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         /// <summary>
         /// Creates a new instance
@@ -41,7 +42,7 @@ namespace AgencyDispatchFramework.Game
         /// <param name="handle">The handle of the checkpoint.</param>
         /// <param name="position">The position of the checkpoint. </param>
         /// <param name="pointingTo">The position of the next checkpoint to point to.</param>
-        internal Checkpoint(int handle, Vector3 position, Vector3 pointingTo, Color color)
+        private Checkpoint(int handle, Vector3 position, Vector3 pointingTo, Color color)
         {
             Handle = handle;
             Position = position;
@@ -138,6 +139,72 @@ namespace AgencyDispatchFramework.Game
         {
             IsDisposed = true;
             Natives.DeleteCheckpoint(Handle);
+        }
+
+        public float DistanceTo(Vector3 position)
+        {
+            return Position.DistanceTo(position);
+        }
+
+        public float DistanceTo(ISpatial spatialObject)
+        {
+            return Position.DistanceTo(spatialObject);
+        }
+
+        public float DistanceTo2D(Vector3 position)
+        {
+            return Position.DistanceTo2D(position);
+        }
+
+        public float DistanceTo2D(ISpatial spatialObject)
+        {
+            return Position.DistanceTo2D(spatialObject);
+        }
+
+        public float TravelDistanceTo(Vector3 position)
+        {
+            return Position.TravelDistanceTo(position);
+        }
+
+        public float TravelDistanceTo(ISpatial spatialObject)
+        {
+            return Position.TravelDistanceTo(spatialObject);
+        }
+
+        public void Delete()
+        {
+            Dispose();
+        }
+
+        /// <summary>
+        /// Creates a checkpoint at the specified location, and returns the handle
+        /// </summary>
+        /// <remarks>
+        /// Checkpoints are already handled by the game itself, so you must not loop it like markers.
+        /// </remarks>
+        /// <seealso cref="https://docs.fivem.net/docs/game-references/checkpoints/"/>
+        /// <param name="type">The type of checkpoint to create.</param>
+        /// <param name="pos">The position of the checkpoint</param>
+        /// <param name="radius">The radius of the checkpoint cylinder</param>
+        /// <param name="color">The color of the checkpoint</param>
+        /// <returns>returns the handle of the checkpoint</returns>
+        public static Checkpoint Create(Vector3 pos, Color color, int type = 47, float radius = 5f, float nearHeight = 3f, float farHeight = 3f, bool forceGround = false, int number = 0)
+        {
+            if (forceGround)
+            {
+                var level = World.GetGroundZ(pos, true, false);
+                if (level.HasValue)
+                    pos.Z = level.Value;
+            }
+
+            // Create checkpoint
+            int handle = Natives.CreateCheckpoint<int>(type, pos.X, pos.Y, pos.Z, pos.X, pos.Y, pos.Z, 1f, color.R, color.G, color.B, color.A, number);
+
+            // Set hieght and radius of the cylinder
+            Natives.SetCheckpointCylinderHeight(handle, nearHeight, farHeight, radius);
+
+            // return handle
+            return new Checkpoint(handle, pos, pos, color);
         }
     }
 }

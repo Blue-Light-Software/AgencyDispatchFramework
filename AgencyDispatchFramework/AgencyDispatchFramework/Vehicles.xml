@@ -84,11 +84,11 @@
     <Vehicle probability="5" seats="2" manufacturer="Vapid" name="Dominator">­DOMINATOR</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Imponte" name="Dukes">DUKES</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Bravado" name="Gauntlet">GAUNTLET</Vehicle>
-    <Vehicle probability="5" seats="2" manufacturer="Imponte" name="Phoenix">PHEONIX</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Imponte" name="Phoenix">PHOENIX</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Cheval" name="Picador">PICADOR</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Imponte" name="Ruiner">RUINER</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Declasse" name="Sabre Turbo">SABREGT</Vehicle>
-    <Vehicle probability="5" seats="2" manufacturer="Declasse" name="Stallion">STALION</Vehicle>
+    <Vehicle probability="5" seats="2" manufacturer="Declasse" name="Stallion">STALLION</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Declasse" name="Vigero">­VIGERO</Vehicle>
     <Vehicle probability="5" seats="2" manufacturer="Declasse" name="Voodoo">VOODOO</Vehicle>
   </Muscle>
@@ -194,9 +194,9 @@
     <Vehicle probability="2" seats="2" manufacturer="HVY" name="Ripley">RIPLEY</Vehicle>
     -->
     <Vehicle probability="2" seats="2" manufacturer="Vapid" name="Tow Truck">TOWTRUCK</Vehicle>
-    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">UTILTRUC</Vehicle>
-    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">UTILTRUC2</Vehicle>
-    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">UTILTRUC3</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">­UTILLITRUCK</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">­UTILLITRUCK2</Vehicle>
+    <Vehicle probability="2" seats="2" manufacturer="Brute" name="Utility Truck">­UTILLITRUCK3</Vehicle>
   </Utility>
   <Van>
     <Vehicle probability="3" seats="4" manufacturer="Declasse" name="Burrito">BURRITO3</Vehicle>

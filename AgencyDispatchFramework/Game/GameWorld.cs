@@ -518,28 +518,14 @@ namespace AgencyDispatchFramework.Game
         /// Checkpoints are already handled by the game itself, so you must not loop it like markers.
         /// </remarks>
         /// <seealso cref="https://docs.fivem.net/docs/game-references/checkpoints/"/>
-        /// <param name="checkPointType">The type of checkpoint to create.</param>
+        /// <param name="type">The type of checkpoint to create.</param>
         /// <param name="pos">The position of the checkpoint</param>
         /// <param name="radius">The radius of the checkpoint cylinder</param>
         /// <param name="color">The color of the checkpoint</param>
         /// <returns>returns the handle of the checkpoint</returns>
-        public static Checkpoint CreateCheckpoint(Vector3 pos, Color color, int checkPointType = 47, float radius = 5f, float nearHeight = 3f, float farHeight = 3f, bool forceGround = false, int number = 0)
+        public static Checkpoint CreateCheckpoint(Vector3 pos, Color color, int type = 47, float radius = 5f, float nearHeight = 3f, float farHeight = 3f, bool forceGround = false, int number = 0)
         {
-            if (forceGround)
-            {
-                var level = World.GetGroundZ(pos, true, false);
-                if (level.HasValue)
-                    pos.Z = level.Value;
-            }
-            
-            // Create checkpoint
-            int handle = Natives.CreateCheckpoint<int>(checkPointType, pos.X, pos.Y, pos.Z, pos.X, pos.Y, pos.Z, 1f, color.R, color.G, color.B, color.A, number);
-
-            // Set hieght and radius of the cylinder
-            Natives.SetCheckpointCylinderHeight(handle, nearHeight, farHeight, radius);
-
-            // return handle
-            return new Checkpoint(handle, pos, pos, color);
+            return Checkpoint.Create(pos, color, type, radius, nearHeight, farHeight, forceGround, number);
         }
     }
 }
