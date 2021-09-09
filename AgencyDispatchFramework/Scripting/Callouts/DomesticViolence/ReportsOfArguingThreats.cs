@@ -206,7 +206,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
                     break;
                 case ScenarioProgress.Arrived:
                     // Remove the checkpoint!
-                    CheckpointHandle?.Dispose();
+                    CheckpointHandle?.Delete();
 
                     // Remove address blip if still active
                     if (AddressBlip != null && AddressBlip.Exists() && AddressBlip.IsValid())
@@ -289,7 +289,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
 
             // Erase the checkpoint if it exists
             if (SceneProgress == ScenarioProgress.BeforeArrival)
-                CheckpointHandle?.Dispose();
+                CheckpointHandle?.Delete();
 
             SuspectDialogue?.Dispose();
             VictimDialogue?.Dispose();

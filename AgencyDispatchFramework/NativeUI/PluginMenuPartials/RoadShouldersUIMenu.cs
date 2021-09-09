@@ -1,4 +1,5 @@
-﻿using AgencyDispatchFramework.Game;
+﻿using AgencyDispatchFramework.Extensions;
+using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
 using Rage;
 using RAGENativeUI;
@@ -10,15 +11,33 @@ using System.Linq;
 
 namespace AgencyDispatchFramework.NativeUI
 {
+    /// <summary>
+    /// This partial class contains the logic and menu properties
+    /// for the <see cref="RoadShoulder"/> location
+    /// </summary>
     internal partial class DeveloperPluginMenu
     {
+        #region Properties
+
+        private SpawnPoint RoadShoulderLocation { get; set; }
+
+        private Dictionary<RoadFlags, UIMenuCheckboxItem> RoadShouldFlagsItems { get; set; }
+
+        private Dictionary<RoadShoulderPosition, UIMenuItem<SpawnPoint>> RoadShoulderSpawnPointItems { get; set; }
+
+        #endregion
+
+        #region Control Properties
+
         private UIMenuItem RoadShoulderCreateButton { get; set; }
+
+        private UIMenuItem RoadShoulderEditButton { get; set; }
+
+        private UIMenuItem RoadShoulderDeleteButton { get; set; }
 
         private UIMenuItem RoadShoulderLoadBlipsButton { get; set; }
 
         private UIMenuItem RoadShoulderClearBlipsButton { get; set; }
-
-        private SpawnPoint RoadShoulderLocation { get; set; }
 
         private UIMenuNumericScrollerItem<int> RoadShoulderSpeedButton { get; set; }
 
@@ -31,8 +50,6 @@ namespace AgencyDispatchFramework.NativeUI
         private UIMenuItem RoadShoulderHintButton { get; set; }
 
         private UIMenuItem RoadShoulderFlagsButton { get; set; }
-
-        private Dictionary<RoadFlags, UIMenuCheckboxItem> RoadShouldFlagsItems { get; set; }
 
         private UIMenuItem RoadShoulderBeforeFlagsButton { get; set; }
 
@@ -50,7 +67,7 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenuItem RoadShoulderSpawnPointsButton { get; set; }
 
-        private Dictionary<RoadShoulderPosition, UIMenuItem<SpawnPoint>> RoadShoulderSpawnPointItems { get; set; }
+        #endregion
 
         /// <summary>
         /// Builds the menu and its buttons
@@ -95,21 +112,45 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Setup buttons
             RoadShoulderCreateButton = new UIMenuItem("Add New Location", "Creates a new Road Shoulder location where you are currently");
+            RoadShoulderEditButton = new UIMenuItem("Edit Location", "Edit a Road Shoulder location that you are currently near. ~y~Blips must be loaded");
+            RoadShoulderDeleteButton = new UIMenuItem("Delete Location", "Edit a Road Shoulder location that you are currently near. ~y~Blips must be loaded");
             RoadShoulderLoadBlipsButton = new UIMenuItem("Load Checkpoints", "Loads checkpoints in the world as well as blips on the map to show all saved locations in this zone");
             RoadShoulderClearBlipsButton = new UIMenuItem("Clear Checkpoints", "Clears all checkpoints and blips loaded by the ~y~Load Checkpoints ~w~option");
 
+            // Disable buttons by default
+            RoadShoulderEditButton.Enabled = false;
+            RoadShoulderDeleteButton.Enabled = false;
+            RoadShoulderClearBlipsButton.Enabled = false;
+
             // Button Events
             RoadShoulderCreateButton.Activated += RoadShouldersCreateButton_Activated;
-            RoadShoulderLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.RoadShoulders.Query(), Color.Red);
-            RoadShoulderClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
+            RoadShoulderEditButton.Activated += RoadShoulderEditButton_Activated;
+            RoadShoulderDeleteButton.Activated += RoadShoulderDeleteButton_Activated;
+            RoadShoulderLoadBlipsButton.Activated += (s, e) =>
+            {
+                if (LoadZoneLocations(LocationsDB.RoadShoulders.Query(), Color.Red, LocationTypeCode.RoadShoulder))
+                {
+                    RoadShoulderLoadBlipsButton.Enabled = false;
+                    RoadShoulderClearBlipsButton.Enabled = true;
+                }
+            };
+            RoadShoulderClearBlipsButton.Activated += (s, e) =>
+            {
+                RoadShoulderLoadBlipsButton.Enabled = true;
+                RoadShoulderClearBlipsButton.Enabled = false;
+                ClearZoneLocations();
+            };
 
             // Add buttons
             RoadUIMenu.AddItem(RoadShoulderCreateButton);
+            RoadUIMenu.AddItem(RoadShoulderEditButton);
+            RoadUIMenu.AddItem(RoadShoulderDeleteButton);
             RoadUIMenu.AddItem(RoadShoulderLoadBlipsButton);
             RoadUIMenu.AddItem(RoadShoulderClearBlipsButton);
 
             // Bind Buttons
             RoadUIMenu.BindMenuToItem(AddRoadUIMenu, RoadShoulderCreateButton);
+            RoadUIMenu.BindMenuToItem(AddRoadUIMenu, RoadShoulderEditButton);
 
             // *************************************************
             // Add RoadShoulder UI Menu
@@ -233,6 +274,212 @@ namespace AgencyDispatchFramework.NativeUI
             RoadShoulderFlagsUIMenu.OnMenuChange += RoadShoulderFlagsUIMenu_OnMenuChange;
         }
 
+        #region Menu Events
+
+        private void AddRoadShoulderUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
+        {
+            // Are we backing out of a menu?
+            if (!forward)
+            {
+                if (oldMenu == AddRoadUIMenu)
+                {
+                    ResetCheckPoints();
+                    Status = LocationUIStatus.None;
+                }
+            }
+        }
+
+        private void RoadShoulderFlagsUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
+        {
+            // Are we backing out of this menu?
+            if (!forward && oldMenu == RoadShoulderFlagsUIMenu)
+            {
+                // We must have at least 1 item checked
+                if (RoadShouldFlagsItems.Any(x => x.Value.Checked))
+                {
+                    RoadShoulderFlagsButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+                }
+                else
+                {
+                    RoadShoulderFlagsButton.RightBadge = UIMenuItem.BadgeStyle.None;
+                }
+            }
+        }
+
+        #endregion Menu Events
+
+        #region Control Events
+
+        // <summary>
+        /// Method called when the "Delete Road Shoulder" menu item is clicked.
+        /// </summary>
+        private void RoadShoulderDeleteButton_Activated(UIMenu sender, UIMenuItem selectedItem)
+        {
+            // Grab item
+            if (LocationCheckpoint?.Tag == null) return;
+
+            // Ensure tag is set properly
+            var editingItem = LocationCheckpoint.Tag as RoadShoulder;
+            if (editingItem == null) return;
+
+            // Disable buttons
+            DisableAllEditButtons();
+
+            // Prevent app crashing
+            try
+            {
+                // Delete location
+                if (LocationsDB.RoadShoulders.Delete(editingItem.Id))
+                {
+                    // Delete checkpoint
+                    DeleteBlipAndCheckpoint(LocationCheckpoint);
+                    LocationCheckpoint = null;
+
+                    // Notify the user
+                    ShowNotification("Delete Road Shoulder", $"~g~Location deleted.");
+                }
+                else
+                {
+                    // Display notification to the player
+                    ShowNotification("Delete Road Shoulder", $"~o~Unable to delete location from database.");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Exception(e);
+
+                // Display notification to the player
+                ShowNotification("Delete Road Shoulder", $"~rAction Failed: ~o~Please check your Game.log!");
+            }
+        }
+
+        /// <summary>
+        /// Method called when the "Edit Road Shoulder" menu item is clicked.
+        /// </summary>
+        private void RoadShoulderEditButton_Activated(UIMenu sender, UIMenuItem selectedItem)
+        {
+            // Grab item
+            if (LocationCheckpoint?.Tag == null) return;
+
+            // Ensure tag is set properly
+            var editingItem = LocationCheckpoint.Tag as RoadShoulder;
+            if (editingItem == null) return;
+
+            // Reset road shoulder flags
+            foreach (var item in RoadShouldFlagsItems)
+            {
+                item.Value.Checked = editingItem.Flags.Contains(item.Key);
+            }
+
+            // Are flags complete?
+            if (RoadShouldFlagsItems.Any(x => x.Value.Checked))
+            {
+                RoadShoulderFlagsButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+            }
+            else
+            {
+                RoadShoulderFlagsButton.RightBadge = UIMenuItem.BadgeStyle.None;
+            }
+
+            // Reset spawn points
+            bool complete = true;
+            foreach (var item in RoadShoulderSpawnPointItems)
+            {
+                // Checking for incomplete spawn points
+                if (editingItem.SpawnPoints.ContainsKey(item.Key))
+                {
+                    // Assign item as complete
+                    var sp = editingItem.SpawnPoints[item.Key];
+                    item.Value.Tag = sp;
+                    item.Value.RightBadge = UIMenuItem.BadgeStyle.Tick;
+
+                    // Create checkpoint!
+                    var position = (int)item.Key;
+                    var checkpoint = GameWorld.CreateCheckpoint(sp.Position, Color.Yellow, radius: 5f);
+                    SpawnPointHandles.AddOrUpdate(position, checkpoint);
+                }
+                else
+                {
+                    item.Value.Tag = null;
+                    item.Value.RightBadge = UIMenuItem.BadgeStyle.None;
+                    complete = false;
+                }
+            }
+
+            // Are spawnpoints complete?
+            if (!complete)
+            {
+                RoadShoulderSpawnPointsButton.RightBadge = UIMenuItem.BadgeStyle.None;
+            }
+            else
+            {
+                RoadShoulderSpawnPointsButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+            }
+
+            // Reset Before intersection flags
+            RoadShoulderBeforeListButton.Index = RoadShoulderBeforeListButton.Collection.IndexOf(editingItem.BeforeIntersectionDirection);
+            foreach (var flag in editingItem.BeforeIntersectionFlags)
+            {
+                BeforeIntersectionItems[flag].Checked = true;
+            }
+
+            // Reset After intersection flags
+            RoadShoulderAfterListButton.Index = RoadShoulderAfterListButton.Collection.IndexOf(editingItem.AfterIntersectionDirection);
+            foreach (var flag in editingItem.AfterIntersectionFlags)
+            {
+                AfterIntersectionItems[flag].Checked = true;
+            }
+
+            // Get current Postal
+            RoadShoulderPostalButton.Collection.Clear();
+            RoadShoulderPostalButton.Collection.Add(editingItem.Postal, editingItem.Postal.Code.ToString());
+
+            // Add Zones
+            RoadShoulderZoneButton.Collection.Clear();
+            RoadShoulderZoneButton.Collection.Add(GameWorld.GetZoneNameAtLocation(editingItem.Position));
+            RoadShoulderZoneButton.Collection.Add("HIGHWAY");
+            var index = RoadShoulderZoneButton.Collection.IndexOf(editingItem.Zone.ScriptName);
+            if (index >= 0)
+                RoadShoulderZoneButton.Index = index;
+
+            // Set street name default
+            if (!String.IsNullOrEmpty(editingItem.StreetName))
+            {
+                RoadShoulderStreetButton.Description = editingItem.StreetName;
+                RoadShoulderStreetButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+            }
+            else
+            {
+                RoadShoulderStreetButton.Description = "";
+                RoadShoulderStreetButton.RightBadge = UIMenuItem.BadgeStyle.None;
+            }
+
+            // Crossing road
+            if (!String.IsNullOrEmpty(editingItem.Hint))
+            {
+                RoadShoulderHintButton.Description = editingItem.Hint;
+                RoadShoulderHintButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+            }
+            else
+            {
+                // Reset ticks
+                RoadShoulderHintButton.RightBadge = UIMenuItem.BadgeStyle.None;
+            }
+
+            // Set Speed
+            RoadShoulderSpeedButton.Value = editingItem.SpeedLimit;
+
+            // Enable button
+            RoadShoulderSaveButton.Enabled = true;
+
+            // Update description
+            AddRoadUIMenu.SubtitleText = "Editing Road Shoulder";
+
+            // Flag
+            RoadShoulderLocation = new SpawnPoint(editingItem.Position, editingItem.Heading);
+            Status = LocationUIStatus.Editing;
+        }
+
         /// <summary>
         /// Method called when the "Create New Road Shoulder" button is clicked.
         /// Clears all prior data.
@@ -242,11 +489,9 @@ namespace AgencyDispatchFramework.NativeUI
             //
             // Reset everything!
             //
-            if (NewLocationCheckpoint != null)
-            {
-                NewLocationCheckpoint.Dispose();
-                NewLocationCheckpoint = null;
-            }
+
+            // Update description
+            AddRoadUIMenu.SubtitleText = "Add Road Shoulder";
 
             // Grab player location
             var pos = Rage.Game.LocalPlayer.Character.Position;
@@ -277,7 +522,7 @@ namespace AgencyDispatchFramework.NativeUI
             RoadShoulderAfterListButton.Index = 0;
 
             // Create checkpoint at the player location
-            NewLocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Red);
+            LocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Red);
 
             // Get current Postal
             RoadShoulderPostalButton.Collection.Clear();
@@ -320,6 +565,9 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Enable button
             RoadShoulderSaveButton.Enabled = true;
+
+            // Flag
+            Status = LocationUIStatus.Adding;
         }
 
         /// <summary>
@@ -338,16 +586,13 @@ namespace AgencyDispatchFramework.NativeUI
             if (SpawnPointHandles.ContainsKey(index))
             {
                 handle = SpawnPointHandles[index];
-                handle.Dispose();
+                handle.Delete();
             }
 
             // Create new checkpoint !!important, need to subtract 2 from the Z since checkpoints spawn at waist level
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
             handle = GameWorld.CreateCheckpoint(cpPos, Color.Yellow, radius: 5f);
-            if (SpawnPointHandles.ContainsKey(index))
-                SpawnPointHandles[index] = handle;
-            else
-                SpawnPointHandles.Add(index, handle);
+            SpawnPointHandles.AddOrUpdate(index, handle);
 
             // Create spawn point
             menuItem.Tag = new SpawnPoint(cpPos, heading);
@@ -386,13 +631,7 @@ namespace AgencyDispatchFramework.NativeUI
                 if (item.RightBadge != UIMenuItem.BadgeStyle.Tick)
                 {
                     // Display notification to the player
-                    Rage.Game.DisplayNotification(
-                        "3dtextures",
-                        "mpgroundlogo_cops",
-                        "Agency Dispatch Framework",
-                        "Add Road Shoulder",
-                        $"~o~Location does not have all required parameters set"
-                    );
+                    ShowNotification("Add Road Shoulder", $"~o~Location does not have all required parameters set");
                     RoadShoulderSaveButton.Enabled = true;
                     return;
                 }
@@ -407,13 +646,7 @@ namespace AgencyDispatchFramework.NativeUI
             if (zone == null)
             {
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "Add Road Shoulder",
-                    $"~rSave Failed: ~o~Unable to find zone in the locations database!"
-                );
+                ShowNotification("Add Road Shoulder", $"~rSave Failed: ~o~Unable to find zone in the locations database!");
                 return;
             }
 
@@ -440,42 +673,57 @@ namespace AgencyDispatchFramework.NativeUI
                 // Be nice and prevent locking up
                 GameFiber.Yield();
 
-                // Save location in the database
-                LocationsDB.RoadShoulders.Insert(shoulder);
+                // Insert or update
+                if (Status == LocationUIStatus.Editing)
+                {
+                    // Grab item
+                    if (LocationCheckpoint?.Tag == null) return;
+
+                    // Ensure tag is set properly
+                    var editingItem = LocationCheckpoint.Tag as RoadShoulder;
+                    if (editingItem == null) return;
+
+                    // Set id for update
+                    shoulder.Id = editingItem.Id;
+
+                    // Save location in the database
+                    LocationsDB.RoadShoulders.Update(shoulder);
+
+                    // Editing
+                    LocationCheckpoint.Tag = shoulder;
+                }
+                else
+                {
+                    // Save location in the database
+                    LocationsDB.RoadShoulders.Insert(shoulder);
+                }
 
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "~b~Add Road Shoulder.",
-                    $"~g~Location saved Successfully."
-                );
+                ShowNotification("~b~Add Road Shoulder.", $"~g~Location saved Successfully.");
             }
             catch (Exception e)
             {
                 Log.Exception(e);
 
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "~b~Add Road Shoulder.",
-                    $"~rSave Failed: ~o~Please check your Game.log!"
-                );
+                ShowNotification("~b~Add Road Shoulder.", $"~rSave Failed: ~o~Please check your Game.log!");
             }
 
             // Go back
             AddRoadUIMenu.GoBack();
 
             // Are we currently showing checkpoints and blips?
-            if (ZoneCheckpoints.Count > 0)
+            if (Status == LocationUIStatus.Adding && ShowingZoneLocations)
             {
                 var pos = RoadShoulderLocation.Position;
-                ZoneCheckpoints.Add(GameWorld.CreateCheckpoint(pos, Color.Yellow, forceGround: true));
-                ZoneBlips.Add(new Blip(pos) { Color = Color.Red });
+
+                // Create checkpint and blips
+                var blip = new Blip(pos) { Color = Color.Yellow };
+                LocationCheckpoint = GameWorld.CreateCheckpoint(pos, Color.Yellow, forceGround: true);
+                ZoneCheckpoints.Add(LocationCheckpoint, blip);
             }
-        } 
+        }
+
+        #endregion Control Events
     }
 }

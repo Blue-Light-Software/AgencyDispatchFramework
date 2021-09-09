@@ -1,18 +1,13 @@
-﻿using AgencyDispatchFramework.Dispatching;
-using AgencyDispatchFramework.Extensions;
+﻿using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
-using AgencyDispatchFramework.Xml;
 using LiteDB;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
-using System.Xml;
 using static Rage.Native.NativeFunction;
 
 namespace AgencyDispatchFramework.NativeUI
@@ -85,14 +80,9 @@ namespace AgencyDispatchFramework.NativeUI
         private Dictionary<int, Checkpoint> SpawnPointHandles { get; set; }
 
         /// <summary>
-        /// Gets a list of all currently active <see cref="Blip"/>s in this <see cref="WorldZone"/>
-        /// </summary>
-        private List<Blip> ZoneBlips { get; set; }
-
-        /// <summary>
         /// Gets a list of all currently active checkpoint handles in this <see cref="WorldZone"/>
         /// </summary>
-        private List<Checkpoint> ZoneCheckpoints { get; set; }
+        private Dictionary<Checkpoint, Blip> ZoneCheckpoints { get; set; }
 
         /// <summary>
         /// Gets or sets the current coordinates of the location we are editing
@@ -102,7 +92,22 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Gets or sets the checkpoint handle that marks the current location being edited in game
         /// </summary>
-        private Checkpoint NewLocationCheckpoint { get; set; }
+        private Checkpoint LocationCheckpoint { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private LocationUIStatus Status { get; set; }
+
+        /// <summary>
+        /// Indicates wether zone checkpoints and blips are being displayed in game
+        /// </summary>
+        private bool ShowingZoneLocations { get; set; }
+
+        /// <summary>
+        /// The type of locaitons being shown via checkpoints and blips in game
+        /// </summary>
+        private LocationTypeCode LoadedBlipsLocationType { get; set; }
 
         /// <summary>
         /// Indicates to stop processing the controls of this menu while the keyboard is open
@@ -187,8 +192,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Create needed checkpoints
             SpawnPointHandles = new Dictionary<int, Checkpoint>(20);
-            ZoneBlips = new List<Blip>(40);
-            ZoneCheckpoints = new List<Checkpoint>(40);
+            ZoneCheckpoints = new Dictionary<Checkpoint, Blip>(40);
         }
 
         private void BuildLocationsMenu()
@@ -263,58 +267,6 @@ namespace AgencyDispatchFramework.NativeUI
             });
         }
 
-        private void AddRoadShoulderUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
-        {
-            // Are we backing out of this main menu
-            if (!forward && oldMenu == AddRoadUIMenu)
-            {
-                ResetCheckPoints();
-            }
-        }
-
-        private void RoadShoulderFlagsUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
-        {
-            // Are we backing out of this menu?
-            if (!forward && oldMenu == RoadShoulderFlagsUIMenu)
-            {
-                // We must have at least 1 item checked
-                if (RoadShouldFlagsItems.Any(x => x.Value.Checked))
-                {
-                    RoadShoulderFlagsButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
-                }
-                else
-                {
-                    RoadShoulderFlagsButton.RightBadge = UIMenuItem.BadgeStyle.None;
-                }
-            }
-        }
-
-        private void AddResidenceUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
-        {
-            // Reset checkpoint handles
-            if (newMenu == LocationsUIMenu || oldMenu == AddResidenceUIMenu)
-            {
-                ResetCheckPoints();
-            }
-        }
-
-        private void ResidenceFlagsUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
-        {
-            // Are we backing out of this menu?
-            if (!forward && oldMenu == ResidenceFlagsUIMenu)
-            {
-                // We must have at least 1 item checked
-                if (ResidenceFlagsItems.Any(x => x.Value.Checked))
-                {
-                    ResidenceFlagsButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
-                }
-                else
-                {
-                    ResidenceFlagsButton.RightBadge = UIMenuItem.BadgeStyle.None;
-                }
-            }
-        }
-
         private void LocationsMenuButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
             // Grab player location
@@ -387,18 +339,20 @@ namespace AgencyDispatchFramework.NativeUI
             // Delete all checkpoints
             foreach (var checkpoint in SpawnPointHandles.Values)
             {
-                checkpoint.Dispose();
+                checkpoint.Delete();
             }
 
             // Clear checkpoint handles
             SpawnPointHandles.Clear();
 
             // Clear location check point
-            if (NewLocationCheckpoint != null)
+            if (LocationCheckpoint != null && !ShowingZoneLocations)
             {
-                NewLocationCheckpoint.Dispose();
-                NewLocationCheckpoint = null;
+                LocationCheckpoint.Delete();
             }
+
+            // Set status to none
+            Status = LocationUIStatus.None;
         }
 
         /// <summary>
@@ -406,21 +360,18 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         private void ClearZoneLocations()
         {
+            // Delete checkpoints
             foreach (var checkpoint in ZoneCheckpoints)
             {
-                checkpoint.Dispose();
+                checkpoint.Key.Delete();
+                checkpoint.Value.Delete();
             }
 
-            foreach (Blip blip in ZoneBlips)
-            {
-                if (blip.Exists())
-                {
-                    blip.Delete();
-                }
-            }
-
+            // Clear collections
             ZoneCheckpoints.Clear();
-            ZoneBlips.Clear();
+
+            // Flag
+            ShowingZoneLocations = false;
         }
 
         /// <summary>
@@ -429,10 +380,11 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         /// <param name="queryable">The querable database instance to pull the locations from</param>
         /// <param name="color">The color to make the checkpoints in game</param>
-        private void LoadZoneLocations<T>(ILiteQueryable<T> queryable, Color color) where T : WorldLocation
+        private bool LoadZoneLocations<T>(ILiteQueryable<T> queryable, Color color, LocationTypeCode typeCode) where T : WorldLocation
         {
             // Clear old shit
             ClearZoneLocations();
+            LoadedBlipsLocationType = typeCode;
 
             // Get players current zone name
             var pos = GamePed.Player.Position;
@@ -444,14 +396,8 @@ namespace AgencyDispatchFramework.NativeUI
             if (zone == null)
             {
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "Add Location",
-                    $"~rFailed: ~o~Unable to find WorldZone ~y~{zoneName} ~o~in the locations database!"
-                );
-                return;
+                ShowNotification("Load Zone Locations", $"~rFailed: ~o~Unable to find WorldZone ~y~{zoneName} ~o~in the locations database!");
+                return false;
             }
 
             // Now grab locations
@@ -459,25 +405,63 @@ namespace AgencyDispatchFramework.NativeUI
             if (items == null || items.Length == 0)
             {
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "Add Location",
-                    $"There are no {enumName} locations in the database"
-                );
-                return;
+                ShowNotification("Load Zone Locations", $"There are no {enumName} locations in the database");
+                return false;
             }
 
-            // Add each checkpoint
+            // Add each location as a checkpoint and blip
             foreach (T location in items)
             {
+                // Create the checkpoint in the game world
                 var vector = location.Position;
+                var checkpoint = GameWorld.CreateCheckpoint(vector, color, forceGround: true);
+                var blip = new Blip(vector) { Color = color };
 
-                // Add checkpoint and blip
-                ZoneCheckpoints.Add(GameWorld.CreateCheckpoint(vector, color, forceGround: true));
-                ZoneBlips.Add(new Blip(vector) { Color = Color.Red });
+                // Tag the location so we can edit it later
+                checkpoint.Tag = location;
+
+                // Add checkpoint and blip to a collection to keep tabs on it
+                ZoneCheckpoints.Add(checkpoint, blip);
             }
+
+            // Flag
+            ShowingZoneLocations = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes the location checkpoint and blip
+        /// </summary>
+        /// <param name="locationCheckpoint"></param>
+        private void DeleteBlipAndCheckpoint(Checkpoint locationCheckpoint)
+        {
+            // Delete checkpoint
+            if (ZoneCheckpoints.TryGetValue(locationCheckpoint, out Blip blip))
+            {
+                // Remove checkpoint
+                ZoneCheckpoints.Remove(locationCheckpoint);
+                locationCheckpoint.Delete();
+
+                // Delete paired blip
+                blip.Delete();
+            }
+        }
+
+        /// <summary>
+        /// Short hand for showing a notification in game
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="description"></param>
+        private void ShowNotification(string title, string description)
+        {
+            // Display notification to the player
+            Rage.Game.DisplayNotification(
+                "3dtextures",
+                "mpgroundlogo_cops",
+                "Agency Dispatch Framework",
+                title,
+                description
+            );
         }
 
         internal void BeginListening()
@@ -497,14 +481,74 @@ namespace AgencyDispatchFramework.NativeUI
 
                     // Process menus
                     AllMenus.ProcessMenus();
+                    var isAnyOpen = AllMenus.IsAnyMenuOpen();
 
                     // If menu is closed, Wait for key press, then open menu
-                    if (!AllMenus.IsAnyMenuOpen() && Keyboard.IsKeyDownWithModifier(Settings.OpenCalloutMenuKey, Settings.OpenCalloutMenuModifierKey))
+                    if (!isAnyOpen && Keyboard.IsKeyDownWithModifier(Settings.OpenCalloutMenuKey, Settings.OpenCalloutMenuModifierKey))
                     {
                         MainUIMenu.Visible = true;
+                        Status = LocationUIStatus.None;
+                    }
+
+                    // Are we in editing mode?
+                    if (ShowingZoneLocations && ZoneCheckpoints.Count > 0)
+                    {
+                        if (isAnyOpen && Status == LocationUIStatus.None)
+                        {
+                            // Check if close to a checkpoint
+                            var playerPos = GamePed.Player.Position;
+                            var closestPoint = (
+                                from x in ZoneCheckpoints
+                                where x.Key.Position.DistanceTo(playerPos) < 7f
+                                select x.Key).FirstOrDefault();
+
+                            // Allow editing of the closest point
+                            if (closestPoint != null)
+                            {
+                                // Did our closest location change?
+                                if (!closestPoint.Equals(LocationCheckpoint))
+                                {
+                                    // Set
+                                    LocationCheckpoint = closestPoint;
+
+                                    // Reset buttons
+                                    DisableAllEditButtons();
+                                }
+
+                                // Grab location from the checkpoint
+                                var location = closestPoint.Tag as WorldLocation;
+                                if (location == null) continue;
+
+                                // Enable buttons
+                                if (location.LocationType == LoadedBlipsLocationType)
+                                {
+                                    switch (LoadedBlipsLocationType)
+                                    {
+                                        case LocationTypeCode.RoadShoulder:
+                                            RoadShoulderEditButton.Enabled = true;
+                                            RoadShoulderDeleteButton.Enabled = true;
+                                            break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                DisableAllEditButtons();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        DisableAllEditButtons();
                     }
                 }
             });
+        }
+
+        internal void DisableAllEditButtons()
+        {
+            RoadShoulderEditButton.Enabled = false;
+            RoadShoulderDeleteButton.Enabled = false;
         }
 
         internal void StopListening()

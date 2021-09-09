@@ -1,19 +1,23 @@
 ﻿using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
-using AgencyDispatchFramework.Xml;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 
 namespace AgencyDispatchFramework.NativeUI
 {
+    /// <summary>
+    /// This partial class contains the logic and menu properties
+    /// for the <see cref="Residence"/> location
+    /// </summary>
     internal partial class DeveloperPluginMenu
     {
+        #region Control Properties
+
         private UIMenuItem ResidenceCreateButton { get; set; }
 
         private UIMenuItem ResidenceLoadBlipsButton { get; set; }
@@ -40,9 +44,15 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenuItem ResidenceSaveButton { get; set; }
 
+        #endregion Control Properties
+
+        #region Properties
+
         private Dictionary<ResidenceFlags, UIMenuCheckboxItem> ResidenceFlagsItems { get; set; }
 
         private Dictionary<ResidencePosition, UIMenuItem<SpawnPoint>> ResidenceSpawnPointItems { get; set; }
+
+        #endregion Control Properties
 
         /// <summary>
         /// Builds the menu and its buttons
@@ -93,7 +103,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Button Events
             ResidenceCreateButton.Activated += ResidenceCreateButton_Activated;
-            ResidenceLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.Residences.Query(), Color.Yellow);
+            ResidenceLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.Residences.Query(), Color.Yellow, LocationTypeCode.Residence);
             ResidenceClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
 
             // Add buttons
@@ -191,11 +201,6 @@ namespace AgencyDispatchFramework.NativeUI
             //
             // Reset everything!
             //
-            if (NewLocationCheckpoint != null)
-            {
-                NewLocationCheckpoint.Dispose();
-                NewLocationCheckpoint = null;
-            }
 
             // Reset flags
             foreach (var cb in ResidenceFlagsItems.Values)
@@ -239,14 +244,15 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Enable button
             ResidenceSaveButton.Enabled = true;
+            Status = LocationUIStatus.Adding;
         }
 
         private void ResidencePositionButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
             // Delete old handle
-            if (NewLocationCheckpoint != null)
+            if (LocationCheckpoint != null)
             {
-                NewLocationCheckpoint.Dispose();
+                LocationCheckpoint.Delete();
             }
 
             // Set new location
@@ -256,7 +262,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Create checkpoint here
             var pos = GamePed.Player.Position;
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
-            NewLocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Purple);
+            LocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Purple);
 
             // Set street name default
             var streetName = GameWorld.GetStreetNameAtLocation(GamePed.Player.Position);
@@ -282,7 +288,7 @@ namespace AgencyDispatchFramework.NativeUI
             if (SpawnPointHandles.ContainsKey(index))
             {
                 checkpoint = SpawnPointHandles[index];
-                checkpoint.Dispose();
+                checkpoint.Delete();
             }
 
             // Create new checkpoint !!important, need to subtract 2 from the Z since checkpoints spawn at waist level
@@ -414,12 +420,44 @@ namespace AgencyDispatchFramework.NativeUI
             AddResidenceUIMenu.GoBack();
 
             // Are we currently showing checkpoints and blips?
-            if (ZoneCheckpoints.Count > 0)
+            if (Status == LocationUIStatus.Adding && ShowingZoneLocations)
             {
-                ZoneCheckpoints.Add(GameWorld.CreateCheckpoint(pos, Color.Yellow, forceGround: true));
-                ZoneBlips.Add(new Blip(pos) { Color = Color.Red });
+                var blip = new Blip(pos) { Color = Color.Yellow };
+                LocationCheckpoint = GameWorld.CreateCheckpoint(pos, Color.Yellow, forceGround: true);
+                ZoneCheckpoints.Add(LocationCheckpoint, blip);
             }
         }
+
+        #region Menu Events
+
+        private void AddResidenceUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
+        {
+            // Reset checkpoint handles
+            if (newMenu == LocationsUIMenu || oldMenu == AddResidenceUIMenu)
+            {
+                ResetCheckPoints();
+                Status = LocationUIStatus.None;
+            }
+        }
+
+        private void ResidenceFlagsUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
+        {
+            // Are we backing out of this menu?
+            if (!forward && oldMenu == ResidenceFlagsUIMenu)
+            {
+                // We must have at least 1 item checked
+                if (ResidenceFlagsItems.Any(x => x.Value.Checked))
+                {
+                    ResidenceFlagsButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+                }
+                else
+                {
+                    ResidenceFlagsButton.RightBadge = UIMenuItem.BadgeStyle.None;
+                }
+            }
+        }
+
+        #endregion Menu Events
 
         private Color GetResidencePositionColor(ResidencePosition value)
         {

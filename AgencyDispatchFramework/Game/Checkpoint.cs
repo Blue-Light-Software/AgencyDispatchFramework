@@ -8,7 +8,7 @@ namespace AgencyDispatchFramework.Game
     /// <summary>
     /// Represents a checkpoint within the game world and methods to manipulate it.
     /// </summary>
-    public class Checkpoint : IDisposable, ISpatial, IDeletable
+    public class Checkpoint : ISpatial, IDeletable, IEquatable<Checkpoint>
     {
         /// <summary>
         /// Gets or sets the reference handle of the checkpoint
@@ -33,8 +33,24 @@ namespace AgencyDispatchFramework.Game
         /// <summary>
         /// Indicates whether this checkpoint has been deleted in game already.
         /// </summary>
-        public bool IsDisposed { get; protected set; }
-        Vector3 ISpatial.Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool Deleted { get; protected set; }
+
+        /// <summary>
+        /// Gets or sets a custom object that contains data about this <see cref="Checkpoint"/>.
+        /// </summary>
+        public object Tag { get; set; }
+
+        /// <summary>
+        /// Gets the position of this <see cref="Checkpoint"/> in the world
+        /// </summary>
+        Vector3 ISpatial.Position
+        {
+            get => Position;
+            set
+            {
+                // Do nothing since we are read only 
+            }
+        }
 
         /// <summary>
         /// Creates a new instance
@@ -131,15 +147,7 @@ namespace AgencyDispatchFramework.Game
             Natives.SetCheckpointRgba2(Handle, color.R, color.G, color.B, color.A);
         }
 
-        /// <summary>
-        /// Deletes a checkpoint with the specified handle
-        /// </summary>
-        /// <param name="handle"></param>
-        public void Dispose()
-        {
-            IsDisposed = true;
-            Natives.DeleteCheckpoint(Handle);
-        }
+        #region Contract Methods
 
         public float DistanceTo(Vector3 position)
         {
@@ -171,10 +179,16 @@ namespace AgencyDispatchFramework.Game
             return Position.TravelDistanceTo(spatialObject);
         }
 
+        /// <summary>
+        /// Deletes a checkpoint
+        /// </summary>
         public void Delete()
         {
-            Dispose();
+            Deleted = true;
+            Natives.DeleteCheckpoint(Handle);
         }
+
+        #endregion
 
         /// <summary>
         /// Creates a checkpoint at the specified location, and returns the handle
@@ -206,5 +220,34 @@ namespace AgencyDispatchFramework.Game
             // return handle
             return new Checkpoint(handle, pos, pos, color);
         }
+
+        #region overrides
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Checkpoint);
+        }
+
+        /// <summary>
+        /// Compares the handles of the two objects
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(Checkpoint other)
+        {
+            return other?.Handle == Handle;
+        }
+
+        public override int GetHashCode()
+        {
+            return Handle.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return $"[Checkpoint # {Handle}; {Position}]";
+        }
+
+        #endregion
     }
 }

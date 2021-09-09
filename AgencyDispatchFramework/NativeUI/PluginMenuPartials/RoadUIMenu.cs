@@ -1,4 +1,5 @@
-﻿using RAGENativeUI;
+﻿using AgencyDispatchFramework.Game.Locations;
+using RAGENativeUI;
 using RAGENativeUI.Elements;
 using System;
 using System.Collections.Generic;
@@ -51,7 +52,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Button Events
             RoadShoulderCreateButton.Activated += RoadShouldersCreateButton_Activated;
-            RoadShoulderLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.Residences.Query(), Color.Red);
+            RoadShoulderLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.Residences.Query(), Color.Red, LocationTypeCode.Residence);
             RoadShoulderClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
 
             // Add buttons
