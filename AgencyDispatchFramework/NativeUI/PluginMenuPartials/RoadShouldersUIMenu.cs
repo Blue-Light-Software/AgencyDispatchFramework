@@ -113,7 +113,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Setup buttons
             RoadShoulderCreateButton = new UIMenuItem("Add New Location", "Creates a new Road Shoulder location where you are currently");
             RoadShoulderEditButton = new UIMenuItem("Edit Location", "Edit a Road Shoulder location that you are currently near. ~y~Blips must be loaded");
-            RoadShoulderDeleteButton = new UIMenuItem("Delete Location", "Edit a Road Shoulder location that you are currently near. ~y~Blips must be loaded");
+            RoadShoulderDeleteButton = new UIMenuItem("Delete Location", "Delete a Road Shoulder location that you are currently near. ~y~Blips must be loaded");
             RoadShoulderLoadBlipsButton = new UIMenuItem("Load Checkpoints", "Loads checkpoints in the world as well as blips on the map to show all saved locations in this zone");
             RoadShoulderClearBlipsButton = new UIMenuItem("Clear Checkpoints", "Clears all checkpoints and blips loaded by the ~y~Load Checkpoints ~w~option");
 
@@ -349,7 +349,7 @@ namespace AgencyDispatchFramework.NativeUI
                 Log.Exception(e);
 
                 // Display notification to the player
-                ShowNotification("Delete Road Shoulder", $"~rAction Failed: ~o~Please check your Game.log!");
+                ShowNotification("Delete Road Shoulder", $"~r~Action Failed: ~o~Please check your Game.log!");
             }
         }
 
@@ -646,7 +646,7 @@ namespace AgencyDispatchFramework.NativeUI
             if (zone == null)
             {
                 // Display notification to the player
-                ShowNotification("Add Road Shoulder", $"~rSave Failed: ~o~Unable to find zone in the locations database!");
+                ShowNotification("Add Road Shoulder", $"~r~Save Failed: ~o~Unable to find zone in the locations database!");
                 return;
             }
 
@@ -706,7 +706,7 @@ namespace AgencyDispatchFramework.NativeUI
                 Log.Exception(e);
 
                 // Display notification to the player
-                ShowNotification("~b~Add Road Shoulder.", $"~rSave Failed: ~o~Please check your Game.log!");
+                ShowNotification("~b~Add Road Shoulder.", $"~r~Save Failed: ~o~Please check your Game.log!");
             }
 
             // Go back

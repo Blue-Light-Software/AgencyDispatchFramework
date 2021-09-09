@@ -396,7 +396,7 @@ namespace AgencyDispatchFramework.NativeUI
             if (zone == null)
             {
                 // Display notification to the player
-                ShowNotification("Load Zone Locations", $"~rFailed: ~o~Unable to find WorldZone ~y~{zoneName} ~o~in the locations database!");
+                ShowNotification("Load Zone Locations", $"~r~Failed: ~o~Unable to find WorldZone ~y~{zoneName} ~o~in the locations database!");
                 return false;
             }
 
