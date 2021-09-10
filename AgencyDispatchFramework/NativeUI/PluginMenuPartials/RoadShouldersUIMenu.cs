@@ -41,8 +41,6 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenuNumericScrollerItem<int> RoadShoulderSpeedButton { get; set; }
 
-        private UIMenuListItem RoadShoulderPostalButton { get; set; }
-
         private UIMenuListItem RoadShoulderZoneButton { get; set; }
 
         private UIMenuItem RoadShoulderStreetButton { get; set; }
@@ -161,7 +159,6 @@ namespace AgencyDispatchFramework.NativeUI
             RoadShoulderHintButton = new UIMenuItem("Location Hint", "");
             RoadShoulderSpeedButton = new UIMenuNumericScrollerItem<int>("Speed Limit", "Sets the speed limit of this road", 10, 80, 5);
             RoadShoulderZoneButton = new UIMenuListItem("Zone", "Selects the jurisdictional zone");
-            RoadShoulderPostalButton = new UIMenuListItem("Postal", "The current location's Postal Code.");
             RoadShoulderSpawnPointsButton = new UIMenuItem("Spawn Points", "Sets safe spawn points for ped groups");
             RoadShoulderFlagsButton = new UIMenuItem("Road Shoulder Flags", "Open the RoadShoulder flags menu.");
             RoadShoulderSaveButton = new UIMenuItem("Save", "Saves the current location data to the XML file");
@@ -176,7 +173,6 @@ namespace AgencyDispatchFramework.NativeUI
             AddRoadUIMenu.AddItem(RoadShoulderHintButton);
             AddRoadUIMenu.AddItem(RoadShoulderSpeedButton);
             AddRoadUIMenu.AddItem(RoadShoulderZoneButton);
-            AddRoadUIMenu.AddItem(RoadShoulderPostalButton);
             AddRoadUIMenu.AddItem(RoadShoulderSpawnPointsButton);
             AddRoadUIMenu.AddItem(RoadShoulderFlagsButton);
             AddRoadUIMenu.AddItem(RoadShoulderSaveButton);
@@ -262,7 +258,7 @@ namespace AgencyDispatchFramework.NativeUI
             foreach (RoadFlags flag in Enum.GetValues(typeof(RoadFlags)))
             {
                 var name = Enum.GetName(typeof(RoadFlags), flag);
-                var cb = new UIMenuCheckboxItem(name, false);
+                var cb = new UIMenuCheckboxItem(name, false, GetRoadFlagDesc(flag));
                 RoadShouldFlagsItems.Add(flag, cb);
 
                 // Add button
@@ -359,11 +355,6 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Create checkpoint at the player location
             LocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Red);
-
-            // Get current Postal
-            RoadShoulderPostalButton.Collection.Clear();
-            var postal = Postal.FromVector(pos);
-            RoadShoulderPostalButton.Collection.Add(postal, postal.Code.ToString());
 
             // Add Zones
             RoadShoulderZoneButton.Collection.Clear();
@@ -476,10 +467,6 @@ namespace AgencyDispatchFramework.NativeUI
             {
                 AfterIntersectionItems[flag].Checked = true;
             }
-
-            // Get current Postal
-            RoadShoulderPostalButton.Collection.Clear();
-            RoadShoulderPostalButton.Collection.Add(editingItem.Postal, editingItem.Postal.Code.ToString());
 
             // Add Zones
             RoadShoulderZoneButton.Collection.Clear();
@@ -689,15 +676,16 @@ namespace AgencyDispatchFramework.NativeUI
 
                     // Save location in the database
                     LocationsDB.RoadShoulders.Update(shoulder);
-
-                    // Editing
-                    LocationCheckpoint.Tag = shoulder;
                 }
                 else
                 {
                     // Save location in the database
-                    LocationsDB.RoadShoulders.Insert(shoulder);
+                    var id = LocationsDB.RoadShoulders.Insert(shoulder);
+                    shoulder.Id = id.AsInt32;
                 }
+
+                // Editing
+                LocationCheckpoint.Tag = shoulder;
 
                 // Display notification to the player
                 ShowNotification($"~b~{heading} Road Shoulder.", $"~g~Location saved Successfully.");
@@ -726,5 +714,45 @@ namespace AgencyDispatchFramework.NativeUI
         }
 
         #endregion Control Events
+
+        /// <summary>
+        /// Gets the text description of a <see cref="RoadFlags"/>
+        /// </summary>
+        private string GetRoadFlagDesc(RoadFlags flag)
+        {
+            switch (flag)
+            {
+                default: return "";
+                case RoadFlags.DirtRoad: return "Describes the location as being along an unpaved road";
+                case RoadFlags.OneWayRoad: return "Describes the location as being along a one way road";
+                case RoadFlags.TwoLaneRoad: return "Describes the location as being along a 2 lane road";
+                case RoadFlags.ThreeLaneRoad: return "Describes the location as being along a 3 lane road";
+                case RoadFlags.ThreeLaneCenterTurnRoad: return "Describes the location as being along a 2 lane road, having a 3rd center turn lane";
+                case RoadFlags.FourLaneRoad: return "Describes the location as being along a 4 lane road";
+                case RoadFlags.FiveLaneRoad: return "Describes the location as being along a 5 lane road";
+                case RoadFlags.FiveLaneCenterTurnRoad: return "Describes the location as being along a 4 lane road, having a 5th center turn lane";
+                case RoadFlags.SixLaneRoad: return "Describes the location as being along a 6 lane road";
+                case RoadFlags.DottedCenterLane: return "Describes a road with a dotted center line, allowing passing on the on coming traffic lane";
+                case RoadFlags.OnInterstate: return "escribes the location as being on the interstate";
+                case RoadFlags.OnInterstateRamp: return "Describes the location as being on an interstate freeway ramp";
+                case RoadFlags.OnBridge: return "Describes the location as being on a bridge";
+                case RoadFlags.InsideTunnel: return "Describes the location as being inside of a tunnel";
+                case RoadFlags.DrivewaysLeft: return "Describes a location as being along a road with driveways on the left side";
+                case RoadFlags.DrivewaysRight: return "Describes a location as being along a road with driveways on the right side";
+                case RoadFlags.BusinessesLeft: return "Describes a location as being along a road with businesses on the left side";
+                case RoadFlags.BusinessesRight: return "Describes a location as being along a road with businesses on the right side";
+                case RoadFlags.FreewayGasStation: return "Describes a location as being a Gas station along the freeway";
+                case RoadFlags.BeforeLightedIntersection: return "Describes the location as being before a lighted intersection";
+                case RoadFlags.AfterLightedIntersection: return "Describes the location as being after a lighted intersection";
+                case RoadFlags.BeforeStopIntersection: return "Describes the location as being before an intersection with Stop/Yield signs on all sides";
+                case RoadFlags.AfterStopIntersection: return "Describes the location as being after an intersection with Stop/Yield signs on all sides";
+                case RoadFlags.BeforeNoStopIntersection: return "Describes the location as being near an intersection with Stop/Yield signs only on the intersecting road (no stop this direction).";
+                case RoadFlags.AfterNoStopIntersection: return "Describes the location as being after an intersection with Stop/Yield signs only on the intersecting road (no stop this direction).";
+                case RoadFlags.BeforeInterstateOnRamp: return "Describes the location as being on the side of a interstate freeway just before an on ramp";
+                case RoadFlags.AfterInterstateOnRamp: return "Describes the location as being on the side of a interstate freeway after an on ramp";
+                case RoadFlags.BeforeInterstateOffRamp: return "Describes the location as being on the side of a interstate freeway just before an off ramp";
+                case RoadFlags.AfterInterstateOffRamp: return "Describes the location as being on the side of a interstate freeway after an off ramp";
+            }
+        }
     }
 }

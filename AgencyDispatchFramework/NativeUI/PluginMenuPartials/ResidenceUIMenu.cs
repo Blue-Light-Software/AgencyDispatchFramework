@@ -31,13 +31,13 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenuItem ResidencePositionButton { get; set; }
 
-        private UIMenuListItem ResidencePostalButton { get; set; }
-
         private UIMenuListItem ResidenceZoneButton { get; set; }
 
         private UIMenuListItem ResidenceClassButton { get; set; }
 
         private UIMenuItem ResidenceStreetButton { get; set; }
+
+        private UIMenuItem ResidenceHintButton { get; set; }
 
         private UIMenuItem ResidenceNumberButton { get; set; }
 
@@ -152,9 +152,9 @@ namespace AgencyDispatchFramework.NativeUI
             ResidenceNumberButton = new UIMenuItem("Building Number", "");
             ResidenceUnitButton = new UIMenuItem("Room/Unit Number", "");
             ResidenceStreetButton = new UIMenuItem("Street Name", "");
+            ResidenceHintButton = new UIMenuItem("Location Hint", "");
             ResidenceClassButton = new UIMenuListItem("Class", "Sets the social class of this home");
             ResidenceZoneButton = new UIMenuListItem("Zone", "Selects the jurisdictional zone");
-            ResidencePostalButton = new UIMenuListItem("Postal", "The current location's Postal Code");
             ResidenceSpawnPointsButton = new UIMenuItem("Spawn Points", "Sets the required spawn points");
             ResidenceFlagsButton = new UIMenuItem("Residence Flags", "Open the Residence flags menu");
             ResidenceSaveButton = new UIMenuItem("Save", "Saves the current residence to the XML file");
@@ -171,9 +171,9 @@ namespace AgencyDispatchFramework.NativeUI
             AddResidenceUIMenu.AddItem(ResidenceNumberButton);
             AddResidenceUIMenu.AddItem(ResidenceUnitButton);
             AddResidenceUIMenu.AddItem(ResidenceStreetButton);
+            AddResidenceUIMenu.AddItem(ResidenceHintButton);
             AddResidenceUIMenu.AddItem(ResidenceClassButton);
             AddResidenceUIMenu.AddItem(ResidenceZoneButton);
-            AddResidenceUIMenu.AddItem(ResidencePostalButton);
             AddResidenceUIMenu.AddItem(ResidenceSpawnPointsButton);
             AddResidenceUIMenu.AddItem(ResidenceFlagsButton);
             AddResidenceUIMenu.AddItem(ResidenceSaveButton);
@@ -213,13 +213,15 @@ namespace AgencyDispatchFramework.NativeUI
             foreach (SocialClass flag in Enum.GetValues(typeof(SocialClass)))
             {
                 var name = Enum.GetName(typeof(SocialClass), flag);
-                ResidenceClassButton.Collection.Add(name);
+                ResidenceClassButton.Collection.Add(flag, name);
             }
 
             // Register for events
             AddResidenceUIMenu.OnMenuChange += AddResidenceUIMenu_OnMenuChange;
             ResidenceFlagsUIMenu.OnMenuChange += ResidenceFlagsUIMenu_OnMenuChange;
         }
+
+        #region Control Events
 
         /// <summary>
         /// Method called when the "Create New Residence" button is clicked.
@@ -230,12 +232,6 @@ namespace AgencyDispatchFramework.NativeUI
             //
             // Reset everything!
             //
-            // Delete old handle
-            if (LocationCheckpoint != null)
-            {
-                LocationCheckpoint.Delete();
-                LocationCheckpoint = null;
-            }
 
             // Reset flags
             foreach (var cb in ResidenceFlagsItems.Values)
@@ -253,11 +249,6 @@ namespace AgencyDispatchFramework.NativeUI
             // Grab player location
             var pos = Rage.Game.LocalPlayer.Character.Position;
 
-            // Get current Postal
-            ResidencePostalButton.Collection.Clear();
-            var postal = Postal.FromVector(pos);
-            ResidencePostalButton.Collection.Add(postal, postal.Code.ToString());
-
             // Add Zones
             ResidenceZoneButton.Collection.Clear();
             ResidenceZoneButton.Collection.Add(GameWorld.GetZoneNameAtLocation(pos));
@@ -268,6 +259,10 @@ namespace AgencyDispatchFramework.NativeUI
 
             ResidenceStreetButton.Description = "";
             ResidenceStreetButton.RightBadge = UIMenuItem.BadgeStyle.None;
+
+            // Reset ticks
+            ResidenceHintButton.Description = "";
+            ResidenceHintButton.RightBadge = UIMenuItem.BadgeStyle.Tick; // Not required
 
             // Reset ticks
             ResidenceUnitButton.Description = "";
@@ -346,11 +341,6 @@ namespace AgencyDispatchFramework.NativeUI
             // Grab player location
             var pos = Rage.Game.LocalPlayer.Character.Position;
 
-            // Get current Postal
-            ResidencePostalButton.Collection.Clear();
-            var postal = Postal.FromVector(pos);
-            ResidencePostalButton.Collection.Add(postal, postal.Code.ToString());
-
             // Add Zones
             ResidenceZoneButton.Collection.Clear();
             ResidenceZoneButton.Collection.Add(GameWorld.GetZoneNameAtLocation(pos));
@@ -361,6 +351,10 @@ namespace AgencyDispatchFramework.NativeUI
 
             ResidenceStreetButton.Description = editingItem.StreetName ?? "";
             ResidenceStreetButton.RightBadge = GetBadgeStyleByTextValue(editingItem.StreetName);
+
+            // Reset ticks
+            ResidenceHintButton.Description = editingItem.Hint ?? "";
+            ResidenceHintButton.RightBadge = UIMenuItem.BadgeStyle.Tick; // Not required
 
             // Reset ticks
             ResidenceUnitButton.Description = editingItem.UnitId ?? "";
@@ -442,11 +436,18 @@ namespace AgencyDispatchFramework.NativeUI
             ResidencePositionButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
 
             // Set street name default
-            var streetName = GameWorld.GetStreetNameAtLocation(GamePed.Player.Position);
+            var streetName = GameWorld.GetStreetNameAtLocation(GamePed.Player.Position, out string crossRoad);
             if (!String.IsNullOrEmpty(streetName))
             {
                 ResidenceStreetButton.Description = streetName;
                 ResidenceStreetButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+            }
+
+            // Add hint
+            if (!String.IsNullOrEmpty(crossRoad))
+            {
+                ResidenceHintButton.Description = $"near {crossRoad}";
+                ResidenceHintButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
             }
         }
 
@@ -543,6 +544,7 @@ namespace AgencyDispatchFramework.NativeUI
                     Heading = NewLocationPosition.Heading,
                     BuildingNumber = ResidenceNumberButton.Description,
                     StreetName = ResidenceStreetButton.Description,
+                    Hint = ResidenceHintButton.Description,
                     UnitId = ResidenceUnitButton.Description,
                     Class = (SocialClass)ResidenceClassButton.SelectedValue,
                     Flags = ResidenceFlagsItems.Where(x => x.Value.Checked).Select(x => x.Key).ToList(),
@@ -568,15 +570,16 @@ namespace AgencyDispatchFramework.NativeUI
 
                     // Save location in the database
                     LocationsDB.Residences.Update(home);
-
-                    // Editing
-                    LocationCheckpoint.Tag = home;
                 }
                 else
                 {
                     // Save location in the database
-                    LocationsDB.Residences.Insert(home);
+                    var id = LocationsDB.Residences.Insert(home);
+                    home.Id = id.AsInt32;
                 }
+
+                // Editing
+                LocationCheckpoint.Tag = home;
 
                 // Display notification to the player
                 ShowNotification($"~b~{heading} Residence.", $"~g~Location saved Successfully.");
@@ -602,15 +605,20 @@ namespace AgencyDispatchFramework.NativeUI
             }
         }
 
+        #endregion Control Events
+
         #region Menu Events
 
         private void AddResidenceUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
         {
             // Reset checkpoint handles
-            if (newMenu == LocationsUIMenu || oldMenu == AddResidenceUIMenu)
+            if (!forward)
             {
-                ResetCheckPoints();
-                Status = LocationUIStatus.None;
+                if (oldMenu == AddResidenceUIMenu)
+                {
+                    ResetCheckPoints();
+                    Status = LocationUIStatus.None;
+                }
             }
         }
 

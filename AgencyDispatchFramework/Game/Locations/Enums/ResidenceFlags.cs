@@ -73,6 +73,11 @@
         HasCarPort,
 
         /// <summary>
+        /// Indicates that the home has a driveway
+        /// </summary>
+        HasDriveWay,
+
+        /// <summary>
         /// Indicates that the residence is in a Cul De Sac
         /// </summary>
         InCulsDSac,

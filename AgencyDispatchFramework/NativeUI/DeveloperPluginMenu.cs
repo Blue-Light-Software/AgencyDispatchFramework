@@ -340,16 +340,29 @@ namespace AgencyDispatchFramework.NativeUI
             // Delete all checkpoints
             foreach (var checkpoint in SpawnPointHandles.Values)
             {
-                checkpoint.Delete();
+                checkpoint?.Delete();
             }
 
             // Clear checkpoint handles
             SpawnPointHandles.Clear();
 
             // Clear location check point
-            if (LocationCheckpoint != null && !ShowingZoneLocations)
+            if (LocationCheckpoint != null)
             {
-                LocationCheckpoint.Delete();
+                if (!ShowingZoneLocations)
+                {
+                    LocationCheckpoint.Delete();
+                    LocationCheckpoint = null;
+                }
+                else if (!ZoneCheckpoints.ContainsKey(LocationCheckpoint))
+                {
+                    // Change color to match
+                    LocationCheckpoint.SetColor(Color.Red);
+
+                    // Create Blip
+                    var blip = new Blip(LocationCheckpoint.Position) { Color = Color.Red };
+                    ZoneCheckpoints.Add(LocationCheckpoint, blip);
+                }
             }
 
             // Set status to none
@@ -386,7 +399,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Clear old shit
             ClearZoneLocations();
             LoadedBlipsLocationType = typeCode;
-
+            
             // Get players current zone name
             var pos = GamePed.Player.Position;
             var zoneName = GameWorld.GetZoneNameAtLocation(pos);
