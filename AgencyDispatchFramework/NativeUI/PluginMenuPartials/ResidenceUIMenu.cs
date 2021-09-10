@@ -201,7 +201,7 @@ namespace AgencyDispatchFramework.NativeUI
             foreach (ResidencePosition flag in Enum.GetValues(typeof(ResidencePosition)))
             {
                 var name = Enum.GetName(typeof(ResidencePosition), flag);
-                var item = new UIMenuItem<SpawnPoint>(null, name, "Activate to set position. Character facing is important");
+                var item = new UIMenuItem<SpawnPoint>(null, name, GetResidencePositionDesc(flag));
                 item.Activated += ResidenceSpawnPointButton_Activated;
                 ResidenceSpawnPointItems.Add(flag, item);
 
@@ -641,14 +641,19 @@ namespace AgencyDispatchFramework.NativeUI
 
         #endregion Menu Events
 
+        /// <summary>
+        /// Gets a color for a <see cref="Checkpoint"/> based on the <see cref="ResidencePosition"/>
+        /// </summary>
         private Color GetResidencePositionColor(ResidencePosition value)
         {
             switch (value)
             {
                 case ResidencePosition.BackDoorPed:
                 case ResidencePosition.FrontDoorPed1:
+                case ResidencePosition.FrontDoorPed2:
                 case ResidencePosition.SidewalkPed:
                     return Color.Yellow;
+                case ResidencePosition.BackDoorPolicePed:
                 case ResidencePosition.FrontDoorPolicePed1:
                 case ResidencePosition.FrontDoorPolicePed2:
                 case ResidencePosition.FrontDoorPolicePed3:
@@ -669,8 +674,42 @@ namespace AgencyDispatchFramework.NativeUI
                     return Color.White;
                 case ResidencePosition.ResidentParking1:
                 case ResidencePosition.ResidentParking2:
+                    return Color.Green;
                 default:
-                    return Color.LightGreen;
+                    return Color.HotPink;
+            }
+        }
+
+        /// <summary>
+        /// Gets the text description of a <see cref="ResidencePosition"/>
+        /// </summary>
+        private string GetResidencePositionDesc(ResidencePosition value)
+        {
+            switch (value)
+            {
+                case ResidencePosition.BackDoorPed: return "A ped standing at the ~g~Back Door or porch ~y~facing away from the door";
+                case ResidencePosition.FrontDoorPed1: return "A ped standing at the ~g~Front Door ~y~facing away from the door";
+                case ResidencePosition.FrontDoorPed2: return "A ped standing near the ~g~Front Door ~y~facing ~b~FrontDoorPolicePed2";
+                case ResidencePosition.SidewalkPed: return "A ped standing on the ~g~Sidewalk in ~y~Front ~w~of the home";
+                case ResidencePosition.BackDoorPolicePed: return "A police ped near the ~g~back door or porch ~y~Talking to ~b~BackDoorPed";
+                case ResidencePosition.FrontDoorPolicePed1:
+                case ResidencePosition.FrontDoorPolicePed2: return "A police ped near the ~g~Front Door or porch ~y~Talking to ~b~FrontDoorPed1";
+                case ResidencePosition.FrontDoorPolicePed3: return "A police ped near the ~g~Front Door or porch ~y~Talking to or watching ~b~FrontDoorPed2";
+                case ResidencePosition.SideWalkPolicePed1:
+                case ResidencePosition.SideWalkPolicePed2: return "A police ped standing near the ~g~Sidewalk ~y~Talking to ~b~SidewalkPed";
+                case ResidencePosition.HidingSpot1: 
+                case ResidencePosition.HidingSpot2: return "A ~y~Hiding Spot ~w~for a ~o~Suspect ~w~to hide from the police";
+                case ResidencePosition.PoliceParking1: 
+                case ResidencePosition.PoliceParking2:
+                case ResidencePosition.PoliceParking3:
+                case ResidencePosition.PoliceParking4: return "A place for police car to park";
+                case ResidencePosition.FrontYardPedGroup: return "An area for ~y~Peds ~w~to spawn in the ~g~Front Yard";
+                case ResidencePosition.SideYardPedGroup: return "An area for ~y~Peds ~w~to spawn in a ~g~Side Yard";
+                case ResidencePosition.BackYardPedGroup: return "An area for ~y~Peds ~w~to spawn in the ~g~Back Yard";
+                case ResidencePosition.ResidentParking1:
+                case ResidencePosition.ResidentParking2: return "A place for residents car to be parked";
+                default:
+                    return "Activate to set position. Character facing is important";
             }
         }
     }
