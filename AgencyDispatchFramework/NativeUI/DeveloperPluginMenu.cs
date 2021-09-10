@@ -475,11 +475,33 @@ namespace AgencyDispatchFramework.NativeUI
             return (String.IsNullOrEmpty(text)) ? UIMenuItem.BadgeStyle.None : UIMenuItem.BadgeStyle.Tick;
         }
 
+        /// <summary>
+        /// Disables all the "Edit Location" and "Delete Location" menu items, while 
+        /// Enabling all the "Create New Location" menu items
+        /// </summary>
+        private void DisableAllEditButtons()
+        {
+            // Road Shoulders
+            RoadShoulderCreateButton.Enabled = true;
+            RoadShoulderEditButton.Enabled = false;
+            RoadShoulderDeleteButton.Enabled = false;
+
+            // Residences
+            ResidenceCreateButton.Enabled = true;
+            ResidenceEditButton.Enabled = false;
+            ResidenceDeleteButton.Enabled = false;
+        }
+
+        /// <summary>
+        /// Beings listening for the Key and Modifer key to open/close the menu,
+        /// as well as process the logic to run this menu
+        /// </summary>
         internal void BeginListening()
         {
             if (IsListening) return;
             IsListening = true;
 
+            // Create a fiber to prevent locking down the main game loop
             ListenFiber = GameFiber.StartNew(delegate 
             {
                 while (IsListening)
@@ -501,9 +523,10 @@ namespace AgencyDispatchFramework.NativeUI
                         Status = LocationUIStatus.None;
                     }
 
-                    // Are we in editing mode?
+                    // Are we showing locations
                     if (ShowingZoneLocations && ZoneCheckpoints.Count > 0)
                     {
+                        // Is a menu open, but not in an editing or creating window
                         if (isAnyOpen && Status == LocationUIStatus.None)
                         {
                             // Check if close to a checkpoint
@@ -536,14 +559,21 @@ namespace AgencyDispatchFramework.NativeUI
                                     switch (LoadedBlipsLocationType)
                                     {
                                         case LocationTypeCode.RoadShoulder:
+                                            RoadShoulderCreateButton.Enabled = false;
                                             RoadShoulderEditButton.Enabled = true;
                                             RoadShoulderDeleteButton.Enabled = true;
+                                            break;
+                                        case LocationTypeCode.Residence:
+                                            ResidenceCreateButton.Enabled = false;
+                                            ResidenceEditButton.Enabled = true;
+                                            ResidenceDeleteButton.Enabled = true;
                                             break;
                                     }
                                 }
                             }
                             else
                             {
+                                LocationCheckpoint = null;
                                 DisableAllEditButtons();
                             }
                         }
@@ -556,12 +586,10 @@ namespace AgencyDispatchFramework.NativeUI
             });
         }
 
-        internal void DisableAllEditButtons()
-        {
-            RoadShoulderEditButton.Enabled = false;
-            RoadShoulderDeleteButton.Enabled = false;
-        }
-
+        /// <summary>
+        /// Stops listening for the Key and Modifer key to open/close the menu,
+        /// as well as stopping the logic that runs this menu
+        /// </summary>
         internal void StopListening()
         {
             IsListening = false;

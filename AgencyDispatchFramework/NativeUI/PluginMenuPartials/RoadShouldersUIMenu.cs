@@ -319,6 +319,12 @@ namespace AgencyDispatchFramework.NativeUI
             //
             // Reset everything!
             //
+            // Delete old handle
+            if (LocationCheckpoint != null)
+            {
+                LocationCheckpoint.Delete();
+                LocationCheckpoint = null;
+            }
 
             // Update description
             AddRoadUIMenu.SubtitleText = "Add Road Shoulder";

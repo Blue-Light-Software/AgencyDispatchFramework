@@ -20,8 +20,11 @@ namespace AgencyDispatchFramework.NativeUI
         #region Control Properties
 
         private UIMenuItem ResidenceCreateButton { get; set; }
-        public UIMenuItem ResidenceEditButton { get; private set; }
-        public UIMenuItem ResidenceDeleteButton { get; private set; }
+
+        private UIMenuItem ResidenceEditButton { get; set; }
+
+        private UIMenuItem ResidenceDeleteButton { get; set; }
+
         private UIMenuItem ResidenceLoadBlipsButton { get; set; }
 
         private UIMenuItem ResidenceClearBlipsButton { get; set; }
