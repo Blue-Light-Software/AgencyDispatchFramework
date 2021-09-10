@@ -376,6 +376,9 @@ namespace AgencyDispatchFramework.Game
         /// <exception cref="FormatException">thrown in the XML file is missing nodes and/or attributes</exception>
         public static WorldZone GetZoneByName(string name)
         {
+            // We dont allow null here...
+            if (String.IsNullOrWhiteSpace(name)) return null;
+
             // If we have loaded this zone already, skip it
             if (ZoneCache.ContainsKey(name))
             {

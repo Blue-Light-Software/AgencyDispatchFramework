@@ -478,13 +478,30 @@ namespace AgencyDispatchFramework.Game
         }
 
         /// <summary>
+        /// Gets the <see cref="WorldZone"/> based on the coordinates provided.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public static WorldZone GetZoneAtLocation(Vector3 position)
+        {
+            var name = Natives.GetNameOfZone<string>(position.X, position.Y, position.Z);
+            return WorldZone.GetZoneByName(name);
+        }
+
+        /// <summary>
         /// Gets the zone name based on the coordinates provided.
         /// </summary>
         /// <param name="position"></param>
         /// <returns></returns>
         public static string GetZoneNameAtLocation(Vector3 position, bool fullName = false)
         {
-            return Natives.GetNameOfZone<string>(position.X, position.Y, position.Z);
+            // Script name?
+            if (!fullName)
+                return Natives.GetNameOfZone<string>(position.X, position.Y, position.Z);
+
+            // Fetch zone
+            var zone = GetZoneAtLocation(position);
+            return zone?.DisplayName;
         }
 
         /// <summary>

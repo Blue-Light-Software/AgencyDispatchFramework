@@ -1,4 +1,5 @@
-﻿using AgencyDispatchFramework.Game;
+﻿using AgencyDispatchFramework.Extensions;
+using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
 using Rage;
 using RAGENativeUI;
@@ -19,7 +20,8 @@ namespace AgencyDispatchFramework.NativeUI
         #region Control Properties
 
         private UIMenuItem ResidenceCreateButton { get; set; }
-
+        public UIMenuItem ResidenceEditButton { get; private set; }
+        public UIMenuItem ResidenceDeleteButton { get; private set; }
         private UIMenuItem ResidenceLoadBlipsButton { get; set; }
 
         private UIMenuItem ResidenceClearBlipsButton { get; set; }
@@ -98,21 +100,45 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Setup buttons
             ResidenceCreateButton = new UIMenuItem("Add New Location", "Creates a new Residence location where you are currently");
-            ResidenceLoadBlipsButton = new UIMenuItem("Load Checkpoints", "Loads checkpoints in the world as well as blips on the map to show all saved locations in this zone");
+            ResidenceEditButton = new UIMenuItem("Edit Location", "Edit a Residence location that you are currently near. ~y~Blips must be loaded");
+            ResidenceDeleteButton = new UIMenuItem("Delete Location", "Delete a Residence location that you are currently near. ~y~Blips must be loaded");
+            ResidenceLoadBlipsButton = new UIMenuItem("Load Checkpoints", "Loads checkpoints in the world as well as blips on the map to show all saved ~y~Residence ~w~locations in this zone");
             ResidenceClearBlipsButton = new UIMenuItem("Clear Checkpoints", "Clears all checkpoints and blips loaded by the ~y~Load Checkpoints ~w~option");
+
+            // Disable buttons by default
+            ResidenceEditButton.Enabled = false;
+            ResidenceDeleteButton.Enabled = false;
+            ResidenceClearBlipsButton.Enabled = false;
 
             // Button Events
             ResidenceCreateButton.Activated += ResidenceCreateButton_Activated;
-            ResidenceLoadBlipsButton.Activated += (s, e) => LoadZoneLocations(LocationsDB.Residences.Query(), Color.Yellow, LocationTypeCode.Residence);
-            ResidenceClearBlipsButton.Activated += (s, e) => ClearZoneLocations();
+            ResidenceEditButton.Activated += ResidenceEditButton_Activated;
+            ResidenceDeleteButton.Activated += ResidenceDeleteButton_Activated;
+            ResidenceLoadBlipsButton.Activated += (s, e) =>
+            {
+                if (LoadZoneLocations(LocationsDB.Residences.Query(), Color.Red, LocationTypeCode.Residence))
+                {
+                    ResidenceLoadBlipsButton.Enabled = false;
+                    ResidenceClearBlipsButton.Enabled = true;
+                }
+            };
+            ResidenceClearBlipsButton.Activated += (s, e) =>
+            {
+                ResidenceLoadBlipsButton.Enabled = true;
+                ResidenceClearBlipsButton.Enabled = false;
+                ClearZoneLocations();
+            };
 
             // Add buttons
             ResidenceUIMenu.AddItem(ResidenceCreateButton);
+            ResidenceUIMenu.AddItem(ResidenceEditButton);
+            ResidenceUIMenu.AddItem(ResidenceDeleteButton);
             ResidenceUIMenu.AddItem(ResidenceLoadBlipsButton);
             ResidenceUIMenu.AddItem(ResidenceClearBlipsButton);
 
             // Bind Buttons
             ResidenceUIMenu.BindMenuToItem(AddResidenceUIMenu, ResidenceCreateButton);
+            ResidenceUIMenu.BindMenuToItem(AddResidenceUIMenu, ResidenceEditButton);
 
             // *************************************************
             // Add Residence UI Menu
@@ -201,6 +227,12 @@ namespace AgencyDispatchFramework.NativeUI
             //
             // Reset everything!
             //
+            // Delete old handle
+            if (LocationCheckpoint != null)
+            {
+                LocationCheckpoint.Delete();
+                LocationCheckpoint = null;
+            }
 
             // Reset flags
             foreach (var cb in ResidenceFlagsItems.Values)
@@ -242,11 +274,153 @@ namespace AgencyDispatchFramework.NativeUI
             ResidenceSpawnPointsButton.RightBadge = UIMenuItem.BadgeStyle.None;
             ResidencePositionButton.RightBadge = UIMenuItem.BadgeStyle.None;
 
+            // Update description
+            AddResidenceUIMenu.SubtitleText = "Add New Residence";
+
             // Enable button
             ResidenceSaveButton.Enabled = true;
             Status = LocationUIStatus.Adding;
         }
 
+        /// <summary>
+        /// Method called when the Residence "Edit Location" button is clicked on the Residence UI menu
+        /// </summary>
+        private void ResidenceEditButton_Activated(UIMenu sender, UIMenuItem selectedItem)
+        {
+            // Grab item
+            if (LocationCheckpoint?.Tag == null) return;
+
+            // Ensure tag is set properly
+            var editingItem = LocationCheckpoint.Tag as Residence;
+            if (editingItem == null) return;
+
+            // Reset flags
+            foreach (var kvp in ResidenceFlagsItems)
+            {
+                kvp.Value.Checked = editingItem.Flags.Contains(kvp.Key);
+            }
+
+            // Are flags complete?
+            if (ResidenceFlagsItems.Any(x => x.Value.Checked))
+            {
+                ResidenceFlagsButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
+            }
+            else
+            {
+                ResidenceFlagsButton.RightBadge = UIMenuItem.BadgeStyle.None;
+            }
+
+            // Reset spawn points
+            bool complete = true;
+            foreach (var item in ResidenceSpawnPointItems)
+            {
+                // Checking for incomplete spawn points
+                if (editingItem.SpawnPoints.ContainsKey(item.Key))
+                {
+                    // Assign item as complete
+                    var sp = editingItem.SpawnPoints[item.Key];
+                    item.Value.Tag = sp;
+                    item.Value.RightBadge = UIMenuItem.BadgeStyle.Tick;
+
+                    // Create checkpoint!
+                    var position = (int)item.Key;
+                    var color = GetResidencePositionColor(item.Key);
+                    var checkpoint = GameWorld.CreateCheckpoint(sp.Position, color, radius: 5f);
+                    SpawnPointHandles.AddOrUpdate(position, checkpoint);
+                }
+                else
+                {
+                    item.Value.Tag = null;
+                    item.Value.RightBadge = UIMenuItem.BadgeStyle.None;
+                    complete = false;
+                }
+            }
+
+            // Are spawnpoints complete?
+            var spBadgeStyle = (!complete) ? UIMenuItem.BadgeStyle.None : UIMenuItem.BadgeStyle.Tick;
+            ResidenceSpawnPointsButton.RightBadge = spBadgeStyle;
+
+            // Grab player location
+            var pos = Rage.Game.LocalPlayer.Character.Position;
+
+            // Get current Postal
+            ResidencePostalButton.Collection.Clear();
+            var postal = Postal.FromVector(pos);
+            ResidencePostalButton.Collection.Add(postal, postal.Code.ToString());
+
+            // Add Zones
+            ResidenceZoneButton.Collection.Clear();
+            ResidenceZoneButton.Collection.Add(GameWorld.GetZoneNameAtLocation(pos));
+
+            // Reset buttons
+            ResidenceNumberButton.Description = editingItem.BuildingNumber ?? "";
+            ResidenceNumberButton.RightBadge = GetBadgeStyleByTextValue(editingItem.BuildingNumber);
+
+            ResidenceStreetButton.Description = editingItem.StreetName ?? "";
+            ResidenceStreetButton.RightBadge = GetBadgeStyleByTextValue(editingItem.StreetName);
+
+            // Reset ticks
+            ResidenceUnitButton.Description = editingItem.UnitId ?? "";
+            ResidenceUnitButton.RightBadge = UIMenuItem.BadgeStyle.Tick; // Not required
+            ResidencePositionButton.RightBadge = UIMenuItem.BadgeStyle.Tick; // Already set
+
+            // Update description
+            AddResidenceUIMenu.SubtitleText = "Editing Residence";
+
+            // Update position
+            NewLocationPosition = new SpawnPoint(editingItem.Position, editingItem.Heading);
+
+            // Enable button
+            ResidenceSaveButton.Enabled = true;
+            Status = LocationUIStatus.Editing;
+        }
+
+        /// <summary>
+        /// Method called when the Residence "Delete Location" button is clicked on the Residence UI menu
+        /// </summary>
+        private void ResidenceDeleteButton_Activated(UIMenu sender, UIMenuItem selectedItem)
+        {
+            // Grab item
+            if (LocationCheckpoint?.Tag == null) return;
+
+            // Ensure tag is set properly
+            var editingItem = LocationCheckpoint.Tag as Residence;
+            if (editingItem == null) return;
+
+            // Disable buttons
+            DisableAllEditButtons();
+
+            // Prevent app crashing
+            try
+            {
+                // Delete location
+                if (LocationsDB.Residences.Delete(editingItem.Id))
+                {
+                    // Delete checkpoint
+                    DeleteBlipAndCheckpoint(LocationCheckpoint);
+                    LocationCheckpoint = null;
+
+                    // Notify the user
+                    ShowNotification("Delete Residence", $"~g~Location deleted.");
+                }
+                else
+                {
+                    // Display notification to the player
+                    ShowNotification("Delete Residence", $"~o~Unable to delete location from database.");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Exception(e);
+
+                // Display notification to the player
+                ShowNotification("Delete Residence", $"~r~Action Failed: ~o~Please check your Game.log!");
+            }
+        }
+
+        /// <summary>
+        /// Method called when the Residence "Set Position" button is clicked on the Residence UI menu
+        /// </summary>
         private void ResidencePositionButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
             // Delete old handle
@@ -255,14 +429,14 @@ namespace AgencyDispatchFramework.NativeUI
                 LocationCheckpoint.Delete();
             }
 
-            // Set new location
-            NewLocationPosition = new SpawnPoint(GamePed.Player.Position, GamePed.Player.Heading);
-            ResidencePositionButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
-
             // Create checkpoint here
             var pos = GamePed.Player.Position;
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
             LocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Purple);
+
+            // Set new location
+            NewLocationPosition = new SpawnPoint(pos, GamePed.Player.Heading);
+            ResidencePositionButton.RightBadge = UIMenuItem.BadgeStyle.Tick;
 
             // Set street name default
             var streetName = GameWorld.GetStreetNameAtLocation(GamePed.Player.Position);
@@ -274,7 +448,7 @@ namespace AgencyDispatchFramework.NativeUI
         }
 
         /// <summary>
-        /// Method called when a residece "Spawnpoint" button is clicked on the Residence Spawn Points UI menu
+        /// Method called when a residence "Spawnpoint" button is clicked on the Residence Spawn Points UI menu
         /// </summary>
         private void ResidenceSpawnPointButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
@@ -294,10 +468,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Create new checkpoint !!important, need to subtract 2 from the Z since checkpoints spawn at waist level
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
             checkpoint = GameWorld.CreateCheckpoint(cpPos, GetResidencePositionColor(value), radius: 1f);
-            if (SpawnPointHandles.ContainsKey(index))
-                SpawnPointHandles[index] = checkpoint;
-            else
-                SpawnPointHandles.Add(index, checkpoint);
+            SpawnPointHandles.AddOrUpdate(index, checkpoint);
 
             // Create spawn point
             menuItem.Tag = new SpawnPoint(cpPos, GamePed.Player.Heading);
@@ -328,6 +499,7 @@ namespace AgencyDispatchFramework.NativeUI
         {
             // Disable button to prevent spam clicking!
             ResidenceSaveButton.Enabled = false;
+            var heading = (Status == LocationUIStatus.Adding) ? "Add" : "Edit";
 
             // Ensure everything is done
             var requiredItems = new[] { ResidenceFlagsButton, ResidenceNumberButton, ResidencePositionButton, ResidenceSpawnPointsButton, ResidenceStreetButton };
@@ -336,13 +508,7 @@ namespace AgencyDispatchFramework.NativeUI
                 if (item.RightBadge != UIMenuItem.BadgeStyle.Tick)
                 {
                     // Display notification to the player
-                    Rage.Game.DisplayNotification(
-                        "3dtextures",
-                        "mpgroundlogo_cops",
-                        "Agency Dispatch Framework",
-                        "Add Residence",
-                        $"~o~Location does not have all required parameters set"
-                    );
+                    ShowNotification($"{heading} Residence", $"~o~Location does not have all required parameters set");
                     ResidenceSaveButton.Enabled = true;
                     return;
                 }
@@ -360,13 +526,7 @@ namespace AgencyDispatchFramework.NativeUI
             if (zone == null)
             {
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "Add Residence",
-                    $"~rSave Failed: ~o~Unable to find zone in the locations database!"
-                );
+                ShowNotification($"{heading} Residence", $"~r~Save Failed: ~o~Unable to find zone in the locations database!");
                 return;
             }
 
@@ -390,31 +550,42 @@ namespace AgencyDispatchFramework.NativeUI
                 // Be nice and prevent locking up
                 GameFiber.Yield();
 
-                // Save location in the database
-                LocationsDB.Residences.Insert(home);
+                // Insert or update
+                if (Status == LocationUIStatus.Editing)
+                {
+                    // Grab item
+                    if (LocationCheckpoint?.Tag == null) return;
+
+                    // Ensure tag is set properly
+                    var editingItem = LocationCheckpoint.Tag as Residence;
+                    if (editingItem == null) return;
+
+                    // Set id for update
+                    home.Id = editingItem.Id;
+
+                    // Save location in the database
+                    LocationsDB.Residences.Update(home);
+
+                    // Editing
+                    LocationCheckpoint.Tag = home;
+                }
+                else
+                {
+                    // Save location in the database
+                    LocationsDB.Residences.Insert(home);
+                }
 
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "~b~Add Residence",
-                    $"~g~Location saved Successfully."
-                );
+                ShowNotification($"~b~{heading} Residence.", $"~g~Location saved Successfully.");
             }
             catch (Exception e)
             {
                 Log.Exception(e);
 
                 // Display notification to the player
-                Rage.Game.DisplayNotification(
-                    "3dtextures",
-                    "mpgroundlogo_cops",
-                    "Agency Dispatch Framework",
-                    "~b~Add Residence",
-                    $"~rSave Failed: ~o~Please check your Game.log!"
-                );
+                ShowNotification($"~b~{heading} Residence.", $"~r~Save Failed: ~o~Please check your Game.log!");
             }
+
 
             // Go back
             AddResidenceUIMenu.GoBack();

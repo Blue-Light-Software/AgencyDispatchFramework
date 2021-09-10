@@ -5,6 +5,7 @@ using LiteDB;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -462,6 +463,16 @@ namespace AgencyDispatchFramework.NativeUI
                 title,
                 description
             );
+        }
+
+        /// <summary>
+        /// Gets a <see cref="UIMenuItem.BadgeStyle"/> based on the value of the text
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        private UIMenuItem.BadgeStyle GetBadgeStyleByTextValue(string text)
+        {
+            return (String.IsNullOrEmpty(text)) ? UIMenuItem.BadgeStyle.None : UIMenuItem.BadgeStyle.Tick;
         }
 
         internal void BeginListening()
