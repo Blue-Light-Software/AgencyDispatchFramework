@@ -1,15 +1,15 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Game;
-using AgencyDispatchFramework.NativeUI;
 using AgencyDispatchFramework.Scripting;
 using Rage;
 using System;
-using System.Windows;
 
 namespace AgencyDispatchFramework.Simulation
 {
     internal static class Simulation
     {
+        public static bool IsRunning { get; private set; }
+
         /// <summary>
         /// Starts the virtual simulation
         /// </summary>
@@ -17,13 +17,15 @@ namespace AgencyDispatchFramework.Simulation
         public static bool Begin(SimulationSettings settings)
         {
             // Do we fade the screen?
-            bool fadeScreen = settings.ForceWeather || settings.RandomWeather || settings.FastForward;
+            bool fadeScreen = settings.ForceWeather || settings.RandomWeather || settings.FastForward || settings.SyncTime;
             bool changedTimeScale = false;
 
             // local variables to fallback onto
             int currentMult = TimeScale.GetCurrentTimeScaleMultiplier();
-            var time = World.TimeOfDay;
             var weather = GameWorld.CurrentWeather;
+            var now = DateTime.Now;
+            var gameNow = World.DateTime;
+            var time = gameNow.TimeOfDay;
 
             // Wrap to catch unexpected errors
             try
@@ -49,13 +51,19 @@ namespace AgencyDispatchFramework.Simulation
                 // Set world time
                 if (settings.FastForward)
                 {
-                    World.TimeOfDay = GetShiftStartTime(settings.SelectedShift);
+                    time = GetShiftStartTime(settings.SelectedShift);
+                    World.TimeOfDay = time;
+                }
+                else if (settings.SyncTime)
+                {
+                    time = DateTime.Now.TimeOfDay;
+                    World.TimeOfDay = time;
                 }
 
                 // Initialize dispatch script
                 if (!Dispatch.Start(settings))
                 {
-                    // Set back
+                    // Set the timescale back to original
                     if (changedTimeScale)
                     {
                         TimeScale.SetTimeScaleMultiplier(currentMult);
@@ -66,12 +74,32 @@ namespace AgencyDispatchFramework.Simulation
                 }
 
                 // Start the event manager
-                Scripting.ScriptEngine.Begin();
+                ScriptEngine.Begin();
+
+                // Set world Date
+                if (settings.SyncDate)
+                {
+                    World.DateTime = new DateTime(now.Year, now.Month, now.Day, time.Hours, time.Minutes, time.Seconds);
+                }
 
                 // Transition weather
                 if (settings.ForceWeather)
                 {
                     GameWorld.TransitionToWeather(settings.SelectedWeather, 0f);
+                }
+                else if (settings.RandomWeather)
+                {
+                    var rnd = new CryptoRandom();
+                    if (settings.RealisticWeather)
+                    {
+                        var weathers = GameWorld.GetRealisticWeatherListByDateTime();
+                        GameWorld.TransitionToWeather(rnd.PickOne(weathers), 0f);
+                    }
+                    else
+                    {
+                        var weathers = (Weather[])Enum.GetValues(typeof(Weather));
+                        GameWorld.TransitionToWeather(rnd.PickOne(weathers), 0f);
+                    }
                 }
 
                 // Tell GameWorld to begin listening. Stops automatically when player goes off duty
@@ -85,6 +113,7 @@ namespace AgencyDispatchFramework.Simulation
                 }
 
                 // Report back
+                IsRunning = true;
                 return true;
             }
             catch (Exception e)
@@ -124,6 +153,8 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         public static void Shutdown()
         {
+            IsRunning = false;
+
             // Tell dispatch to stop
             Dispatch.Shutdown();
 

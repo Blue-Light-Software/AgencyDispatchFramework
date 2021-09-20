@@ -31,13 +31,6 @@ namespace AgencyDispatchFramework.NativeUI
         private UIMenu WorldSettingsMenu;
         private UIMenu CallSignMenu;
 
-        public UIMenuCheckboxItem SupervisorBox { get; private set; }
-        public UIMenuCheckboxItem FastForwardBox { get; private set; }
-        public UIMenuItem WorldSettingsButton { get; private set; }
-        public UIMenuItem CallSignsButton { get; private set; }
-        public UIMenuItem BeginSimuButton { get; private set; }
-        public UIMenuListItem ShiftSelectMenuItem { get; private set; }
-
         #region Main Menu Buttons
 
         private UIMenuItem DispatchMenuButton { get; set; }
@@ -52,6 +45,16 @@ namespace AgencyDispatchFramework.NativeUI
 
         #region Patrol Menu Buttons
 
+        private UIMenuCheckboxItem SupervisorBox { get; set; }
+
+        private UIMenuItem WorldSettingsButton { get; set; }
+
+        private UIMenuItem CallSignsButton { get; set; }
+
+        private UIMenuItem BeginSimuButton { get; set; }
+
+        private UIMenuListItem ShiftSelectMenuItem { get; set; }
+
         private UIMenuListItem SetRoleMenuItem { get; set; }
 
         private UIMenuListItem PatrolAreaMenuButton { get; set; }
@@ -62,13 +65,23 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenuListItem BeatMenuButton { get; set; }
 
-        public UIMenuCheckboxItem RandomWeatherBox { get; private set; }
-        public UIMenuCheckboxItem ForceWeatherBox { get; private set; }
-        public UIMenuItem SaveWorldSettingsButton { get; private set; }
+        private UIMenuCheckboxItem RandomWeatherBox { get; set; }
 
-        public UIMenuListItem TimeScaleMenuItem { get; private set; }
+        private UIMenuCheckboxItem RealisticWeatherBox { get; set; }
 
-        public UIMenuListItem WeatherMenuItem { get; private set; }
+        private UIMenuCheckboxItem ForceWeatherBox { get; set; }
+
+        private UIMenuItem SaveWorldSettingsButton { get; set; }
+
+        private UIMenuListItem TimeScaleMenuItem { get; set; }
+
+        private UIMenuCheckboxItem FastForwardBox { get; set; }
+
+        private UIMenuCheckboxItem SyncTimeBox { get; set; }
+
+        private UIMenuCheckboxItem SyncDateBox { get; set; }
+
+        private UIMenuListItem WeatherMenuItem { get; set; }
 
 
         #endregion Patrol Menu Buttons
@@ -147,6 +160,7 @@ namespace AgencyDispatchFramework.NativeUI
             // Refresh indexes
             AllMenus.RefreshIndex();
             MainUIMenu.OnMenuChange += MainUIMenu_OnMenuChange;
+            PatrolUIMenu.OnMenuChange += PatrolUIMenu_OnMenuChange;
         }
 
         internal void BeginListening()
@@ -164,7 +178,7 @@ namespace AgencyDispatchFramework.NativeUI
                 Rage.Game.DisplayHelp($"Press the {openMenuModifierKeyString} ~+~ {openMenuKeyString} keys to open the interaction menu.", 6000);
                 */
 
-                // Open the menu
+                // Open the menu initially when going on duty
                 PatrolUIMenu.Visible = true;
 
                 // Main loop
@@ -179,7 +193,14 @@ namespace AgencyDispatchFramework.NativeUI
                     // If menu is closed, Wait for key press, then open menu
                     if (!AllMenus.IsAnyMenuOpen() && Keyboard.IsKeyDownWithModifier(Settings.OpenMenuKey, Settings.OpenMenuModifierKey))
                     {
-                        MainUIMenu.Visible = true;
+                        if (!Simulation.Simulation.IsRunning)
+                        {
+                            PatrolUIMenu.Visible = true;
+                        }
+                        else
+                        {
+                            MainUIMenu.Visible = true;
+                        }
                     }
 
                     // Enable/Disable buttons if not/on duty
@@ -196,6 +217,9 @@ namespace AgencyDispatchFramework.NativeUI
                         EndCallMenuButton.Enabled = Dispatch.ActivePlayerEvent != null;
                         RequestCallMenuButton.Enabled = Dispatch.CanInvokeAnyCalloutForPlayer(true);
                     }
+
+                    // Enable / Disable menus
+                    PatrolSettingsMenuButton.Enabled = !Simulation.Simulation.IsRunning;
                 }
             });
         }
@@ -268,8 +292,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Create buttons
             SupervisorBox = new UIMenuCheckboxItem("Supervisor", false, "Enables supervisor mode.");
-            FastForwardBox = new UIMenuCheckboxItem("Fast Forward to Shift", true, "If checked, when this menu closes time is fast forwarded to the begining of you shift");
-            WorldSettingsButton = new UIMenuItem("World Settings", "Setup world settings.");
+            WorldSettingsButton = new UIMenuItem("World Settings", "Setup the world settings for this shift.");
             CallSignsButton = new UIMenuItem("Choose CallSign", "Choose your CallSign for your Agency.");
             BeginSimuButton = new UIMenuItem("Begin Simulation", "Start the ADF simulation.") { BackColor = Color.Green, ForeColor = Color.Black };
             BeginSimuButton.Activated += BeginSimuButton_Activated;
@@ -299,7 +322,6 @@ namespace AgencyDispatchFramework.NativeUI
             PatrolUIMenu.AddItem(SupervisorBox);
             PatrolUIMenu.AddItem(SetRoleMenuItem);
             PatrolUIMenu.AddItem(ShiftSelectMenuItem);
-            PatrolUIMenu.AddItem(FastForwardBox);
             PatrolUIMenu.AddItem(WorldSettingsButton);
             PatrolUIMenu.AddItem(CallSignsButton);
             PatrolUIMenu.AddItem(BeginSimuButton);
@@ -368,17 +390,23 @@ namespace AgencyDispatchFramework.NativeUI
             };
 
             // Create buttons
-            RandomWeatherBox = new UIMenuCheckboxItem("Randomize Weather", false, "If checked, the weather will be selected at random.") { Enabled = false };
+            TimeScaleMenuItem = new UIMenuListItem("Timescale Multiplier", "Sets the timescale multipler. Default is 30 (1 second in real life equals 30 seconds in game)");
+            FastForwardBox = new UIMenuCheckboxItem("Fast Forward to Shift", true, "If checked, when this menu closes, in game time will be fast forwarded to the begining of you shift");
+            SyncTimeBox = new UIMenuCheckboxItem("Sync Time", false, "If checked, the clock in game will be sync'd with the current real time.") { Enabled = false };
+            SyncDateBox = new UIMenuCheckboxItem("Sync Date", false, "If checked, the in game month, day and year will be set in game using todays date.");
             ForceWeatherBox = new UIMenuCheckboxItem("Force Weather", false, "If checked, the selected weather will be forced at when this menu closes.");
+            RandomWeatherBox = new UIMenuCheckboxItem("Randomize Weather", false, "If checked, the weather will be selected at random.");
+            RealisticWeatherBox = new UIMenuCheckboxItem("Realistic Weather", false, "If checked, the randomized weather will be sensible to the current month in game.") { Enabled = false };
             SaveWorldSettingsButton = new UIMenuItem("Save", "Saves the selected settings and goes back to the previous menu.");
 
             // Events
+            FastForwardBox.CheckboxEvent += FastForwardBox_CheckboxEvent;
             ForceWeatherBox.CheckboxEvent += ForceWeatherBox_CheckboxEvent;
             RandomWeatherBox.CheckboxEvent += RandomWeatherBox_CheckboxEvent;
+            SaveWorldSettingsButton.Activated += (s, e) => WorldSettingsMenu.GoBack();
 
-            // TimeScale slider
+            // Insert TimeScale valeus into the slider
             var currentMult = TimeScale.GetCurrentTimeScaleMultiplier();
-            TimeScaleMenuItem = new UIMenuListItem("Timescale Multiplier", "Sets the timescale multipler. Default is 30 (1 second in real life equals 30 seconds in game)");
             foreach (var number in Enumerable.Range(1, 30))
             {
                 // Add item
@@ -398,22 +426,54 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Add patrol menu buttons
             WorldSettingsMenu.AddItem(TimeScaleMenuItem);
+            WorldSettingsMenu.AddItem(FastForwardBox);
+            WorldSettingsMenu.AddItem(SyncTimeBox);
+            WorldSettingsMenu.AddItem(SyncDateBox);
+            WorldSettingsMenu.AddItem(RandomWeatherBox);
+            WorldSettingsMenu.AddItem(RealisticWeatherBox);
             WorldSettingsMenu.AddItem(ForceWeatherBox);
             WorldSettingsMenu.AddItem(WeatherMenuItem);
-            WorldSettingsMenu.AddItem(RandomWeatherBox);
             WorldSettingsMenu.AddItem(SaveWorldSettingsButton);
+        }
+
+        /// <summary>
+        /// Disables and unchecks the Sync Clock button if the Fast Forward to Shift checkbox is checked
+        /// or vise versa
+        /// </summary>
+        private void FastForwardBox_CheckboxEvent(UIMenuCheckboxItem sender, bool Checked)
+        {
+            if (Checked)
+            {
+                SyncTimeBox.Enabled = false;
+                SyncTimeBox.Checked = false;
+            }
+            else
+            {
+                SyncTimeBox.Enabled = true;
+            }
         }
 
         private void RandomWeatherBox_CheckboxEvent(UIMenuCheckboxItem sender, bool Checked)
         {
             if (Checked)
             {
-                ForceWeatherBox.Checked = false;
-                ForceWeatherBox.Enabled = false;
+                if (ForceWeatherBox.Enabled)
+                {
+                    ForceWeatherBox.Checked = false;
+                    ForceWeatherBox.Enabled = false;
+                }
+
+                RealisticWeatherBox.Enabled = true;
             }
             else
             {
-                ForceWeatherBox.Enabled = true;
+                if (!ForceWeatherBox.Enabled)
+                {
+                    ForceWeatherBox.Enabled = true;
+                }
+                
+                RealisticWeatherBox.Enabled = false;
+                RealisticWeatherBox.Checked = false;
             }
         }
 
@@ -421,13 +481,21 @@ namespace AgencyDispatchFramework.NativeUI
         {
             if (Checked)
             {
-                RandomWeatherBox.Checked = false;
-                RandomWeatherBox.Enabled = false;
+                if (RandomWeatherBox.Enabled)
+                {
+                    RandomWeatherBox.Checked = false;
+                    RandomWeatherBox.Enabled = false;
+                }
+
                 WeatherMenuItem.Enabled = true;
             }
             else
             {
-                RandomWeatherBox.Enabled = true;
+                if (!RandomWeatherBox.Enabled)
+                {
+                    RandomWeatherBox.Enabled = true;
+                }
+
                 WeatherMenuItem.Enabled = false;
             }
         }
@@ -467,13 +535,35 @@ namespace AgencyDispatchFramework.NativeUI
 
         private void MainUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
         {
-            if (!forward) return;
-
-            if (newMenu == DispatchUIMenu)
+            if (forward)
             {
-                var status = Dispatch.GetPlayerStatus();
-                int index = OfficerStatusMenuButton.Collection.IndexOf(status);
-                OfficerStatusMenuButton.Index = index;
+                // Only set this when going forward
+                if (newMenu == DispatchUIMenu)
+                {
+                    var status = Dispatch.GetPlayerStatus();
+                    int index = OfficerStatusMenuButton.Collection.IndexOf(status);
+                    OfficerStatusMenuButton.Index = index;
+                }
+            }
+        }
+
+        private void PatrolUIMenu_OnMenuChange(UIMenu oldMenu, UIMenu newMenu, bool forward)
+        {
+            if (forward)
+            {
+
+            }
+            else
+            {
+                // If we are trying to exit the Patrol Settings menu into the main menu
+                // without starting the simulation, close all menus
+                if (oldMenu == PatrolUIMenu)
+                {
+                    if (!Simulation.Simulation.IsRunning)
+                    {
+                        AllMenus.CloseAllMenus();
+                    }
+                }
             }
         }
 
@@ -557,8 +647,11 @@ namespace AgencyDispatchFramework.NativeUI
                     SelectedShift = (ShiftRotation)ShiftSelectMenuItem.SelectedValue,
                     TimeScaleMult = (int)TimeScaleMenuItem.SelectedValue,
                     FastForward = FastForwardBox.Checked,
+                    SyncTime = SyncTimeBox.Checked,
+                    SyncDate = SyncDateBox.Checked,
                     ForceWeather = ForceWeatherBox.Checked,
                     RandomWeather = RandomWeatherBox.Checked,
+                    RealisticWeather = RealisticWeatherBox.Checked,
                     SelectedWeather = (Weather)WeatherMenuItem.SelectedValue,
                     SetCallSign = callSign
                 };

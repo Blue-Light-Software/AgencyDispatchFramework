@@ -203,24 +203,6 @@ namespace AgencyDispatchFramework.Game
         }
 
         /// <summary>
-        /// Gets the current in game weather using Natives
-        /// </summary>
-        /// <returns></returns>
-        private static Weather GetCurrentWeather()
-        {
-            var weatherHash = Natives.GetPrevWeatherTypeHashName<uint>();
-            for (int i = 0; i < WeatherNames.Length; i++)
-            {
-                if (weatherHash == Rage.Game.GetHashKey(WeatherNames[i]))
-                {
-                    return (Weather)i;
-                }
-            }
-
-            return Weather.Unknown;
-        }
-
-        /// <summary>
         /// Gets the remaining time until the next <see cref="TimePeriod"/> change (GameTime)
         /// </summary>
         /// <returns></returns>
@@ -246,6 +228,26 @@ namespace AgencyDispatchFramework.Game
             }
         }
 
+        #region Weather Methods
+
+        /// <summary>
+        /// Gets the current in game weather using Natives
+        /// </summary>
+        /// <returns></returns>
+        private static Weather GetCurrentWeather()
+        {
+            var weatherHash = Natives.GetPrevWeatherTypeHashName<uint>();
+            for (int i = 0; i < WeatherNames.Length; i++)
+            {
+                if (weatherHash == Rage.Game.GetHashKey(WeatherNames[i]))
+                {
+                    return (Weather)i;
+                }
+            }
+
+            return Weather.Unknown;
+        }
+
         /// <summary>
 		/// Transitions to the specified weather.
 		/// </summary>
@@ -268,6 +270,81 @@ namespace AgencyDispatchFramework.Game
         {
             return new WeatherSnapshot();
         }
+
+        /// <summary>
+        /// Gets a random weather list that makes sense based on the current in game DateTime
+        /// </summary>
+        /// <returns></returns>
+        public static Weather[] GetRealisticWeatherListByDateTime() => GetRealisticWeatherListByDateTime(World.DateTime);
+
+        /// <summary>
+        /// Gets a random weather list that makes sense based on the supplied DateTime
+        /// </summary>
+        /// <returns></returns>
+        public static Weather[] GetRealisticWeatherListByDateTime(DateTime inGameDate)
+        {
+            if (inGameDate.Month == 1 || inGameDate.Month.InRange(10, 12))
+            {
+                // Winter
+                return new[]
+                {
+                    Weather.Blizzard,
+                    Weather.Snowing,
+                    Weather.Christmas,
+                    Weather.Snowlight,
+                    Weather.Raining,
+                    Weather.Overcast,
+                    //Weather.Halloween,
+                    Weather.Foggy,
+                    Weather.Clouds,
+                    Weather.Clearing
+                };
+            }
+            else if (inGameDate.Month.InRange(2, 5))
+            {
+                // Spring
+                return new[]
+                {
+                    Weather.Raining,
+                    Weather.Overcast,
+                    Weather.Clouds,
+                    Weather.Clearing,
+                    Weather.Clear,
+                    Weather.Neutral,
+                    Weather.ThunderStorm
+                };
+            }
+            else if (inGameDate.Month.InRange(6, 9))
+            {
+                return new[]
+                {
+                    Weather.Raining,
+                    Weather.Overcast,
+                    Weather.Clouds,
+                    Weather.Clearing,
+                    Weather.Clear,
+                    Weather.Neutral,
+                    Weather.ExtraSunny,
+                    Weather.Smog
+                };
+            }
+            else
+            {
+                // Fall
+                return new[]
+                {
+                    Weather.Raining,
+                    Weather.Overcast,
+                    Weather.Clouds,
+                    Weather.Clearing,
+                    Weather.Clear,
+                    Weather.Neutral,
+                    Weather.ThunderStorm
+                };
+            }
+        }
+
+        #endregion Weather Methods
 
         #region Spawning Entity Methods 
 

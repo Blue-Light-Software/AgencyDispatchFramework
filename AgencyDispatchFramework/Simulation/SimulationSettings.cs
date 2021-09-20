@@ -1,10 +1,5 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Game;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AgencyDispatchFramework.Simulation
 {
@@ -14,7 +9,13 @@ namespace AgencyDispatchFramework.Simulation
 
         public bool FastForward { get; set; }
 
+        public bool SyncTime { get; set; }
+
+        public bool SyncDate { get; set; }
+
         public bool RandomWeather { get; set; }
+
+        public bool RealisticWeather { get; set; }
 
         public bool ForceWeather { get; set; }
 
