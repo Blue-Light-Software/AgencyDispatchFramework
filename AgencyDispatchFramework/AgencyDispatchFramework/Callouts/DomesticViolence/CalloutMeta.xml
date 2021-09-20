@@ -1,12 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <CalloutMeta>
   <Author>Wilson212</Author>
-  <Controller>AgencyDispatchFramework.Scripting.Callouts.DomesticViolence.Controller</Controller>
+  <Controller>
+    <Script>AgencyDispatchFramework.Scripting.Callouts.DomesticViolence.Controller</Script>
+    <Type>Callout</Type>
+  </Controller>
   <Scenarios>
 
     <ReportsOfArguingThreats>
-      <!-- Emergency Type -->
-      <Category>Disturbance</Category>
       <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
       <Probabilities>
         <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
@@ -17,57 +18,55 @@
         <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Probabilities>
       <!-- Location requirements for scenario -->
-      <Location>
-        <Type>Residence</Type>
-        <RequiredFlags mode="Any">
-          <!-- <Requirement mode="All" inverse="false"></Requirement> -->
-        </RequiredFlags>
-      </Location>
+      <Locations>
+        <Location probability="10">
+          <Type>Residence</Type>
+          <RequiredFlags mode="Any">
+            <!-- <Requirement mode="All" inverse="false"></Requirement> -->
+          </RequiredFlags>
+        </Location>
+      </Locations>
       <Dispatch>
-        <!-- Initial dispatched agency to call -->
-        <Target>Police</Target>
-        <!-- Agencies that handle this callout scenario -->
+        <!-- Agencies that initially get dispatched to handle this scenario -->
         <Agencies>
-          <Agency>CityPolice</Agency>
-          <Agency>CountySheriff</Agency>
-          <Agency>HighwayPatrol</Agency>
+          <Agency target="Police" unitCount="2" />
         </Agencies>
-        <!-- Number of units that dispatch should send to this call -->
-        <UnitCount>2</UnitCount>
+        <Category>Disturbance</Category>
+        <EventType>Crime</EventType>
+        <EventSource>Reported</EventSource>
         <Priority>Emergency</Priority>
         <Response>Code3</Response>
-        <!-- Scanner Audio data for call -->
-        <Scanner>
-          <AudioString>WE_HAVE_01 CRIME_DOMESTIC_DISTURBANCE_02 IN_OR_ON_POSITION UNITS_RESPOND_CODE_03_02</AudioString>
-          <PrefixCallSign>False</PrefixCallSign>
-          <UsePosition>True</UsePosition>
-        </Scanner>
-        <CAD>
+        <MDT>
           <!-- CAD texture for this call in call details -->
           <Texture dictionary="char_chat_call">char_chat_call</Texture>
           <IncidentType abbreviation="DIST">Domestic Disturbance</IncidentType>
           <Descriptions>
             <Description probability="10">
-              <Source>Citizen</Source>
               <Text>
 RP SAYS THEY HEARD THIER NEIGHBORS VERBALLY FIGHTING AND LOUD CRASHING NOISES COMING FROM INSIDE THE HOME AT $LOCATION$.
 RP STATED ONE OF THE SCREAMS WAS SOMEONE STATING THEY WERE GOING TO KILL SOMEONE. RESPOND CODE 3
               </Text>
             </Description>
           </Descriptions>
-        </CAD>
+        </MDT>
       </Dispatch>
+      <!-- Scanner Audio data for call -->
+      <Scanner>
+        <Event name="OnAssigned" priority="Normal">
+          <AudioString>WE_HAVE_01 CRIME_DOMESTIC_DISTURBANCE_02 IN_OR_ON_POSITION UNITS_RESPOND_CODE_03_02</AudioString>
+          <PrefixCallSign>False</PrefixCallSign>
+          <UsePosition>True</UsePosition>
+        </Event>
+      </Scanner>
+      <!-- AI Simulation Info -->
       <Simulation>
         <!-- In game minutes -->
         <CallTime min="20" max="45" />
         <!-- Chance that a ped gets arrested -->
-        <Arrests>
-          <Arrest chance="80">Suspect</Arrest>
-        </Arrests>
-        <Escalation chance="20">
-          
-        </Escalation>
+        <Arrests></Arrests>
+        <Escalation chance="0" />
       </Simulation>
+      <!-- Different circumstances for this event -->
       <Circumstances>
         <Circumstance id="cheating" probability="10" />
       </Circumstances>

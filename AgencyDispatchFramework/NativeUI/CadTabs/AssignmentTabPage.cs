@@ -1,5 +1,6 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Dispatching.Assignments;
+using AgencyDispatchFramework.Scripting;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
 using RAGENativeUI.PauseMenu;
@@ -9,7 +10,7 @@ using System.Drawing;
 namespace AgencyDispatchFramework.NativeUI
 {
     /// <summary>
-    /// A submenu <see cref="TabItem"/> that represents displays current <see cref="PriorityCall"/>
+    /// A submenu <see cref="TabItem"/> that represents displays current <see cref="Event"/>
     /// information if the player is currently on a callout, otherwise shows <see cref="BaseAssignment"/>
     /// information
     /// </summary>
@@ -26,9 +27,9 @@ namespace AgencyDispatchFramework.NativeUI
         public int WordWrap { get; set; }
 
         /// <summary>
-        /// Contains the active <see cref="PriorityCall"/> the player is on
+        /// Contains the active <see cref="Event"/> the player is on
         /// </summary>
-        internal PriorityCall Call { get; private set; }
+        internal ActiveEvent Call { get; private set; }
 
         /// <summary>
         /// Creates a new instance of this Tab Page
@@ -52,7 +53,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// Method called when the player completes a call
         /// </summary>
         /// <param name="call"></param>
-        private void Dispatch_OnPlayerCallCompleted(PriorityCall call)
+        private void Dispatch_OnPlayerCallCompleted(ActiveEvent call)
         {
             // Set internal
             Call = null;
@@ -69,7 +70,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// Method called when the player accepts a callout
         /// </summary>
         /// <param name="call"></param>
-        private void Dispatch_OnPlayerCallAccepted(PriorityCall call)
+        private void Dispatch_OnPlayerCallAccepted(ActiveEvent call)
         {
             // Clear old
             Items.Clear();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AgencyDispatchFramework.Scripting;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,9 +9,9 @@ namespace AgencyDispatchFramework.Dispatching.Assignments
 {
     public class AssignedToCall : BaseAssignment
     {
-        public AssignedToCall(PriorityCall call)
+        public AssignedToCall(ActiveEvent call)
         {
-            Priority = (CallPriority)call.OriginalPriority;
+            Priority = (EventPriority)call.OriginalPriority;
         }
     }
 }

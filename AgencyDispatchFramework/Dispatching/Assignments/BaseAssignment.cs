@@ -18,10 +18,10 @@ namespace AgencyDispatchFramework.Dispatching.Assignments
     public abstract class BaseAssignment
     {
         /// <summary>
-        /// Gets or sets the <see cref="CallPriority"/> for this event. <see cref="Callouts.AgencyCallout"/>'s
+        /// Gets or sets the <see cref="EventPriority"/> for this event. <see cref="Callouts.AgencyCallout"/>'s
         /// with a lower priority than this value will not be paged to the player during this event.
         /// </summary>
-        public CallPriority Priority { get; protected set; }
+        public EventPriority Priority { get; protected set; }
 
         /// <summary>
         /// Gets or sets a short description or name of this assignment

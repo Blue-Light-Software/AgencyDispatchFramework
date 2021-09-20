@@ -6,11 +6,8 @@ using System.Threading.Tasks;
 
 namespace AgencyDispatchFramework.Scripting.Events
 {
-    internal class PeopleFightingEvent : AmbientEvent
+    internal class EventScenario : IEventScenario
     {
-        public override void Process()
-        {
-            throw new NotImplementedException();
-        }
+        public EventScenarioMeta ScenarioMeta { get; set; }
     }
 }

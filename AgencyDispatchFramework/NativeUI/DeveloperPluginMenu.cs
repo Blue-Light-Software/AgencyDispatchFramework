@@ -357,7 +357,7 @@ namespace AgencyDispatchFramework.NativeUI
                 else if (!ZoneCheckpoints.ContainsKey(LocationCheckpoint))
                 {
                     // Change color to match
-                    LocationCheckpoint.SetColor(Color.Red);
+                    //LocationCheckpoint.SetColor(Color.Red);
 
                     // Create Blip
                     var blip = new Blip(LocationCheckpoint.Position) { Color = Color.Red };

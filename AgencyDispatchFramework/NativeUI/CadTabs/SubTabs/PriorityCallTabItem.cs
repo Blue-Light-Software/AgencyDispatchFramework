@@ -1,5 +1,6 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Game;
+using AgencyDispatchFramework.Scripting;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
@@ -10,7 +11,7 @@ using System.Drawing;
 namespace AgencyDispatchFramework.NativeUI
 {
     /// <summary>
-    /// A submenu <see cref="TabItem"/> that represents a <see cref="PriorityCall"/>
+    /// A submenu <see cref="TabItem"/> that represents a <see cref="Event"/>
     /// </summary>
     internal class PriorityCallTabItem : TabItem, IEquatable<PriorityCallTabItem>
     {
@@ -35,9 +36,9 @@ namespace AgencyDispatchFramework.NativeUI
         const float ValueTextWeight = 0.40f;
 
         /// <summary>
-        /// Gets the <see cref="PriorityCall"/>
+        /// Gets the <see cref="Event"/>
         /// </summary>
-        public PriorityCall Call { get; private set; }
+        public ActiveEvent Call { get; private set; }
 
         /// <summary>
         /// Gets or sets the address of this call
@@ -58,7 +59,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// Creates a new instance of <see cref="PriorityCallTabItem"/>
         /// </summary>
         /// <param name="call"></param>
-        public PriorityCallTabItem(PriorityCall call) : base(call.ScenarioInfo.IncidentText)
+        public PriorityCallTabItem(ActiveEvent call) : base(call.ScenarioMeta.CADEventText)
         {
             Call = call;
             Address = Call.Location.GetAddress();
@@ -100,25 +101,26 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Draw 911 icon
             ResRectangle.Draw(this.SafeSize.AddPoints(new Point(col1p, headerY)), new Size(148, 148), Color.FromArgb(150, Color.Black));
-            Sprite.Draw(Call.ScenarioInfo.CADSpriteName, Call.ScenarioInfo.CADSpriteTextureDict, this.SafeSize.AddPoints(new Point(col1p + 10, headerY + 10)), new Size(128, 128), 0.0f, Color.White, true);
+            Sprite.Draw(Call.ScenarioMeta.CADSpriteName, Call.ScenarioMeta.CADSpriteTextureDict, this.SafeSize.AddPoints(new Point(col1p + 10, headerY + 10)), new Size(128, 128), 0.0f, Color.White, true);
 
             // Add callout call ID
             var headerLoc = SafeSize.AddPoints(new Point(col2p, headerY));
             var valueLoc = SafeSize.AddPoints(new Point(col2p, valueY));
             ResText.Draw("~b~Event ID", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~SA-{Call.CallId}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~SA-{Call.EventId}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // Add call date
             headerLoc = SafeSize.AddPoints(new Point(col3p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col3p, valueY));
             ResText.Draw("~b~Call DateTime", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{Call.CallCreated}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{Call.Created}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // Add call source
+            var source = Enum.GetName(typeof(EventSource), Call.ScenarioMeta.Source);
             headerLoc = SafeSize.AddPoints(new Point(col4p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col4p, valueY));
             ResText.Draw("~b~Call Source", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{Call.Description.Source}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{source}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // ===
             // 2nd Row
@@ -131,13 +133,13 @@ namespace AgencyDispatchFramework.NativeUI
             headerLoc = SafeSize.AddPoints(new Point(col2p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col2p, valueY));
             ResText.Draw("~b~Incident", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{Call.ScenarioInfo.IncidentText}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{Call.ScenarioMeta.CADEventText}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // Add Priority
             headerLoc = SafeSize.AddPoints(new Point(col4p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col4p, valueY));
             ResText.Draw("~b~Priority", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{GetPriorityText(Call.Priority)}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{GetPriorityText(Call.CurrentPriority)}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // ===
             // 3rd Row
@@ -175,7 +177,7 @@ namespace AgencyDispatchFramework.NativeUI
             headerLoc = SafeSize.AddPoints(new Point(col1p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col1p, valueY));
             ResText.Draw("~y~Call Status", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{Call.CallStatus}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{Call.Status}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // add Officer
             headerLoc = SafeSize.AddPoints(new Point(col2p, headerY));
@@ -217,7 +219,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         /// <param name="priority"></param>
         /// <returns></returns>-
-        private static string GetPriorityText(CallPriority priority)
+        private static string GetPriorityText(EventPriority priority)
         {
             switch ((int)priority)
             {
@@ -251,7 +253,7 @@ namespace AgencyDispatchFramework.NativeUI
 
         public override int GetHashCode()
         {
-            return Call.CallId.GetHashCode();
+            return Call.EventId.GetHashCode();
         }
 
         public override bool Equals(object obj)
@@ -262,7 +264,7 @@ namespace AgencyDispatchFramework.NativeUI
         public bool Equals(PriorityCallTabItem other)
         {
             if (other == null) return false;
-            return other.Call.CallId == Call.CallId;
+            return other.Call.EventId == Call.EventId;
         }
     }
 }

@@ -13,7 +13,7 @@ namespace AgencyDispatchFramework.Dispatching.Assignments
         public StandardTrafficStop()
         {
             Description = "Traffic Stop";
-            Priority = CallPriority.Expedited;
+            Priority = EventPriority.Expedited;
             Location = Rage.Game.LocalPlayer.Character.Position;
         }
     }

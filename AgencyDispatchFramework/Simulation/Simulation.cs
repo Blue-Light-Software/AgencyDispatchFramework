@@ -1,8 +1,10 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.NativeUI;
+using AgencyDispatchFramework.Scripting;
 using Rage;
 using System;
+using System.Windows;
 
 namespace AgencyDispatchFramework.Simulation
 {
@@ -63,6 +65,9 @@ namespace AgencyDispatchFramework.Simulation
                     return false;
                 }
 
+                // Start the event manager
+                Scripting.ScriptEngine.Begin();
+
                 // Transition weather
                 if (settings.ForceWeather)
                 {
@@ -106,8 +111,8 @@ namespace AgencyDispatchFramework.Simulation
                     Rage.Game.FadeScreenIn(500);
                 }
 
-                // Call just to be sure
-                Dispatch.Shutdown();
+                // Stop the events
+                Shutdown();
 
                 // Report back
                 return false;
@@ -124,6 +129,8 @@ namespace AgencyDispatchFramework.Simulation
 
             // Stop GameWorld fibers
 
+            // Stop events
+            ScriptEngine.Shutdown();
         }
 
         /// <summary>

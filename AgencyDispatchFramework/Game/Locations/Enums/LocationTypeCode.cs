@@ -6,6 +6,7 @@
         RoadShoulder,
         Intersection,
         Residence,
-        Business
+        Business,
+        Coordinate
     }
 }

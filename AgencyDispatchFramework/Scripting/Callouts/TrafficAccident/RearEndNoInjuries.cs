@@ -59,7 +59,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
         /// </summary>
         /// <param name="callout">The parent callout instance</param>
         /// <param name="scenarioNode">The <see cref="XmlNode"/> for this scenario specifically</param>
-        public RearEndNoInjuries(Controller callout, CalloutScenarioInfo info) : base(info)
+        public RearEndNoInjuries(Controller callout, EventScenarioMeta info) : base(info)
         {
             // Set internals
             Callout = callout;

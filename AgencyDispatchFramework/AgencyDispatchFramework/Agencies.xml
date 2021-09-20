@@ -47,6 +47,10 @@
     <CallSignStyle>LAPD</CallSignStyle>
     <County>LosSantos</County>
     <CustomBackingAgency />
+    <Policies>
+      <EnablePursiuts>True</EnablePursiuts>
+      <ContinuePursiutOutsideJurisdiciton>True</ContinuePursiutOutsideJurisdiciton>
+    </Policies>
     <Units>
       <!-- 
           Only list the primary unit types that this agency has. If a department has only a Patrol unit, there should

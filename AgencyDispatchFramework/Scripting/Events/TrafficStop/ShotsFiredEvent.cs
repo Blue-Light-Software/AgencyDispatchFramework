@@ -9,5 +9,9 @@ namespace AgencyDispatchFramework.Scripting.Events.TrafficStop
     internal class ShotsFiredEvent : AmbientEvent
     {
 
+        public override void Process()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

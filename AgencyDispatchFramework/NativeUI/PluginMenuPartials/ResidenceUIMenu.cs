@@ -323,7 +323,8 @@ namespace AgencyDispatchFramework.NativeUI
                     // Create checkpoint!
                     var position = (int)item.Key;
                     var color = GetResidencePositionColor(item.Key);
-                    var checkpoint = GameWorld.CreateCheckpoint(sp.Position, color, radius: 5f);
+                    var number = GetResidencePositionNumber(item.Key);
+                    var checkpoint = GameWorld.CreateCheckpoint(sp.Position, color, 46, number: number, radius: 1f);
                     SpawnPointHandles.AddOrUpdate(position, checkpoint);
                 }
                 else
@@ -420,16 +421,39 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         private void ResidencePositionButton_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
-            // Delete old handle
-            if (LocationCheckpoint != null)
-            {
-                LocationCheckpoint.Delete();
-            }
-
             // Create checkpoint here
             var pos = GamePed.Player.Position;
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
-            LocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Purple);
+
+            // Delete old checkpoint
+            if (Status == LocationUIStatus.Adding)
+            {
+                if (LocationCheckpoint != null)
+                {
+                    LocationCheckpoint.Delete();
+                }
+
+                LocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Red);
+            }
+            else if (LocationCheckpoint != null)
+            {
+                var location = LocationCheckpoint.Tag;
+
+                // Delete the old checkpoint
+                LocationCheckpoint.Delete();
+
+                // If the handle exists in our collection, overwrite it
+                if (ZoneCheckpoints.TryGetValue(LocationCheckpoint, out Blip blip))
+                {
+                    // Remove
+                    ZoneCheckpoints.Remove(LocationCheckpoint);
+
+                    // Create and add new
+                    LocationCheckpoint = GameWorld.CreateCheckpoint(cpPos, Color.Red);
+                    LocationCheckpoint.Tag = location;
+                    ZoneCheckpoints.Add(LocationCheckpoint, blip);
+                }
+            }
 
             // Set new location
             NewLocationPosition = new SpawnPoint(pos, GamePed.Player.Heading);
@@ -471,7 +495,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Create new checkpoint !!important, need to subtract 2 from the Z since checkpoints spawn at waist level
             var cpPos = new Vector3(pos.X, pos.Y, pos.Z - ZCorrection);
-            checkpoint = GameWorld.CreateCheckpoint(cpPos, GetResidencePositionColor(value), radius: 1f);
+            checkpoint = GameWorld.CreateCheckpoint(cpPos, GetResidencePositionColor(value), 46, number: GetResidencePositionNumber(value), radius: 1f);
             SpawnPointHandles.AddOrUpdate(index, checkpoint);
 
             // Create spawn point
@@ -599,8 +623,8 @@ namespace AgencyDispatchFramework.NativeUI
             // Are we currently showing checkpoints and blips?
             if (Status == LocationUIStatus.Adding && ShowingZoneLocations)
             {
-                var blip = new Blip(pos) { Color = Color.Yellow };
-                LocationCheckpoint = GameWorld.CreateCheckpoint(pos, Color.Yellow, forceGround: true);
+                var blip = new Blip(pos) { Color = Color.Red };
+                LocationCheckpoint = GameWorld.CreateCheckpoint(pos, Color.Red, forceGround: true);
                 ZoneCheckpoints.Add(LocationCheckpoint, blip);
             }
         }
@@ -667,7 +691,7 @@ namespace AgencyDispatchFramework.NativeUI
                 case ResidencePosition.PoliceParking2:
                 case ResidencePosition.PoliceParking3:
                 case ResidencePosition.PoliceParking4:
-                    return Color.Red;
+                    return Color.Purple;
                 case ResidencePosition.FrontYardPedGroup:
                 case ResidencePosition.SideYardPedGroup:
                 case ResidencePosition.BackYardPedGroup:
@@ -697,9 +721,9 @@ namespace AgencyDispatchFramework.NativeUI
                 case ResidencePosition.FrontDoorPolicePed3: return "A police ped near the ~g~Front Door or porch ~y~Talking to or watching ~b~FrontDoorPed2";
                 case ResidencePosition.SideWalkPolicePed1:
                 case ResidencePosition.SideWalkPolicePed2: return "A police ped standing near the ~g~Sidewalk ~y~Talking to ~b~SidewalkPed";
-                case ResidencePosition.HidingSpot1: 
+                case ResidencePosition.HidingSpot1:
                 case ResidencePosition.HidingSpot2: return "A ~y~Hiding Spot ~w~for a ~o~Suspect ~w~to hide from the police";
-                case ResidencePosition.PoliceParking1: 
+                case ResidencePosition.PoliceParking1:
                 case ResidencePosition.PoliceParking2:
                 case ResidencePosition.PoliceParking3:
                 case ResidencePosition.PoliceParking4: return "A place for police car to park";
@@ -708,8 +732,39 @@ namespace AgencyDispatchFramework.NativeUI
                 case ResidencePosition.BackYardPedGroup: return "An area for ~y~Peds ~w~to spawn in the ~g~Back Yard";
                 case ResidencePosition.ResidentParking1:
                 case ResidencePosition.ResidentParking2: return "A place for residents car to be parked";
-                default:
-                    return "Activate to set position. Character facing is important";
+                default: return "Activate to set position. Character facing is important";
+            }
+        }
+
+        /// <summary>
+        /// Gets the number to display in the <see cref="Checkpoint"/> of a <see cref="ResidencePosition"/>
+        /// </summary>
+        private int GetResidencePositionNumber(ResidencePosition value)
+        {
+            switch (value)
+            {
+                case ResidencePosition.BackDoorPed: return 4;
+                case ResidencePosition.FrontDoorPed1: return 1;
+                case ResidencePosition.FrontDoorPed2: return 2;
+                case ResidencePosition.SidewalkPed: return 3;
+                case ResidencePosition.BackDoorPolicePed: return 4;
+                case ResidencePosition.FrontDoorPolicePed1: return 1;
+                case ResidencePosition.FrontDoorPolicePed2: return 2;
+                case ResidencePosition.FrontDoorPolicePed3: return 3;
+                case ResidencePosition.SideWalkPolicePed1: return 6;
+                case ResidencePosition.SideWalkPolicePed2: return 7;
+                case ResidencePosition.HidingSpot1: return 1;
+                case ResidencePosition.HidingSpot2: return 2;
+                case ResidencePosition.PoliceParking1: return 1;
+                case ResidencePosition.PoliceParking2: return 2;
+                case ResidencePosition.PoliceParking3: return 3;
+                case ResidencePosition.PoliceParking4: return 4;
+                case ResidencePosition.FrontYardPedGroup: return 1;
+                case ResidencePosition.SideYardPedGroup: return 2;
+                case ResidencePosition.BackYardPedGroup: return 3;
+                case ResidencePosition.ResidentParking1: return 1;
+                case ResidencePosition.ResidentParking2: return 2;
+                default: return 99;
             }
         }
     }

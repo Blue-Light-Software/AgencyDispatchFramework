@@ -24,7 +24,7 @@ namespace AgencyDispatchFramework.Xml
         /// <summary>
         /// Contains a list Scenarios by name
         /// </summary>
-        public List<CalloutScenarioInfo> Scenarios { get; set; }
+        public List<EventScenarioMeta> Scenarios { get; set; }
 
         /// <summary>
         /// Gets the class type that controls the scenarios
@@ -40,7 +40,7 @@ namespace AgencyDispatchFramework.Xml
         {
             // === Document loaded successfully by base class if we are here === //
             // 
-            Scenarios = new List<CalloutScenarioInfo>();
+            Scenarios = new List<EventScenarioMeta>();
         }
 
         /// <summary>
@@ -51,8 +51,6 @@ namespace AgencyDispatchFramework.Xml
         {
             // Setup some vars
             var calloutDirName = Path.GetDirectoryName(FilePath);
-            var agencies = new List<AgencyType>(6);
-            ProbabilityGenerator<PriorityCallDescription> descriptions = null;
 
             // Ensure proper format at the top
             var rootElement = Document.SelectSingleNode("CalloutMeta");
@@ -62,7 +60,7 @@ namespace AgencyDispatchFramework.Xml
             }
 
             // Get callout type name
-            var typeName = rootElement.SelectSingleNode("Controller")?.InnerText;
+            var typeName = rootElement.SelectSingleNode("Controller/Script")?.InnerText;
             if (String.IsNullOrWhiteSpace(typeName))
             {
                 throw new Exception($"CalloutMetaFile.Parse(): Unable to extract Controller value in CalloutMeta.xml in directory '{calloutDirName}' for Assembly: '{assembly.FullName}'");
@@ -82,6 +80,13 @@ namespace AgencyDispatchFramework.Xml
                 throw new Exception($"CalloutMetaFile.Parse(): Callout class '{typeName}' in Assembly '{assembly.FullName}' is missing the CalloutInfoAttribute!");
             }
 
+            // Extract script type
+            var scriptTypeName = rootElement.SelectSingleNode("Controller/Type")?.InnerText;
+            if (!Enum.TryParse(scriptTypeName, out ScriptType scriptType))
+            {
+                throw new Exception($"CalloutMetaFile.Parse(): Unable to extract Controller ScriptType value in CalloutMeta.xml in directory '{calloutDirName}' for Assembly: '{assembly.FullName}'");
+            }
+
             // Yield fiber?
             if (yieldFiber) GameFiber.Yield();
 
@@ -89,35 +94,7 @@ namespace AgencyDispatchFramework.Xml
             foreach (XmlNode scenarioNode in rootElement.SelectSingleNode("Scenarios")?.ChildNodes)
             {
                 // Skip all but elements
-                if (scenarioNode.NodeType == XmlNodeType.Comment) continue;
-
-                // Grab the Callout Catagory
-                XmlNode catagoryNode = scenarioNode.SelectSingleNode("Category");
-                if (!Enum.TryParse(catagoryNode?.InnerText, out CallCategory crimeType))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract Callout Category value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Extract simulation time
-                int min = 0, max = 0;
-                XmlNode childNode = scenarioNode.SelectSingleNode("Simulation")?.SelectSingleNode("CallTime");
-                if (childNode == null)
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract Simulation->CallTime element for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-                else if (childNode.Attributes == null || !Int32.TryParse(childNode.Attributes["min"]?.Value, out min) || !Int32.TryParse(childNode.Attributes["max"]?.Value, out max))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract CallTime[min] or CallTime[max] attribute for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
-                    );
-                    continue;
-                }
+                if (scenarioNode.NodeType == XmlNodeType.Comment) continue;         
 
                 // ============================================== //
                 // Grab probabilities
@@ -129,7 +106,7 @@ namespace AgencyDispatchFramework.Xml
                     continue;
                 }
 
-                // Create world state probabilities
+                // Parse World State Probabilities
                 WorldStateMultipliers multipliers = null;
                 try
                 {
@@ -141,18 +118,471 @@ namespace AgencyDispatchFramework.Xml
                     continue;
                 }
 
-                // Grab the Location info
-                childNode = scenarioNode.SelectSingleNode("Location");
-                if (childNode == null)
+                // Create scenario
+                var scene = new EventScenarioMeta()
+                {
+                    ScenarioName = scenarioNode.Name,
+                    ControllerName = calloutName,
+                    ScriptType = scriptType,
+                    ProbabilityMultipliers = multipliers
+                };
+
+                // Parse locations
+                if (!ExtractLocations(scene, scenarioNode, calloutDirName)) continue;
+
+                // Yield fiber?
+                if (yieldFiber) GameFiber.Yield();
+
+                // Parse Dispatching info
+                if (!ExtractDispatchData(scene, scenarioNode, calloutDirName)) continue;
+
+                // Yield fiber?
+                if (yieldFiber) GameFiber.Yield();
+
+                // Parse Scanner data
+                if (!ExtractScannerData(scene, scenarioNode, calloutDirName)) continue;
+
+                // Yield fiber?
+                if (yieldFiber) GameFiber.Yield();
+
+                // Parse simulation info
+                if (!ExtractSimulationData(scene, scenarioNode, calloutDirName)) continue;
+
+                // Yield fiber?
+                if (yieldFiber) GameFiber.Yield();
+
+                // Parse simulation info
+                if (!ExtractCircumstances(scene, scenarioNode, calloutDirName)) continue;
+
+                // Yield fiber?
+                if (yieldFiber) GameFiber.Yield();
+
+                // Add scenario to the pools
+                Scenarios.Add(scene);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scenario"></param>
+        /// <param name="scenarioNode"></param>
+        /// <param name="calloutDirName"></param>
+        /// <returns></returns>
+        private bool ExtractCircumstances(EventScenarioMeta scenario, XmlNode scenarioNode, string calloutDirName)
+        {
+            // Fetch each FlowOutcome item
+            var scenarioNodes = scenarioNode.SelectSingleNode("Circumstances")?.SelectNodes("Circumstance");
+            if (scenarioNodes == null || scenarioNodes.Count == 0)
+            {
+                Log.Error($"CalloutMetaFile.Parse(): Unable to load Circumstance nodes in CalloutMeta for '{calloutDirName}'");
+                return false;
+            }
+
+            // Evaluate each flow outcome, and add it to the probability generator
+            List<Circumstance> outcomes = new List<Circumstance>();
+            foreach (XmlNode n in scenarioNodes)
+            {
+                // Ensure we have attributes
+                if (n.Attributes == null)
+                {
+                    Log.Warning($"Circumstance item has no attributes in 'CalloutMeta.xml->{scenarioNode.Name}->Circumstances'");
+                    continue;
+                }
+
+                // Try and extract type value
+                if (n.Attributes["id"]?.Value == null)
+                {
+                    Log.Warning($"Unable to extract the 'id' attribute value in 'CalloutMeta.xml->{scenarioNode.Name}->Circumstances'");
+                    continue;
+                }
+
+                // Try and extract probability value
+                if (n.Attributes["probability"]?.Value == null || !int.TryParse(n.Attributes["probability"].Value, out int probability))
+                {
+                    Log.Warning($"Unable to extract probability value of a Circumstance in 'CalloutMeta.xml->{scenarioNode.Name}->Circumstances'");
+                    continue;
+                }
+
+                // Add
+                outcomes.Add(new Circumstance(n.Attributes["id"].Value, probability)
+                {
+                    ConditionStatement = n.Attributes["if"]?.Value ?? String.Empty
+                });
+            }
+
+            if (outcomes.Count == 0)
+            {
+                Log.Warning($"Unable to extract any Circumstances in 'CalloutMeta.xml' for '{calloutDirName}' for scenario {scenarioNode.Name}");
+                return false;
+            }
+
+            scenario.Circumstances = outcomes.ToArray();
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scenario"></param>
+        /// <param name="scenarioNode"></param>
+        /// <param name="calloutDirName"></param>
+        /// <returns></returns>
+        private bool ExtractSimulationData(EventScenarioMeta scenario, XmlNode scenarioNode, string calloutDirName)
+        {
+            // Extract simulation time
+            int min = 0, max = 0;
+            XmlNode childNode = scenarioNode.SelectSingleNode("Simulation")?.SelectSingleNode("CallTime");
+            if (childNode == null)
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract Simulation->CallTime element for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
+                );
+                return false;
+            }
+            else if (childNode.Attributes == null || !Int32.TryParse(childNode.Attributes["min"]?.Value, out min) || !Int32.TryParse(childNode.Attributes["max"]?.Value, out max))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract CallTime[min] or CallTime[max] attribute for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Set properties
+            scenario.SimulationTime = new Range<int>(min, max);
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scenario"></param>
+        /// <param name="scenarioNode"></param>
+        /// <param name="calloutDirName"></param>
+        /// <returns></returns>
+        private bool ExtractScannerData(EventScenarioMeta scenario, XmlNode scenarioNode, string calloutDirName)
+        {
+            // Grab the Scanner data
+            var scannerNode = scenarioNode.SelectSingleNode("Scanner");
+            if (scannerNode == null)
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario Scanner node for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Local Vars
+            var messages = new Dictionary<string, RadioMessageMeta>();
+
+            // Add each scanner event callback
+            foreach (XmlNode eventNode in scannerNode.SelectNodes("Event"))
+            {
+                string scanner = String.Empty;
+                XmlNode childNode = eventNode.SelectSingleNode("AudioString");
+                if (String.IsNullOrWhiteSpace(eventNode.InnerText))
                 {
                     Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract Location node for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                        $"CalloutMetaFile.Parse(): Unable to extract ScannerAudioString value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}' -> Scanner"
+                    );
+                    return false;
+                }
+                else
+                {
+                    scanner = eventNode.InnerText;
+                }
+
+                // Extract event name
+                var name = eventNode.GetAttribute("name");
+                if (String.IsNullOrEmpty(name))
+                {
+                    Log.Warning(
+                        $"CalloutMetaFile.Parse(): Unable to parse Event['name'] value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}' -> Scanner"
+                    );
+                    continue;
+                }
+
+                // Extract message priority
+                if (!Enum.TryParse(eventNode.GetAttribute("priority"), out RadioMessage.MessagePriority priority))
+                {
+                    Log.Warning(
+                        $"CalloutMetaFile.Parse(): Unable to parse RadionMessagePriority value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}' -> Scanner"
+                    );
+                    continue;
+                }
+
+                // Try to extract scanner prefix and suffix information
+                childNode = eventNode.SelectSingleNode("PrefixCallSign");
+                bool.TryParse(childNode?.InnerText, out bool prefix);
+
+                childNode = eventNode.SelectSingleNode("UsePosition");
+                bool.TryParse(childNode?.InnerText, out bool suffix);
+
+                // Create new
+                messages.AddOrUpdate(name, new RadioMessageMeta()
+                {
+                    AudioString = scanner,
+                    PrefixCallSign = prefix,
+                    UsePosition = suffix,
+                    Priority = priority
+                });
+            }
+
+            // Set properties
+            scenario.RadioMessages = messages;
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scenario"></param>
+        /// <param name="scenarioNode"></param>
+        /// <param name="calloutDirName"></param>
+        /// <returns></returns>
+        private bool ExtractDispatchData(EventScenarioMeta scenario, XmlNode scenarioNode, string calloutDirName)
+        {
+            // Get the Dispatch Node
+            XmlNode dispatchNode = scenarioNode.SelectSingleNode("Dispatch");
+            if (dispatchNode == null)
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario Dispatch node for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            var agencies = new Dictionary<ServiceSector, int>();
+            var descriptions = new ProbabilityGenerator<EventDescription>();
+
+            // Grab agency list
+            XmlNode agenciesNode = dispatchNode.SelectSingleNode("Agencies");
+            if (agenciesNode == null || !agenciesNode.HasChildNodes)
+            {
+                Log.Error($"CalloutMetaFile.Parse(): Unable to load agency data in CalloutMeta for '{calloutDirName}'");
+                return false;
+            }
+
+            // Itterate through items
+            foreach (XmlNode n in agenciesNode.SelectNodes("Agency"))
+            {
+                // Try and extract type value
+                if (!Enum.TryParse(n.GetAttribute("target"), out ServiceSector agencyType))
+                {
+                    Log.Warning(
+                        $"CalloutMetaFile.Parse(): Unable to parse AgencyType value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}'"
+                    );
+                    continue;
+                }
+
+                // Try and extract type value
+                if (!Int32.TryParse(n.GetAttribute("unitCount"), out int unitCount))
+                {
+                    Log.Warning(
+                        $"CalloutMetaFile.Parse(): Unable to parse unitCount of AgencyType value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}'"
+                    );
+                    continue;
+                }
+
+                agencies.Add(agencyType, unitCount);
+            }
+
+            // Grab the Callout Catagory
+            XmlNode catagoryNode = dispatchNode.SelectSingleNode("Category");
+            if (!Enum.TryParse(catagoryNode?.InnerText, out CallCategory crimeType))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract Callout Category value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Try and extract priority value
+            XmlNode childNode = dispatchNode.SelectSingleNode("Priority");
+            if (!Enum.TryParse(childNode.InnerText, out EventPriority priority))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario priority value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Try and extract event type
+            childNode = dispatchNode.SelectSingleNode("EventType");
+            if (!Enum.TryParse(childNode.InnerText, out EventType eventType))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario eventType value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Try and extract event source
+            childNode = dispatchNode.SelectSingleNode("EventSource");
+            if (!Enum.TryParse(childNode.InnerText, out EventSource eventSource))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario eventSource value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Try and extract response code value
+            childNode = dispatchNode.SelectSingleNode("Response");
+            if (!Enum.TryParse(childNode.InnerText, out ResponseCode code))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario response code value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Try and extract descriptions
+            XmlNode cadNode = dispatchNode.SelectSingleNode("MDT");
+            if (cadNode == null || !cadNode.HasChildNodes)
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario MDT values for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Try and extract descriptions
+            childNode = cadNode.SelectSingleNode("Descriptions");
+            if (childNode == null || !childNode.HasChildNodes)
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract scenario descriptions values for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+            else
+            {
+                // Clear old descriptions
+                foreach (XmlNode descNode in childNode.SelectNodes("Description"))
+                {
+                    // Ensure we have attributes
+                    if (descNode.Attributes == null || !int.TryParse(descNode.Attributes["probability"]?.Value, out int prob))
+                    {
+                        Log.Warning(
+                            $"CalloutMetaFile.Parse(): Unable to extract probability value for Description in '{calloutDirName}->Scenarios->{scenarioNode.Name}'->Dispatch->Descriptions"
+                        );
+                        continue;
+                    }
+
+                    // Extract desc text value
+                    var descTextNode = descNode.SelectSingleNode("Text");
+                    if (descTextNode == null)
+                    {
+                        Log.Warning(
+                            $"CalloutMetaFile.Parse(): Unable to extract Text value for Description in '{calloutDirName}->Scenarios->{scenarioNode.Name}'->Dispatch->Descriptions"
+                        );
+                        continue;
+                    }
+
+                    descriptions.Add(new EventDescription(prob, descTextNode.InnerText.Trim()));
+                }
+
+                // If we have no descriptions, we failed
+                if (descriptions.ItemCount == 0)
+                {
+                    Log.Warning(
+                        $"CalloutMetaFile.Parse(): Scenario has no Descriptions '{calloutDirName}->Scenarios->{scenarioNode.Name}'->Dispatch"
+                    );
+                    return false;
+                }
+            }
+
+            // Grab the CAD Texture
+            childNode = cadNode.SelectSingleNode("Texture");
+            if (String.IsNullOrWhiteSpace(childNode.InnerText))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract CADTexture value for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
+                );
+                return false;
+            }
+            else if (childNode.Attributes == null || String.IsNullOrWhiteSpace(childNode.Attributes["dictionary"]?.Value))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract CADTexture[dictionary] attribute for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            string textName = childNode.InnerText;
+            string textDict = childNode.Attributes["dictionary"].Value;
+
+            // Grab the Incident
+            childNode = cadNode.SelectSingleNode("IncidentType");
+            if (String.IsNullOrWhiteSpace(childNode.InnerText))
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract IncidentType value for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
+                );
+                return false;
+            }
+            else if (childNode.Attributes == null || childNode.Attributes["abbreviation"]?.Value == null)
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract Incident abbreviation attribute for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Set properties
+            scenario.Type = eventType;
+            scenario.Source = eventSource;
+            scenario.Category = crimeType;
+            scenario.Priority = priority;
+            scenario.ResponseCode = code;
+            scenario.InitialDispatch = agencies;
+            scenario.Descriptions = descriptions;
+            scenario.CADEventText = childNode.InnerText;
+            scenario.CADEventAbbreviation = childNode.Attributes["abbreviation"].Value;
+            scenario.CADSpriteName = textName;
+            scenario.CADSpriteTextureDict = textDict;
+
+            // Report success
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scenario"></param>
+        /// <param name="scenarioNode"></param>
+        /// <param name="calloutDirName"></param>
+        /// <returns></returns>
+        private bool ExtractLocations(EventScenarioMeta scenario, XmlNode scenarioNode, string calloutDirName)
+        {
+            // Grab the Location info
+            var locationsNode = scenarioNode.SelectSingleNode("Locations");
+            if (locationsNode == null)
+            {
+                Log.Warning(
+                    $"CalloutMetaFile.Parse(): Unable to extract Locations node for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
+                );
+                return false;
+            }
+
+            // Initialize
+            scenario.PossibleLocationMetas = new ProbabilityGenerator<PossibleLocationMeta>();
+
+            // Add each scanner event callback
+            foreach (XmlNode locationNode in locationsNode.SelectNodes("Location"))
+            {
+                // Try and extract probability value
+                if (!Int32.TryParse(locationNode.GetAttribute("probability"), out int probability))
+                {
+                    Log.Warning(
+                        $"CalloutMetaFile.Parse(): Unable to parse Location['probability'] value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}'"
                     );
                     continue;
                 }
 
                 // Parse location type
-                string type = childNode.SelectSingleNode("Type")?.InnerText ?? "";
+                string type = locationNode.SelectSingleNode("Type")?.InnerText ?? "";
                 if (!Enum.TryParse(type, out LocationTypeCode locationType))
                 {
                     Log.Warning(
@@ -163,7 +593,7 @@ namespace AgencyDispatchFramework.Xml
 
                 // Extract location flags
                 var filter = new FlagFilterGroup();
-                childNode = childNode.SelectSingleNode("RequiredFlags");
+                XmlNode childNode = locationNode.SelectSingleNode("RequiredFlags");
                 if (childNode != null && childNode.HasChildNodes)
                 {
                     // Fetch filter type
@@ -174,7 +604,7 @@ namespace AgencyDispatchFramework.Xml
                     filter.Mode = filterType;
 
                     // Get child requirements
-                    var nodes = childNode.SelectNodes("Requirement"); 
+                    var nodes = childNode.SelectNodes("Requirement");
                     foreach (XmlNode n in nodes)
                     {
                         // Fetch filter type
@@ -200,292 +630,17 @@ namespace AgencyDispatchFramework.Xml
                     }
                 }
 
-                // Yield fiber?
-                if (yieldFiber) GameFiber.Yield();
-
-                // Get the Dispatch Node
-                XmlNode dispatchNode = scenarioNode.SelectSingleNode("Dispatch");
-                if (dispatchNode == null)
+                // Add location
+                scenario.PossibleLocationMetas.Add(new PossibleLocationMeta
                 {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract scenario Dispatch node for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Grab agency list
-                XmlNode agenciesNode = dispatchNode.SelectSingleNode("Agencies");
-                if (agenciesNode == null)
-                {
-                    Log.Error($"CalloutMetaFile.Parse(): Unable to load agency data in CalloutMeta for '{calloutDirName}'");
-                    continue;
-                }
-
-                // No data?
-                if (!agenciesNode.HasChildNodes)
-                {
-                    Log.Error($"CalloutMetaFile.Parse(): Unable to load any agencies data in CalloutMeta for '{calloutDirName}'");
-                    continue;
-                }
-
-                // Itterate through items
-                agencies.Clear();
-                foreach (XmlNode n in agenciesNode.SelectNodes("Agency"))
-                {
-                    // Try and extract type value
-                    if (!Enum.TryParse(n.InnerText, out AgencyType agencyType))
-                    {
-                        Log.Warning(
-                            $"CalloutMetaFile.Parse(): Unable to parse AgencyType value for '{calloutDirName}/CalloutMeta.xml -> '{scenarioNode.Name}'"
-                        );
-                        continue;
-                    }
-
-                    agencies.Add(agencyType);
-                }
-
-                // Try and extract probability value
-                childNode = dispatchNode.SelectSingleNode("Target");
-                if (!Enum.TryParse(childNode.InnerText, out CallTarget callTarget))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract scenario dispatch target value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Try and extract probability value
-                childNode = dispatchNode.SelectSingleNode("Priority");
-                if (!Enum.TryParse(childNode.InnerText, out CallPriority priority))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract scenario priority value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Try and extract Code value
-                childNode = dispatchNode.SelectSingleNode("Response");
-                if (!Enum.TryParse(childNode.InnerText, out ResponseCode code))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract scenario response code value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Try and extract Code value
-                childNode = dispatchNode.SelectSingleNode("UnitCount");
-                if (!Int32.TryParse(childNode.InnerText, out int unitCount))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract scenario unit count value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Grab the Scanner data
-                string scanner = String.Empty;
-                var scannerNode = dispatchNode.SelectSingleNode("Scanner");
-                childNode = scannerNode.SelectSingleNode("AudioString");
-                if (String.IsNullOrWhiteSpace(childNode.InnerText))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract ScannerAudioString value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}' -> Scanner"
-                    );
-                    continue;
-                }
-                else
-                {
-                    scanner = childNode.InnerText;
-                }
-
-                // Try to extract scanner prefix and suffix information
-                childNode = scannerNode.SelectSingleNode("PrefixCallSign");
-                bool.TryParse(childNode?.InnerText, out bool prefix);
-
-                childNode = scannerNode.SelectSingleNode("UsePosition");
-                bool.TryParse(childNode?.InnerText, out bool suffix);
-
-                // Try and extract descriptions
-                XmlNode cadNode = dispatchNode.SelectSingleNode("CAD");
-                if (cadNode == null || !cadNode.HasChildNodes)
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract scenario CAD values for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Yield fiber?
-                if (yieldFiber) GameFiber.Yield();
-
-                // Try and extract descriptions
-                childNode = cadNode.SelectSingleNode("Descriptions");
-                if (childNode == null || !childNode.HasChildNodes)
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract scenario descriptions values for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-                else
-                {
-                    // Clear old descriptions
-                    descriptions = new ProbabilityGenerator<PriorityCallDescription>();
-                    foreach (XmlNode descNode in childNode.SelectNodes("Description"))
-                    {
-                        // Ensure we have attributes
-                        if (descNode.Attributes == null || !int.TryParse(descNode.Attributes["probability"]?.Value, out int prob))
-                        {
-                            Log.Warning(
-                                $"CalloutMetaFile.Parse(): Unable to extract probability value for Description in '{calloutDirName}->Scenarios->{scenarioNode.Name}'->Dispatch->Descriptions"
-                            );
-                            continue;
-                        }
-
-                        // Extract call source value
-                        var srcNode = descNode.SelectSingleNode("Source");
-                        if (srcNode == null)
-                        {
-                            Log.Warning(
-                                $"CalloutMetaFile.Parse(): Unable to extract Source value for Description in '{calloutDirName}->Scenarios->{scenarioNode.Name}'->Dispatch->Descriptions"
-                            );
-                            continue;
-                        }
-
-                        // Extract desc text value
-                        var descTextNode = descNode.SelectSingleNode("Text");
-                        if (descTextNode == null)
-                        {
-                            Log.Warning(
-                                $"CalloutMetaFile.Parse(): Unable to extract Text value for Description in '{calloutDirName}->Scenarios->{scenarioNode.Name}'->Dispatch->Descriptions"
-                            );
-                            continue;
-                        }
-
-                        descriptions.Add(new PriorityCallDescription(prob, descTextNode.InnerText.Trim(), srcNode.InnerText));
-                    }
-
-                    // If we have no descriptions, we failed
-                    if (descriptions.ItemCount == 0)
-                    {
-                        Log.Warning(
-                            $"CalloutMetaFile.Parse(): Scenario has no Descriptions '{calloutDirName}->Scenarios->{scenarioNode.Name}'->Dispatch"
-                        );
-                        continue;
-                    }
-                }
-
-                // Grab the CAD Texture
-                childNode = cadNode.SelectSingleNode("Texture");
-                if (String.IsNullOrWhiteSpace(childNode.InnerText))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract CADTexture value for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-                else if (childNode.Attributes == null || String.IsNullOrWhiteSpace(childNode.Attributes["dictionary"]?.Value))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract CADTexture[dictionary] attribute for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                string textName = childNode.InnerText;
-                string textDict = childNode.Attributes["dictionary"].Value;
-
-                // Grab the Incident
-                childNode = cadNode.SelectSingleNode("IncidentType");
-                if (String.IsNullOrWhiteSpace(childNode.InnerText))
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract IncidentType value for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-                else if (childNode.Attributes == null || childNode.Attributes["abbreviation"]?.Value == null)
-                {
-                    Log.Warning(
-                        $"CalloutMetaFile.Parse(): Unable to extract Incident abbreviation attribute for '{calloutDirName}->Scenarios->{scenarioNode.Name}'"
-                    );
-                    continue;
-                }
-
-                // Fetch each FlowOutcome item
-                var scenarioNodes = scenarioNode.SelectSingleNode("Circumstances")?.SelectNodes("Circumstance");
-                if (scenarioNodes == null || scenarioNodes.Count == 0)
-                {
-                    Log.Error($"CalloutMetaFile.Parse(): Unable to load Circumstance nodes in CalloutMeta for '{calloutDirName}'");
-                    continue;
-                }
-
-                // Evaluate each flow outcome, and add it to the probability generator
-                List<Circumstance> outcomes = new List<Circumstance>();
-                foreach (XmlNode n in scenarioNodes)
-                {
-                    // Ensure we have attributes
-                    if (n.Attributes == null)
-                    {
-                        Log.Warning($"Circumstance item has no attributes in 'CalloutMeta.xml->FlowSequence'");
-                        continue;
-                    }
-
-                    // Try and extract type value
-                    if (n.Attributes["id"]?.Value == null)
-                    {
-                        Log.Warning($"Unable to extract the 'id' attribute value in 'CalloutMeta.xml->Circumstances'");
-                        continue;
-                    }
-
-                    // Try and extract probability value
-                    if (n.Attributes["probability"]?.Value == null || !int.TryParse(n.Attributes["probability"].Value, out int probability))
-                    {
-                        Log.Warning($"Unable to extract probability value of a Circumstance in 'CalloutMeta.xml'");
-                        continue;
-                    }
-
-                    // Add
-                    outcomes.Add(new Circumstance(n.Attributes["id"].Value, probability)
-                    {
-                        ConditionStatement = n.Attributes["if"]?.Value ?? String.Empty
-                    });
-                }
-
-                // Create scenario
-                var scene = new CalloutScenarioInfo()
-                {
-                    Name = scenarioNode.Name,
-                    CalloutName = calloutName,
-                    Category = crimeType,
-                    Targets = callTarget,
-                    ProbabilityMultipliers = multipliers,
-                    Priority = priority,
-                    ResponseCode = code,
-                    UnitCount = unitCount,
+                    Probability = probability,
                     LocationTypeCode = locationType,
                     LocationFilters = filter,
-                    ScannerAudioString = scanner,
-                    ScannerPrefixCallSign = prefix,
-                    ScannerUsePosition = suffix,
-                    Descriptions = descriptions,
-                    IncidentText = childNode.InnerText,
-                    IncidentAbbreviation = childNode.Attributes["abbreviation"].Value,
-                    CADSpriteName = textName,
-                    CADSpriteTextureDict = textDict,
-                    SimulationTime = new Range<int>(min, max),
-                    AgencyTypes = agencies.ToArray(),
-                    Circumstances = outcomes.ToArray()
-                };
-
-                // Add scenario to the pools
-                Scenarios.Add(scene);
-
-                // Yield fiber?
-                if (yieldFiber) GameFiber.Yield();
+                });
             }
+
+            // Report back
+            return true;
         }
 
         /// <summary>

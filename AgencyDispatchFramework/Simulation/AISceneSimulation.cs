@@ -1,4 +1,5 @@
 ﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Scripting;
 using Rage;
 
 namespace AgencyDispatchFramework.Simulation
@@ -9,9 +10,9 @@ namespace AgencyDispatchFramework.Simulation
     public class AISceneSimulation
     {
         /// <summary>
-        /// Gets or sets the see active <see cref="PriorityCall"/>
+        /// Gets or sets the see active <see cref="Event"/>
         /// </summary>
-        protected PriorityCall ActiveCall { get; set; }
+        protected ActiveEvent ActiveCall { get; set; }
 
         /// <summary>
         /// Indicates whether or this <see cref="AISceneSimulation"/> is currently running
@@ -22,7 +23,7 @@ namespace AgencyDispatchFramework.Simulation
         /// Creates a new instance
         /// </summary>
         /// <param name="call"></param>
-        public AISceneSimulation(PriorityCall call)
+        public AISceneSimulation(ActiveEvent call)
         {
             ActiveCall = call;
         }

@@ -1,6 +1,6 @@
 ﻿namespace AgencyDispatchFramework.Dispatching
 {
-    public enum CallTarget
+    public enum ServiceSector
     {
         Police,
 

@@ -28,7 +28,7 @@ Event planning:
 				or participate in the event without requiring a "Press {insertbuttonhere} to accept"
 			- An event keeps playing until a player moves out of range
 		AiOfficerEvent:
-			- These are virtual events that happen in memory, but lead to a Callout
+			- These are virtual events that happen in memory, but sometimes lead to a Callout
 
 	- 3 Difference Callout Sources:
 		- Incoming 911 call from civilian (Callout)

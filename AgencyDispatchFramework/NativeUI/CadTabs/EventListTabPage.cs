@@ -1,4 +1,5 @@
 ﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Scripting;
 using Rage;
 using RAGENativeUI;
 using RAGENativeUI.Elements;
@@ -13,7 +14,7 @@ namespace AgencyDispatchFramework.NativeUI
     /// <summary>
     /// Represents the "Open Calls" tab in the CAD pause menu
     /// </summary>
-    internal class CallListTabPage : TabItem // TabSubmenuItem
+    internal class EventListTabPage : TabItem // TabSubmenuItem
     {
         /// <summary>
         /// Our lock object to prevent multi-threading issues
@@ -23,7 +24,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Gets the message to display when the player is not on a <see cref="AgencyCallout"/>
         /// </summary>
-        public static readonly string NoAssingnmentMessage = "There are currently no open calls";
+        public static readonly string NoAssingnmentMessage = "There are currently no Events";
 
         /// <summary>
         /// Sets the bounds for the "no assignment" message
@@ -52,10 +53,10 @@ namespace AgencyDispatchFramework.NativeUI
         public Range<int> IndexesInView { get; private set; }
 
         /// <summary>
-        /// Creates a new instance of <see cref="CallListTabPage"/>
+        /// Creates a new instance of <see cref="EventListTabPage"/>
         /// </summary>
         /// <param name="name"></param>
-        public CallListTabPage(string name) : base(name)
+        public EventListTabPage(string name) : base(name)
         {
             Items = new List<PriorityCallTabItem>();
             IndexesInView = new Range<int>(0, MaxItemsToDisplay - 1);
@@ -294,27 +295,27 @@ namespace AgencyDispatchFramework.NativeUI
         /// <returns></returns>
         private Color GetCallItemColor(PriorityCallTabItem priorityCallTabItem)
         {
-            PriorityCall call = priorityCallTabItem.Call;
-            switch (call.CallStatus)
+            ActiveEvent call = priorityCallTabItem.Call;
+            switch (call.Status)
             {
                 default:
-                case CallStatus.Created: return Color.DodgerBlue;
-                case CallStatus.Dispatched: return Color.Purple;
-                case CallStatus.OnScene: return Color.LimeGreen;
-                case CallStatus.Waiting: return Color.Orange;
+                case EventStatus.Created: return Color.DodgerBlue;
+                case EventStatus.Dispatched: return Color.Purple;
+                case EventStatus.OnScene: return Color.LimeGreen;
+                case EventStatus.Waiting: return Color.Orange;
             }
         }
 
         #region Event Callback Methods
 
-        private void Dispatch_OnCallCompleted(PriorityCall call)
+        private void Dispatch_OnCallCompleted(ActiveEvent call)
         {
             lock (_threadLock)
             {
-                int i = Items.FindIndex(x => x.Call.CallId == call.CallId);
+                int i = Items.FindIndex(x => x.Call.EventId == call.EventId);
                 if (i == -1)
                 {
-                    Log.Error($"OpenCallListTabPage.Dispatch_OnCallCompleted(): Unable to remove call '{call.ScenarioInfo.Name}' with id {call.CallId} as it does not exist in the list");
+                    Log.Error($"OpenCallListTabPage.Dispatch_OnCallCompleted(): Unable to remove call '{call.ScenarioMeta.ScenarioName}' with id {call.EventId} as it does not exist in the list");
                     return;
                 }
 
@@ -324,7 +325,7 @@ namespace AgencyDispatchFramework.NativeUI
             }
         }
 
-        private void Dispatch_OnCallAdded(PriorityCall call)
+        private void Dispatch_OnCallAdded(ActiveEvent call)
         {
             lock (_threadLock)
             {
@@ -334,8 +335,8 @@ namespace AgencyDispatchFramework.NativeUI
 
                 // Apply ordering
                 Items = Items.OrderByDescending(x => Dispatch.CanAssignAgencyToCall(Dispatch.PlayerAgency, x.Call))
-                    .ThenBy(x => (int)x.Call.Priority)
-                    .ThenBy(x => x.Call.CallCreated).ToList();
+                    .ThenBy(x => (int)x.Call.CurrentPriority)
+                    .ThenBy(x => x.Call.Created).ToList();
 
                 // Always refresh
                 RefreshIndex();

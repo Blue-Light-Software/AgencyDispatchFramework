@@ -54,6 +54,11 @@ namespace AgencyDispatchFramework.Simulation
         public abstract AgencyType AgencyType { get; }
 
         /// <summary>
+        /// Gets the <see cref="ServiceSector"/> of this agency
+        /// </summary>
+        public abstract ServiceSector Sector { get;  }
+
+        /// <summary>
         /// Gets the <see cref="Dispatching.CallSignStyle"/> this department uses when assigning 
         /// <see cref="CallSign/>s to <see cref="OfficerUnit"/>s
         /// </summary>

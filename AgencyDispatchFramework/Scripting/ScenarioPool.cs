@@ -12,30 +12,30 @@ using System.Reflection;
 namespace AgencyDispatchFramework
 {
     /// <summary>
-    /// Provides an interface to load and store <see cref="CalloutScenarioInfo"/> instances
+    /// Provides an interface to load and store <see cref="CalloutScenarioMeta"/> instances
     /// </summary>
     public static class ScenarioPool
     {
         /// <summary>
         /// Contains a list Scenarios by name
         /// </summary>
-        internal static Dictionary<string, CalloutScenarioInfo> ScenariosByName { get; set; }
+        internal static Dictionary<string, EventScenarioMeta> ScenariosByName { get; set; }
 
         /// <summary>
         /// Contains a list Scenarios by name
         /// </summary>
-        internal static Dictionary<string, List<CalloutScenarioInfo>> ScenariosByAssembly { get; set; }
+        internal static Dictionary<string, List<EventScenarioMeta>> ScenariosByAssembly { get; set; }
 
         /// <summary>
         /// Contains a list Scenarios seperated by CalloutType that will be used
         /// to populate the calls board
         /// </summary>
-        internal static Dictionary<CallCategory, WorldStateProbabilityGenerator<CalloutScenarioInfo>> ScenariosByCalloutType { get; set; }
+        internal static Dictionary<CallCategory, WorldStateProbabilityGenerator<EventScenarioMeta>> ScenariosByCalloutType { get; set; }
 
         /// <summary>
         /// Contains a list of scenario's by callout name
         /// </summary>
-        internal static Dictionary<string, WorldStateProbabilityGenerator<CalloutScenarioInfo>> ScenariosByCalloutName { get; set; }
+        internal static Dictionary<string, WorldStateProbabilityGenerator<EventScenarioMeta>> ScenariosByCalloutName { get; set; }
 
         /// <summary>
         /// Event called when a callout scenario is added to the list
@@ -59,13 +59,13 @@ namespace AgencyDispatchFramework
         static ScenarioPool()
         {
             // Initialize callout types
-            ScenariosByName = new Dictionary<string, CalloutScenarioInfo>();
-            ScenariosByAssembly = new Dictionary<string, List<CalloutScenarioInfo>>();
-            ScenariosByCalloutName = new Dictionary<string, WorldStateProbabilityGenerator<CalloutScenarioInfo>>();
-            ScenariosByCalloutType = new Dictionary<CallCategory, WorldStateProbabilityGenerator<CalloutScenarioInfo>>();
+            ScenariosByName = new Dictionary<string, EventScenarioMeta>();
+            ScenariosByAssembly = new Dictionary<string, List<EventScenarioMeta>>();
+            ScenariosByCalloutName = new Dictionary<string, WorldStateProbabilityGenerator<EventScenarioMeta>>();
+            ScenariosByCalloutType = new Dictionary<CallCategory, WorldStateProbabilityGenerator<EventScenarioMeta>>();
             foreach (CallCategory type in Enum.GetValues(typeof(CallCategory)))
             {
-                ScenariosByCalloutType.Add(type, new WorldStateProbabilityGenerator<CalloutScenarioInfo>());
+                ScenariosByCalloutType.Add(type, new WorldStateProbabilityGenerator<EventScenarioMeta>());
             }
         }
 
@@ -109,7 +109,7 @@ namespace AgencyDispatchFramework
                     var name = assembly.GetName().Name;
                     if (!ScenariosByAssembly.ContainsKey(name))
                     {
-                        ScenariosByAssembly.Add(name, new List<CalloutScenarioInfo>());
+                        ScenariosByAssembly.Add(name, new List<EventScenarioMeta>());
                     }
 
                     // Load meta file
@@ -122,18 +122,18 @@ namespace AgencyDispatchFramework
                         if (yieldFiber) GameFiber.Yield();
 
                         // Add each scenario
-                        foreach (var scenario in metaFile.Scenarios.OrderBy(x => x.Name))
+                        foreach (var scenario in metaFile.Scenarios.OrderBy(x => x.ScenarioName))
                         {
                             // Create entry if not already
-                            if (!ScenariosByCalloutName.ContainsKey(scenario.CalloutName))
+                            if (!ScenariosByCalloutName.ContainsKey(scenario.ControllerName))
                             {
-                                ScenariosByCalloutName.Add(scenario.CalloutName, new WorldStateProbabilityGenerator<CalloutScenarioInfo>());
+                                ScenariosByCalloutName.Add(scenario.ControllerName, new WorldStateProbabilityGenerator<EventScenarioMeta>());
                             }
 
                             // Add scenario to the pools
-                            ScenariosByName.Add(scenario.Name, scenario);
+                            ScenariosByName.Add(scenario.ScenarioName, scenario);
                             ScenariosByAssembly[name].Add(scenario);
-                            ScenariosByCalloutName[scenario.CalloutName].Add(scenario, scenario.ProbabilityMultipliers);
+                            ScenariosByCalloutName[scenario.ControllerName].Add(scenario, scenario.ProbabilityMultipliers);
                             ScenariosByCalloutType[scenario.Category].Add(scenario, scenario.ProbabilityMultipliers);
 
                             // Statistics trackins

@@ -7,10 +7,31 @@ Description:
 File Format:
  - Event Name
 	- Scenario Name [type] [locationType {?flags}]
+		Circumstance
 
-- OfficerNeedsAssistance
-	- ResistingArrest						[Traffic] [RoadShoulder]
-	- RefusingFieldSobrietyTest				[Traffic] [RoadShoulder]
-	- FelonyStop							[Traffic] [RoadShoulder]
-	- HotPursuit							[Traffic] [Road]
-	- ShotsFired							[Violent] [RoadShoulder, Residence, Business]
+- Patrol : Happens when an AI Officer is Patroling an area
+	- AssaultInProgress
+	- WitnessDrugDeal
+- TrafficStop : Happens when an AI officer performs a traffic stop
+	- GenericTrafficStop					[Traffic] [RoadShoulder] : Common, sometimes leads to an arrest. (Idea: 20% of the time, a secondary unit is requested)
+		- RanRedLight
+		- RanStopSign
+		- Speeding
+		- LightOut
+		- NoSeatBelt
+		- DistractedDriving
+		- RecklessDriving
+		- IllegalPass
+		- UnRoadworthyVehicle
+		- ExpiredTabs
+	- ResistingArrest						[Traffic] [RoadShoulder] : Suspect in a fist fight with officer
+		- RefusingToLeaveVehicle
+		- FightDuringArrest
+	- SobrietyTest							[Traffic] [RoadShoulder] : Officer can't do field sobriety test
+	- FelonyStop							[Traffic] [RoadShoulder] : Warrant on Suspect
+	- HotPursuit							[Traffic] [RoadShoulder] : Suspect took off during traffic stop
+		- NeverStopped
+		- TookOffInVehicle
+		- TookOffOnFoot
+	- ShotsFired							[Violent] [RoadShoulder] : Suspect fired a weapon at the officer
+	- K9Requested							[Traffic] [RoadShoulder] : Suspected narcotics

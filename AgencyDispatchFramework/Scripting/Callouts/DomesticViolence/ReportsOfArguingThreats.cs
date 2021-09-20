@@ -58,7 +58,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
 
         private Blip AddressBlip; 
 
-        public ReportsOfArguingThreats(Controller callout, CalloutScenarioInfo scenarioInfo) : base(scenarioInfo)
+        public ReportsOfArguingThreats(Controller callout, EventScenarioMeta scenarioInfo) : base(scenarioInfo)
         {
             // Set internals
             Callout = callout;

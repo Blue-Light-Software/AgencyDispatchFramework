@@ -707,8 +707,8 @@ namespace AgencyDispatchFramework.NativeUI
                 var pos = RoadShoulderLocation.Position;
 
                 // Create checkpint and blips
-                var blip = new Blip(pos) { Color = Color.Yellow };
-                LocationCheckpoint = GameWorld.CreateCheckpoint(pos, Color.Yellow, forceGround: true);
+                var blip = new Blip(pos) { Color = Color.Red };
+                LocationCheckpoint = GameWorld.CreateCheckpoint(pos, Color.Red, forceGround: true);
                 ZoneCheckpoints.Add(LocationCheckpoint, blip);
             }
         }

@@ -9,7 +9,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts
     /// <summary>
     /// An object base that represents a callout scenario.
     /// </summary>
-    internal abstract class CalloutScenario
+    internal abstract class CalloutScenario : IEventScenario
     {
         /// <summary>
         /// Contains the <see cref="ExpressionParser"/> used to parse the expression strings
@@ -23,24 +23,24 @@ namespace AgencyDispatchFramework.Scripting.Callouts
         protected Circumstance SelectedCircumstance { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="CalloutScenarioInfo"/> for this instance
+        /// Gets the <see cref="CalloutScenarioMeta"/> for this instance
         /// </summary>
-        protected CalloutScenarioInfo ScenarioInfo { get; set; }
+        public EventScenarioMeta ScenarioMeta { get; set; }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public CalloutScenario(CalloutScenarioInfo scenarioInfo)
+        public CalloutScenario(EventScenarioMeta scenarioInfo)
         {
             Parser = new ExpressionParser();
             Parser.SetParamater("Weather", GameWorld.GetWeatherSnapshot());
-            Parser.SetParamater("Call", Dispatch.PlayerActiveCall);
-            ScenarioInfo = scenarioInfo;
+            Parser.SetParamater("Call", Dispatch.ActivePlayerEvent);
+            ScenarioMeta = scenarioInfo;
 
             // Select a random Circumstance for this scenario
-            if (!ScenarioInfo.GetRandomCircumstance(Parser, out Circumstance circ))
+            if (!ScenarioMeta.GetRandomCircumstance(Parser, out Circumstance circ))
             {
-                throw new Exception($"Unable to select a Circumstance for callout scenario {ScenarioInfo.Name}");
+                throw new Exception($"Unable to select a Circumstance for callout scenario {ScenarioMeta.ScenarioName}");
             }
 
             SelectedCircumstance = circ;

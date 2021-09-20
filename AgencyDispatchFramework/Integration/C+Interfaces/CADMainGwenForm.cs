@@ -1,4 +1,5 @@
 ﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Scripting;
 using Gwen.Control;
 using LSPD_First_Response.Mod.API;
 using Rage;
@@ -293,7 +294,7 @@ namespace AgencyDispatchFramework.Integration
             out_vehs.KeyboardInputEnabled = false;
 
             // Active Call tab is hidden when no callout is active
-            if (Dispatch.PlayerActiveCall != null)
+            if (Dispatch.ActivePlayerEvent != null)
             {
                 tc_main.AddPage("Current Assignment", base_active);
             }
@@ -304,18 +305,18 @@ namespace AgencyDispatchFramework.Integration
 
             // Add tabs and their corresponding containers
             tc_main.AddPage("Active Call List", base_active_calls);
-            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
+            foreach (EventPriority priority in Enum.GetValues(typeof(EventPriority)))
             {
                 foreach (var call in Dispatch.GetCallList(priority))
                 {
-                    var timeSpan = World.DateTime - call.CallCreated;
+                    var timeSpan = World.DateTime - call.Created;
                     var row = list_active_calls.AddRow(
                         String.Format("{0}{1}{2}{3}{4}{5}{6}",
-                            call.CallId.ToString().PadRight(12),
-                            call.ScenarioInfo.IncidentAbbreviation.PadRight(32),
+                            call.EventId.ToString().PadRight(12),
+                            call.ScenarioMeta.CADEventAbbreviation.PadRight(32),
                             timeSpan.ToString().PadRight(20),
                             call.OriginalPriority.ToString().PadRight(16),
-                            call.CallStatus.ToString().PadRight(20),
+                            call.Status.ToString().PadRight(20),
                             call.PrimaryOfficer?.CallSign.Value.PadRight(20) ?? " ".PadRight(25),
                             call.Location.Zone.ScriptName
                         )
@@ -347,7 +348,7 @@ namespace AgencyDispatchFramework.Integration
             SelectedRow = (ListBoxRow)sender;
             diag_callDetails = GameFiber.StartNew(delegate 
             {
-                PriorityCall call = (PriorityCall)SelectedRow.UserData;
+                ActiveEvent call = (ActiveEvent)SelectedRow.UserData;
                 GwenForm help = new CallDetailsGwenForm(call);
                 help.Show();
                 while (help.Window.IsVisible)

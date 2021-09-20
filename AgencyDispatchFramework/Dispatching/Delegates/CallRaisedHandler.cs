@@ -1,4 +1,5 @@
-﻿using AgencyDispatchFramework.Simulation;
+﻿using AgencyDispatchFramework.Scripting;
+using AgencyDispatchFramework.Simulation;
 
 namespace AgencyDispatchFramework.Dispatching
 {
@@ -8,7 +9,7 @@ namespace AgencyDispatchFramework.Dispatching
     /// <param name="agency"></param>
     /// <param name="call"></param>
     /// <param name="args"></param>
-    internal delegate void CallRaisedHandler(Agency agency, PriorityCall call, CallRaisedEventArgs args);
+    internal delegate void CallRaisedHandler(Agency agency, ActiveEvent call, CallRaisedEventArgs args);
 
     public class CallRaisedEventArgs
     {

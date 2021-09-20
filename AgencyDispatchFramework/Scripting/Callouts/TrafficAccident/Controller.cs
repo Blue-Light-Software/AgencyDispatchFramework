@@ -1,5 +1,4 @@
-﻿using AgencyDispatchFramework.Dispatching;
-using AgencyDispatchFramework.Game.Locations;
+﻿using AgencyDispatchFramework.Game.Locations;
 using LSPD_First_Response.Mod.Callouts;
 using System;
 
@@ -11,7 +10,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
     /// <remarks>
     /// All AgencyCallout type callouts must have a CalloutProbability of Never!
     /// This is due to a reliance on the <see cref="Dispatch"/> class for location
-    /// and <see cref="CalloutScenarioInfo"/> information.
+    /// and <see cref="CalloutScenarioMeta"/> information.
     /// </remarks>
     [CalloutInfo("AgencyCallout.TrafficAccident", CalloutProbability.Never)]
     internal class Controller : AgencyCallout
@@ -36,7 +35,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
         public override bool OnBeforeCalloutDisplayed()
         {
             // Grab the priority call dispatched to player
-            PriorityCall call = Dispatch.RequestPlayerCallInfo(this);
+            ActiveEvent call = Dispatch.RequestPlayerCallInfo(this);
             if (call == null)
             {
                 Log.Error("AgencyCallout.TrafficAccident: This is awkward... No PriorityCall of this type for player");
@@ -46,7 +45,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
             try
             {
                 // Store data
-                ActiveCall = call;
+                Event = call;
                 Location = (RoadShoulder)call.Location;
 
                 // Create scenario class handler
@@ -54,7 +53,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
 
                 // Show are blip and message
                 ShowCalloutAreaBlipBeforeAccepting(Location.Position, 40f);
-                CalloutMessage = call.ScenarioInfo.IncidentText;
+                CalloutMessage = call.ScenarioMeta.CADEventText;
                 CalloutPosition = Location.Position;
             }
             catch (Exception e)
@@ -133,12 +132,12 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
         /// <returns></returns>
         private CalloutScenario CreateScenarioInstance()
         {
-            switch (ActiveCall.ScenarioInfo.Name)
+            switch (Event.ScenarioMeta.ScenarioName)
             {
                 case "RearEndNoInjuries":
-                    return new RearEndNoInjuries(this, ActiveCall.ScenarioInfo);
+                    return new RearEndNoInjuries(this, Event.ScenarioMeta);
                 default:
-                    throw new Exception($"Unsupported TrafficAccident Scenario '{ActiveCall.ScenarioInfo.Name}'");
+                    throw new Exception($"Unsupported TrafficAccident Scenario '{Event.ScenarioMeta.ScenarioName}'");
             }
         }
     }

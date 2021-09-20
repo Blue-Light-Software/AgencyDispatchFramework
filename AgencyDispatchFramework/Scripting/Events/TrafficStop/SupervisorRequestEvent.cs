@@ -8,5 +8,9 @@ namespace AgencyDispatchFramework.Scripting.Events.TrafficStop
 {
     internal class SupervisorRequestEvent : AiOfficerEvent 
     {
+        public override void Process()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using AgencyDispatchFramework.Simulation;
+﻿using AgencyDispatchFramework.Scripting;
+using AgencyDispatchFramework.Simulation;
 using LSPD_First_Response.Mod.API;
 using Rage;
 using System;
@@ -38,7 +39,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="call"></param>
         /// <param name="forcePrimary"></param>
-        internal override void AssignToCall(PriorityCall call, bool forcePrimary = false)
+        internal override void AssignToCall(ActiveEvent call, bool forcePrimary = false)
         {
             // === DO NOT CALL BASE FOR PLAYER === //
 
@@ -48,7 +49,7 @@ namespace AgencyDispatchFramework.Dispatching
             // Is this call already dispatched?
             if (call.PrimaryOfficer == this)
             {
-                call.CallStatus = CallStatus.Assigned;
+                call.Status = EventStatus.Assigned;
             }
 
             CurrentCall = call;

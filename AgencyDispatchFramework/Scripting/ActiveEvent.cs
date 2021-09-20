@@ -1,58 +1,59 @@
-﻿using AgencyDispatchFramework.Game.Locations;
-using AgencyDispatchFramework.Scripting;
+﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Game;
+using AgencyDispatchFramework.Game.Locations;
 using LSPD_First_Response.Mod.Callouts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace AgencyDispatchFramework.Dispatching
+namespace AgencyDispatchFramework.Scripting
 {
     /// <summary>
-    /// Represents a <see cref="LSPD_First_Response.Mod.Callouts.Callout"/> that can
-    /// be queued up and dispatched to <see cref="Dispatching.OfficerUnit"/>(s)
+    /// Contains the details to a specific <see cref="IEventScenario"/> that is active in the <see cref="GameWorld"/> 
     /// </summary>
-    public sealed class PriorityCall : IEquatable<PriorityCall>, IDisposable
+    public sealed class ActiveEvent : IEquatable<ActiveEvent>, IDisposable
     {
         /// <summary>
         /// The unique call ID
         /// </summary>
-        public int CallId { get; internal set; }
+        public int EventId { get; internal set; }
 
         /// <summary>
         /// The callout scenario for this call
         /// </summary>
-        public CalloutScenarioInfo ScenarioInfo { get; private set; }
+        public EventScenarioMeta ScenarioMeta { get; set; }
 
         /// <summary>
         /// Gets the Callout handle
         /// </summary>
+        [Obsolete]
         internal Callout Callout { get; set; }
 
         /// <summary>
         /// Gets whether this call has been escelated to a dangerous level, 
         /// requiring more immediate attention
         /// </summary>
-        public bool IsEscalated { get; internal set; }
+        public bool IsEmergency { get; internal set; }
 
         /// <summary>
-        /// The current <see cref="CallPriority"/>
+        /// The current <see cref="EventPriority"/>
         /// </summary>
-        public CallPriority Priority { get; internal set; }
+        public EventPriority CurrentPriority { get; internal set; }
 
         /// <summary>
-        /// The <see cref="CallPriority"/> when it was created
+        /// The <see cref="EventPriority"/> when it was created
         /// </summary>
-        public CallPriority OriginalPriority => ScenarioInfo.Priority;
+        public EventPriority OriginalPriority => ScenarioMeta.Priority;
 
         /// <summary>
         /// Gets the  <see cref="DateTime"/> when this call was created using Game Time
         /// </summary>
-        public DateTime CallCreated { get; internal set; }
+        public DateTime Created { get; internal set; }
 
         /// <summary>
-        /// The current <see cref="CallStatus"/>
+        /// Gets the current <see cref="EventStatus"/> of this <see cref="ActiveEvent"/>
         /// </summary>
-        public CallStatus CallStatus { get; internal set; }
+        public EventStatus Status { get; internal set; }
 
         /// <summary>
         /// The <see cref="WorldLocation"/> that this callout takes place or begins at
@@ -65,7 +66,7 @@ namespace AgencyDispatchFramework.Dispatching
         public OfficerUnit PrimaryOfficer { get; private set; }
 
         /// <summary>
-        /// Gets a list of officers attached to this <see cref="PriorityCall"/>
+        /// Gets a list of officers attached to this <see cref="ActiveEvent"/>
         /// </summary>
         private List<OfficerUnit> AttachedOfficers { get; set; }
 
@@ -88,17 +89,17 @@ namespace AgencyDispatchFramework.Dispatching
         /// <summary>
         /// Indicates whether this call was declined by the player
         /// </summary>
-        public bool CallDeclinedByPlayer { get; internal set; }
+        public bool DeclinedByPlayer { get; internal set; }
 
         /// <summary>
         /// Indicates wether the OfficerUnit should repsond code 3
         /// </summary>
-        public ResponseCode ResponseCode => (IsEscalated) ? ResponseCode.Code3 : ScenarioInfo.ResponseCode;
+        public ResponseCode ResponseCode => (IsEmergency) ? ResponseCode.Code3 : ScenarioMeta.ResponseCode;
 
         /// <summary>
-        /// Gets the description of the call
+        /// Gets the description of this event for the MDT
         /// </summary>
-        public PriorityCallDescription Description { get; internal set; }
+        public EventDescription Description { get; internal set; }
 
         /// <summary>
         /// Gets a value indicated whether the call has ended
@@ -114,24 +115,23 @@ namespace AgencyDispatchFramework.Dispatching
         /// An event fired when this call is closed. This event is used to remove the call from
         /// ever <see cref="Dispatcher"/> that has added this call to its <see cref="Dispatcher.CallQueue" />
         /// </summary>
-        internal event CallEndedHandler OnCallEnded;
+        internal event EventEndedHandler OnEnded;
 
         /// <summary>
-        /// Creates a new instance of <see cref="PriorityCall"/>
+        /// Creates a new instance of <see cref="ActiveEvent"/>
         /// </summary>
         /// <param name="id"></param>
         /// <param name="scenarioInfo"></param>
-        internal PriorityCall(int id, CalloutScenarioInfo scenarioInfo, WorldLocation location)
+        internal ActiveEvent(int id, EventScenarioMeta scenarioInfo, WorldLocation location)
         {
-            CallId = id;
-            CallCreated = Rage.World.DateTime;
-            ScenarioInfo = scenarioInfo ?? throw new ArgumentNullException(nameof(scenarioInfo));
+            EventId = id;
+            Created = Rage.World.DateTime;
+            ScenarioMeta = scenarioInfo ?? throw new ArgumentNullException(nameof(scenarioInfo));
             Description = scenarioInfo.Descriptions.Spawn();
             AttachedOfficers = new List<OfficerUnit>(4);
-            CallStatus = CallStatus.Created;
+            Status = EventStatus.Created;
             Location = location;
-            Priority = scenarioInfo.Priority;
-            TotalRequiredUnits = scenarioInfo.UnitCount;
+            CurrentPriority = scenarioInfo.Priority;
         }
 
         /// <summary>
@@ -182,17 +182,17 @@ namespace AgencyDispatchFramework.Dispatching
         }
 
         /// <summary>
-        /// Ends the call and calls the event <see cref="OnCallEnded"/>
+        /// Ends the call and calls the event <see cref="OnEnded"/>
         /// </summary>
         /// <param name="flag"></param>
-        internal void End(CallCloseFlag flag)
+        internal void End(EventClosedFlag flag)
         {
             if (!HasEnded)
             {
                 HasEnded = true;
 
                 // Fire event
-                OnCallEnded?.Invoke(this, flag);
+                OnEnded?.Invoke(this, flag);
 
                 // Dispose of this instance
                 Dispose();
@@ -209,7 +209,7 @@ namespace AgencyDispatchFramework.Dispatching
 
             // Clear
             Callout = null;
-            ScenarioInfo = null;
+            ScenarioMeta = null;
             AttachedOfficers.Clear();
             AttachedOfficers = null;
             PrimaryOfficer = null;
@@ -218,29 +218,29 @@ namespace AgencyDispatchFramework.Dispatching
         }
 
         /// <summary>
-        /// Gets a list of officers attached to this <see cref="PriorityCall"/>
+        /// Gets a list of officers attached to this <see cref="ActiveEvent"/>
         /// </summary>
         public OfficerUnit[] GetAttachedOfficers() => AttachedOfficers.ToArray();
 
         public override string ToString()
         {
-            return ScenarioInfo?.Name;
+            return ScenarioMeta?.ScenarioName;
         }
 
-        public bool Equals(PriorityCall other)
+        public bool Equals(ActiveEvent other)
         {
             if (other == null) return false;
-            return other.CallId == CallId;
+            return other.EventId == EventId;
         }
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as PriorityCall);
+            return Equals(obj as ActiveEvent);
         }
 
         public override int GetHashCode()
         {
-            return CallId.GetHashCode();
+            return EventId.GetHashCode();
         }
     }
 }

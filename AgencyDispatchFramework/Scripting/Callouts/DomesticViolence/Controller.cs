@@ -11,7 +11,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
     /// <remarks>
     /// All AgencyCallout type callouts must have a CalloutProbability of Never!
     /// This is due to a reliance on the <see cref="Dispatch"/> class for location
-    /// and <see cref="CalloutScenarioInfo"/> information.
+    /// and <see cref="CalloutScenarioMeta"/> information.
     /// </remarks>
     [CalloutInfo("AgencyCallout.DomesticViolence", CalloutProbability.Never)]
     internal class Controller : AgencyCallout
@@ -36,7 +36,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
         public override bool OnBeforeCalloutDisplayed()
         {
             // Grab the priority call dispatched to player
-            PriorityCall call = Dispatch.RequestPlayerCallInfo(this);
+            ActiveEvent call = Dispatch.RequestPlayerCallInfo(this);
             if (call == null)
             {
                 Log.Error("AgencyCallout.DomesticViolence: This is awkward... No PriorityCall of this type for player");
@@ -46,7 +46,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
             try
             {
                 // Store data
-                ActiveCall = call;
+                Event = call;
                 Location = call.Location as Residence;
 
                 // Create scenario class handler
@@ -54,7 +54,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
 
                 // Show are blip and message
                 ShowCalloutAreaBlipBeforeAccepting(Location.Position, 40f);
-                CalloutMessage = call.ScenarioInfo.IncidentText;
+                CalloutMessage = call.ScenarioMeta.CADEventText;
                 CalloutPosition = Location.Position;
             }
             catch (Exception e)
@@ -133,12 +133,12 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
         /// <returns></returns>
         private CalloutScenario CreateScenarioInstance()
         {
-            switch (ActiveCall.ScenarioInfo.Name)
+            switch (Event.ScenarioMeta.ScenarioName)
             {
                 case "ReportsOfArguingThreats":
-                    return new ReportsOfArguingThreats(this, ActiveCall.ScenarioInfo);
+                    return new ReportsOfArguingThreats(this, Event.ScenarioMeta);
                 default:
-                    throw new Exception($"Unsupported DomesticViolence Scenario '{ActiveCall.ScenarioInfo.Name}'");
+                    throw new Exception($"Unsupported DomesticViolence Scenario '{Event.ScenarioMeta.ScenarioName}'");
             }
         }
     }

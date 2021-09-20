@@ -1,12 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <CalloutMeta>
   <Author>Wilson212</Author>
-  <Controller>AgencyDispatchFramework.Scripting.Callouts.TrafficAccident.Controller</Controller>
+  <Controller>
+    <Script>AgencyDispatchFramework.Scripting.Callouts.TrafficAccident.Controller</Script>
+    <Type>Callout</Type>
+  </Controller>
   <Scenarios>
     
     <RearEndNoInjuries>
-      <!-- Emergency Type -->
-      <Category>Traffic</Category>
       <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
       <Probabilities>
         <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
@@ -17,44 +18,46 @@
         <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
       </Probabilities>
       <!-- Location requirements for scenario -->
-      <Location>
-        <Type>RoadShoulder</Type>
-        <RequiredFlags mode="Any">
-          <!-- <Requirement mode="All" inverse="false"></Requirement> -->
-        </RequiredFlags>
-      </Location>
+      <Locations>
+        <Location probability="10">
+          <Type>RoadShoulder</Type>
+          <RequiredFlags mode="Any">
+            <!-- <Requirement mode="All" inverse="false"></Requirement> -->
+          </RequiredFlags>
+        </Location>
+      </Locations>
+      <!-- Dispatching information -->
       <Dispatch>
-        <!-- Initial dispatched agency to call -->
-        <Target>Police</Target>
-        <!-- Agencies that handle this callout scenario -->
+        <!-- Agencies that initially get dispatched to handle this scenario -->
         <Agencies>
-          <Agency>CityPolice</Agency>
-          <Agency>CountySheriff</Agency>
-          <Agency>HighwayPatrol</Agency>
+          <Agency target="Police" unitCount="1" />
         </Agencies>
-        <!-- Number of units that dispatch should send to this call -->
-        <UnitCount>1</UnitCount>
         <Priority>Expedited</Priority>
+        <Category>Traffic</Category>
+        <EventType>Crime</EventType>
+        <EventSource>Reported</EventSource>
         <Response>Code2</Response>
-        <!-- Scanner Audio data for call -->
-        <Scanner>
-          <AudioString>WE_HAVE_01 CRIME_TRAFFIC_ALERT IN_OR_ON_POSITION</AudioString>
-          <PrefixCallSign>True</PrefixCallSign>
-          <UsePosition>True</UsePosition>
-        </Scanner>
-        <CAD>
+        <MDT>
           <!-- CAD texture for this call in call details -->
           <Texture dictionary="char_chat_call">char_chat_call</Texture>
           <IncidentType abbreviation="MVA">Motor Vehicle Accident</IncidentType>
           <!-- Callout Details are for ComputerPlus / CAD -->
           <Descriptions>
             <Description probability="10">
-              <Source>Citizen</Source>
               <Text>RP SAYS THEY WERE INVLOVED IN A VEHICLE COLLISION NEAR $LOCATION$. NO INJURIES REPORTED AT THIS TIME. ~n~~n~RP STATED THAT OTHER INVOLED PED IS BEING AGRESSIVE. RESPOND CODE 2</Text>
             </Description>
           </Descriptions>
-        </CAD>
+        </MDT>
       </Dispatch>
+      <!-- Scanner Audio data for call -->
+      <Scanner>
+        <Event name="OnAssigned" priority="Normal">
+          <AudioString>WE_HAVE_01 CRIME_TRAFFIC_ALERT IN_OR_ON_POSITION</AudioString>
+          <PrefixCallSign>True</PrefixCallSign>
+          <UsePosition>True</UsePosition>
+        </Event>
+      </Scanner>
+      <!-- AI Simulation Info -->
       <Simulation>
         <!-- In game minutes -->
         <CallTime min="20" max="45" />
@@ -62,6 +65,7 @@
         <Arrests></Arrests>
         <Escalation chance="0" />
       </Simulation>
+      <!-- Different circumstances for this event -->
       <Circumstances>
         <Circumstance id="distracted" probability="10" />
         <Circumstance id="eating" probability="3" />

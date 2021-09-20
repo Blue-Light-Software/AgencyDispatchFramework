@@ -11,7 +11,7 @@ using System.Linq;
 namespace AgencyDispatchFramework.Simulation
 {
     /// <summary>
-    /// This class is responsible for generating crime related <see cref="PriorityCall"/>s.
+    /// This class is responsible for generating crime related <see cref="ActiveEvent"/>s.
     /// </summary>
     internal class RegionCrimeGenerator
     {
@@ -263,7 +263,7 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Generates a new <see cref="PriorityCall"/> within a set range of time,
+        /// Generates a new <see cref="ActiveEvent"/> within a set range of time,
         /// determined by the <see cref="Agency.OverallCrimeLevel"/>
         /// </summary>
         private void ProcessCrimeLogic()
@@ -285,7 +285,8 @@ namespace AgencyDispatchFramework.Simulation
                 }
 
                 // Is this call incoming now?
-                if (time < World.DateTime.TimeOfDay)
+                var tod = World.DateTime.TimeOfDay;
+                if (time < tod)
                 {
                     continue;
                 }
@@ -335,7 +336,8 @@ namespace AgencyDispatchFramework.Simulation
                     if (NextIncomingCallTimes.TryPeek(out time))
                     {
                         // Determine random time till next call
-                        Log.Debug($"Starting next call in {time.TotalMinutes} in-game minutes");
+                        var next = time - tod;
+                        Log.Debug($"Starting next call in {next.TotalMinutes} in-game minutes");
                     }
                     else
                     {
@@ -350,12 +352,12 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Creates a <see cref="PriorityCall"/> with a crime location for the <paramref name="scenario"/>.
+        /// Creates a <see cref="ActiveEvent"/> with a crime location for the <paramref name="scenario"/>.
         /// This method does not add the call to <see cref="Dispatch"/> call queue
         /// </summary>
         /// <param name="scenario"></param>
         /// <returns></returns>
-        internal PriorityCall CreateCallFromScenario(CalloutScenarioInfo scenario)
+        internal ActiveEvent CreateCallFromScenario(EventScenarioMeta scenario)
         {
             // Try to generate a call
             for (int i = 0; i < Settings.MaxLocationAttempts; i++)
@@ -371,15 +373,15 @@ namespace AgencyDispatchFramework.Simulation
                     }
 
                     // Get a random location!
-                    WorldLocation location = GetScenarioLocationFromZone(zone, scenario);
+                    WorldLocation location = GetScenarioLocationFromZone(zone, scenario, out LocationTypeCode typeCode);
                     if (location == null)
                     {
-                        Log.Warning($"RegionCrimeGenerator.CreateCallFromScenario(): Zone '{zone.DisplayName}' does not have any available '{scenario.LocationTypeCode}' locations");
+                        Log.Warning($"RegionCrimeGenerator.CreateCallFromScenario(): Zone '{zone.DisplayName}' does not have any available '{typeCode}' locations");
                         continue;
                     }
 
                     // Add call to the dispatch Queue
-                    return new PriorityCall(NextCallId++, scenario, location);
+                    return new ActiveEvent(NextCallId++, scenario, location);
                 }
                 catch (Exception ex)
                 {
@@ -391,10 +393,10 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Creates a new <see cref="PriorityCall"/> using <see cref="WorldStateMultipliers"/>
+        /// Creates a new <see cref="ActiveEvent"/> using <see cref="WorldStateMultipliers"/>
         /// </summary>
         /// <returns></returns>
-        public virtual PriorityCall GenerateCall()
+        public virtual ActiveEvent GenerateCall()
         {
             // Spawn a zone in our jurisdiction
             WorldZone zone = GetNextRandomCrimeZone();
@@ -411,23 +413,23 @@ namespace AgencyDispatchFramework.Simulation
                 {
                     // Spawn crime type from our spawned zone
                     CallCategory type = zone.GetNextRandomCrimeType();
-                    if (!ScenarioPool.ScenariosByCalloutType[type].TrySpawn(out CalloutScenarioInfo scenario))
+                    if (!ScenarioPool.ScenariosByCalloutType[type].TrySpawn(out EventScenarioMeta scenario))
                     {
                         Log.Warning($"RegionCrimeGenerator.GenerateCall(): Unable to find a CalloutScenario of CalloutType '{type}' in '{zone.DisplayName}'");
                         continue;
                     }
 
                     // Get a random location!
-                    WorldLocation location = GetScenarioLocationFromZone(zone, scenario);
+                    WorldLocation location = GetScenarioLocationFromZone(zone, scenario, out LocationTypeCode typeCode);
                     if (location == null)
                     {
                         // Log this as a warning... May need to add more locations!
-                        Log.Warning($"RegionCrimeGenerator.GenerateCall(): Zone '{zone.DisplayName}' does not have any available '{scenario.LocationTypeCode}' locations");
+                        Log.Warning($"RegionCrimeGenerator.GenerateCall(): Zone '{zone.DisplayName}' does not have any available '{typeCode}' locations");
                         continue;
                     }
 
                     // Add call to the dispatch Queue
-                    return new PriorityCall(NextCallId++, scenario, location);
+                    return new ActiveEvent(NextCallId++, scenario, location);
                 }
                 catch (Exception ex)
                 {
@@ -440,21 +442,27 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Returns a <see cref="WorldLocation"/> from a <see cref="WorldZone"/> for a <see cref="CalloutScenarioInfo"/>
+        /// Returns a <see cref="WorldLocation"/> from a <see cref="WorldZone"/> for a <see cref="CalloutScenarioMeta"/>
         /// </summary>
         /// <param name="zone"></param>
         /// <param name="scenario"></param>
         /// <returns></returns>
-        protected virtual WorldLocation GetScenarioLocationFromZone(WorldZone zone, CalloutScenarioInfo scenario)
+        protected virtual WorldLocation GetScenarioLocationFromZone(WorldZone zone, EventScenarioMeta scenario, out LocationTypeCode attempted)
         {
-            switch (scenario.LocationTypeCode)
+            // Spawn a location
+            if (scenario.PossibleLocationMetas.TrySpawn(out PossibleLocationMeta location))
             {
-                case LocationTypeCode.RoadShoulder:
-                    return zone.GetRandomRoadShoulder(scenario.LocationFilters, true);
-                case LocationTypeCode.Residence:
-                    return zone.GetRandomResidence(scenario.LocationFilters, true);
+                attempted = location.LocationTypeCode;
+                switch (location.LocationTypeCode)
+                {
+                    case LocationTypeCode.RoadShoulder:
+                        return zone.GetRandomRoadShoulder(location.LocationFilters, true);
+                    case LocationTypeCode.Residence:
+                        return zone.GetRandomResidence(location.LocationFilters, true);
+                }
             }
 
+            attempted = LocationTypeCode.Coordinate;
             return null;
         }
 

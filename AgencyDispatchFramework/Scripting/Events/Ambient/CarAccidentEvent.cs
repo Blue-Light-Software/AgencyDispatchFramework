@@ -8,6 +8,9 @@ namespace AgencyDispatchFramework.Scripting.Events
 {
     internal class CarAccidentEvent : AmbientEvent
     {
-
+        public override void Process()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

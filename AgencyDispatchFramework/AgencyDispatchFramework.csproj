@@ -103,7 +103,10 @@
     <Compile Include="Conversation\SequenceCollection.cs" />
     <Compile Include="Conversation\PedResponseEventHandler.cs" />
     <Compile Include="Conversation\Question.cs" />
+    <Compile Include="Dispatching\Enums\MessageEvent.cs" />
+    <Compile Include="Dispatching\RadioMessageMeta.cs" />
     <Compile Include="Game\Checkpoint.cs" />
+    <Compile Include="Game\Locations\WorldPosition.cs" />
     <Compile Include="LocationsDB.cs" />
     <Compile Include="Dispatching\Delegates\ShiftUpdateHandler.cs" />
     <Compile Include="Dispatching\CallSigns\CallSignGenerator.cs" />
@@ -115,6 +118,14 @@
     <Compile Include="NativeUI\DutyPluginMenu.cs" />
     <Compile Include="NativeUI\LocationUIStatus.cs" />
     <Compile Include="NativeUI\PluginMenuPartials\RoadUIMenu.cs" />
+    <Compile Include="Scripting\EventScenarioMeta.cs" />
+    <Compile Include="Scripting\Events\EventScenario.cs" />
+    <Compile Include="Scripting\Enums\EventSource.cs" />
+    <Compile Include="Scripting\Enums\EventType.cs" />
+    <Compile Include="Scripting\IEventController.cs" />
+    <Compile Include="Scripting\IEventScenario.cs" />
+    <Compile Include="Scripting\PossibleLocationMeta.cs" />
+    <Compile Include="Scripting\Enums\ScriptType.cs" />
     <Compile Include="Simulation\Agency\EmsAgency.cs" />
     <Compile Include="Simulation\Agency\FireAgency.cs" />
     <Compile Include="Simulation\Agency\SheriffAgency.cs" />
@@ -135,7 +146,7 @@
     <Compile Include="Dispatching\Delegates\RadioCancelEventArgs.cs" />
     <Compile Include="Dispatching\Delegates\RadioMessageEventHandler.cs" />
     <Compile Include="Dispatching\Dispatchers\Dispatcher.cs" />
-    <Compile Include="Dispatching\Enums\CallTarget.cs" />
+    <Compile Include="Dispatching\Enums\ServiceSector.cs" />
     <Compile Include="Dispatching\Enums\DispatchPriority.cs" />
     <Compile Include="Dispatching\Enums\UnitType.cs" />
     <Compile Include="Dispatching\Dispatchers\PoliceDispatcher.cs" />
@@ -158,9 +169,8 @@
     <Compile Include="Simulation\Enums\OutfitVariation.cs" />
     <Compile Include="Simulation\ShiftRotation.cs" />
     <Compile Include="Scripting\Events\AiOfficerEvent.cs" />
-    <Compile Include="Scripting\Events\AmbientEventHandler.cs" />
+    <Compile Include="Scripting\ScriptEngine.cs" />
     <Compile Include="Scripting\Events\Ambient\DrunkDriver.cs" />
-    <Compile Include="Scripting\Events\TrafficStop\BackupRequested.cs" />
     <Compile Include="Scripting\Events\TrafficStop\K9RequestEvent.cs" />
     <Compile Include="Scripting\Events\TrafficStop\ShotsFiredEvent.cs" />
     <Compile Include="Scripting\Events\TrafficStop\SupervisorRequestEvent.cs" />
@@ -209,7 +219,7 @@
     <Compile Include="NativeUI\Example.cs" />
     <Compile Include="NativeUI\PluginMenuPartials\ResidenceUIMenu.cs" />
     <Compile Include="NativeUI\PluginMenuPartials\RoadShouldersUIMenu.cs" />
-    <Compile Include="NativeUI\CadTabs\CallListTabPage.cs" />
+    <Compile Include="NativeUI\CadTabs\EventListTabPage.cs" />
     <Compile Include="NativeUI\MyUIMenuItem.cs" />
     <Compile Include="NativeUI\CadTabs\SubTabs\PriorityCallTabItem.cs" />
     <Compile Include="Game\PedDescriptionProperty.cs" />
@@ -225,9 +235,9 @@
     <Compile Include="Scripting\Callouts\AgencyCallout.cs" />
     <Compile Include="Simulation\Agency\PoliceAgency.cs" />
     <Compile Include="Simulation\Agency\HighwayPatrolAgency.cs" />
-    <Compile Include="Dispatching\PriorityCallDescription.cs" />
-    <Compile Include="Dispatching\Enums\CallCloseFlag.cs" />
-    <Compile Include="Dispatching\Enums\CallStatus.cs" />
+    <Compile Include="Dispatching\EventDescription.cs" />
+    <Compile Include="Scripting\Enums\EventClosedFlag.cs" />
+    <Compile Include="Scripting\Enums\EventStatus.cs" />
     <Compile Include="Dispatching\Enums\CallCategory.cs" />
     <Compile Include="Simulation\Enums\CrimeLevel.cs" />
     <Compile Include="Simulation\Enums\AgencyType.cs" />
@@ -247,9 +257,9 @@
     <Compile Include="Dispatching\PlayerOfficerUnit.cs" />
     <Compile Include="Simulation\OfficerModelMeta.cs" />
     <Compile Include="Simulation\PersistentAIOfficerUnit.cs" />
-    <Compile Include="Dispatching\PriorityCall.cs" />
+    <Compile Include="Scripting\ActiveEvent.cs" />
     <Compile Include="Game\Enums\SocialClass.cs" />
-    <Compile Include="Dispatching\Enums\CallPriority.cs" />
+    <Compile Include="Dispatching\Enums\EventPriority.cs" />
     <Compile Include="Simulation\SpecializedUnit.cs" />
     <Compile Include="Simulation\VehicleModelMeta.cs" />
     <Compile Include="Simulation\VehicleSet.cs" />
@@ -293,7 +303,6 @@
     <Compile Include="Game\WorldZone.cs" />
     <Compile Include="Game\VehicleInfo.cs" />
     <Compile Include="Game\Enums\ZoneSize.cs" />
-    <Compile Include="Scripting\CalloutScenarioInfo.cs" />
     <Compile Include="Scripting\Callouts\CalloutScenario.cs" />
     <Compile Include="Scripting\Callouts\TrafficAccident\RearEndNoInjuries.cs" />
     <Compile Include="Scripting\Callouts\TrafficAccident\Controller.cs" />

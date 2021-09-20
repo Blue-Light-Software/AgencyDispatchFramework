@@ -1,6 +1,7 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Dispatching.Assignments;
 using AgencyDispatchFramework.Game;
+using AgencyDispatchFramework.Scripting;
 using AgencyDispatchFramework.Simulation;
 using Rage;
 using RAGENativeUI;
@@ -192,7 +193,7 @@ namespace AgencyDispatchFramework.NativeUI
                     if (DispatchUIMenu.Visible)
                     {
                         // Disable the Callout menu button if player is not on a callout
-                        EndCallMenuButton.Enabled = Dispatch.PlayerActiveCall != null;
+                        EndCallMenuButton.Enabled = Dispatch.ActivePlayerEvent != null;
                         RequestCallMenuButton.Enabled = Dispatch.CanInvokeAnyCalloutForPlayer(true);
                     }
                 }
@@ -501,11 +502,11 @@ namespace AgencyDispatchFramework.NativeUI
             }
 
             // Add each call priority data
-            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
+            foreach (EventPriority priority in Enum.GetValues(typeof(EventPriority)))
             {
                 var calls = Dispatch.GetCallList(priority);
-                int c1c = calls.Where(x => x.CallStatus == CallStatus.Created || x.NeedsMoreOfficers).Count();
-                int c1b = calls.Where(x => x.CallStatus == CallStatus.Dispatched).Count() + c1c;
+                int c1c = calls.Where(x => x.Status == EventStatus.Created || x.NeedsMoreOfficers).Count();
+                int c1b = calls.Where(x => x.Status == EventStatus.Dispatched).Count() + c1c;
                 builder.Append($"<br />- Priority {priority} Calls: ~b~{c1b} ~w~(~g~{c1c} ~w~Avail)");
             }
 

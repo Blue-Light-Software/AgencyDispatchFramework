@@ -1,5 +1,4 @@
-﻿using AgencyDispatchFramework.Dispatching;
-using LSPD_First_Response.Mod.Callouts;
+﻿using LSPD_First_Response.Mod.Callouts;
 using System;
 using System.IO;
 using System.Xml;
@@ -10,12 +9,12 @@ namespace AgencyDispatchFramework.Scripting.Callouts
     /// Provides a base for all callouts withing ADF. This base class will process
     /// all the dispatch magic related to calls.
     /// </summary>
-    internal abstract class AgencyCallout : Callout
+    internal abstract class AgencyCallout : Callout, IEventController
     {
         /// <summary>
-        /// Stores the current <see cref="PriorityCall"/>
+        /// Stores the current <see cref="Dispatching.Event"/>
         /// </summary>
-        protected PriorityCall ActiveCall { get; set; }
+        public ActiveEvent Event { get; set; }
 
         /// <summary>
         /// Loads an xml file and returns the XML document back as an object
@@ -46,20 +45,20 @@ namespace AgencyDispatchFramework.Scripting.Callouts
         }
 
         /// <summary>
-        /// Attempts to spawn a <see cref="CalloutScenarioInfo"/> based on probability. If no
-        /// <see cref="CalloutScenarioInfo"/> can be spawned, the error is logged automatically.
+        /// Attempts to spawn a <see cref="CalloutScenarioMeta"/> based on probability. If no
+        /// <see cref="CalloutScenarioMeta"/> can be spawned, the error is logged automatically.
         /// </summary>
-        /// <returns>returns a <see cref="CalloutScenarioInfo"/> on success, or null otherwise</returns>
-        internal static XmlNode LoadScenarioNode(CalloutScenarioInfo info)
+        /// <returns>returns a <see cref="CalloutScenarioMeta"/> on success, or null otherwise</returns>
+        internal static XmlNode LoadScenarioNode(EventScenarioMeta info)
         {
             // Remove name prefix
-            var folderName = info.CalloutName.Replace("AgencyCallout.", "");
+            var folderName = info.ControllerName.Replace("AgencyCallout.", "");
 
             // Load the CalloutMeta
             var document = LoadScenarioFile("Callouts", folderName, "CalloutMeta.xml");
 
             // Return the Scenario node
-            return document.DocumentElement.SelectSingleNode($"Scenarios/{info.Name}");
+            return document.DocumentElement.SelectSingleNode($"Scenarios/{info.ScenarioName}");
         }
 
         public override bool OnBeforeCalloutDisplayed()
@@ -70,11 +69,11 @@ namespace AgencyDispatchFramework.Scripting.Callouts
         public override bool OnCalloutAccepted()
         {
             // Did the callout do thier ONE AND ONLY TASK???
-            if (ActiveCall == null)
-                throw new ArgumentNullException(nameof(ActiveCall));
+            if (Event == null)
+                throw new ArgumentNullException(nameof(Event));
 
             // Tell dispatch
-            Dispatch.CalloutAccepted(ActiveCall, this);
+            Dispatch.CalloutAccepted(Event, this);
             
             // Base must be called last!
             return base.OnCalloutAccepted();
@@ -85,14 +84,14 @@ namespace AgencyDispatchFramework.Scripting.Callouts
             // Did the callout do thier ONE AND ONLY TASK???
             // If not, its not the end of the world because Dispatch is keeping watch but... 
             // still alert the author
-            if (ActiveCall == null)
+            if (Event == null)
             {
                 Log.Error("AgencyCallout.OnCalloutNotAccepted: Unable to clear active call because ActiveCall is null!");
                 return;
             }
 
             // Tell dispatch
-            Dispatch.CalloutNotAccepted(ActiveCall);
+            Dispatch.CalloutNotAccepted(Event);
 
             // Base must be called last!
             base.OnCalloutNotAccepted();
@@ -100,7 +99,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts
 
         public override void End()
         {
-            Dispatch.RegisterCallComplete(ActiveCall);
+            Dispatch.RegisterCallComplete(Event);
             base.End();
         }
     }

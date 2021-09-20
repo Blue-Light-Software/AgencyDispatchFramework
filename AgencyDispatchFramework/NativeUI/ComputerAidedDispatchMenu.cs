@@ -1,5 +1,4 @@
 ﻿using AgencyDispatchFramework.Dispatching;
-using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Scripting;
 using LSPD_First_Response.Engine.Scripting.Entities;
 using LSPD_First_Response.Mod.API;
@@ -40,7 +39,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Contains the call list tab
         /// </summary>
-        private static CallListTabPage CallListTab { get; set; }
+        private static EventListTabPage CallListTab { get; set; }
 
         /// <summary>
         /// Contains the scenario list tab
@@ -86,7 +85,7 @@ namespace AgencyDispatchFramework.NativeUI
                 // BOLO'S ?
 
                 // Add active calls list
-                DispatchWindow.AddTab(CallListTab = new CallListTabPage("Open Calls"));
+                DispatchWindow.AddTab(CallListTab = new EventListTabPage("Open Events"));
 
                 // Add Current Call tab
                 DispatchWindow.AddTab(CurrentCallTab = new AssignmentTabPage("Assigned Call"));
@@ -148,10 +147,10 @@ namespace AgencyDispatchFramework.NativeUI
             var iList = new List<TabInteractiveListItem>();
             foreach (var scenes in ScenarioPool.ScenariosByAssembly)
             {
-                var menuItems = new List<UIMenuItem<CalloutScenarioInfo>>(scenes.Value.Count);
+                var menuItems = new List<UIMenuItem<EventScenarioMeta>>(scenes.Value.Count);
                 foreach (var scenario in scenes.Value)
                 {
-                    var item = new UIMenuItem<CalloutScenarioInfo>(scenario, scenario.Name);
+                    var item = new UIMenuItem<EventScenarioMeta>(scenario, scenario.ScenarioName);
                     item.Activated += ScenarioItem_Activated;
                     menuItems.Add(item);
                 }
@@ -168,14 +167,14 @@ namespace AgencyDispatchFramework.NativeUI
 
         /// <summary>
         /// Method called when a scenario is activated from the scenario list. 
-        /// Creates a new <see cref="PriorityCall"/> using the activated <see cref="CalloutScenario"/>
+        /// Creates a new <see cref="ActiveEvent"/> using the activated <see cref="CalloutScenario"/>
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="selectedItem"></param>
         private static void ScenarioItem_Activated(UIMenu sender, UIMenuItem selectedItem)
         {
             // Get our scenario info
-            var item = selectedItem as UIMenuItem<CalloutScenarioInfo>;
+            var item = selectedItem as UIMenuItem<EventScenarioMeta>;
             var call = Dispatch.CrimeGenerator.CreateCallFromScenario(item.Tag);
 
             // Add call to dispatch

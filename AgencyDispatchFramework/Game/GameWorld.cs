@@ -240,7 +240,7 @@ namespace AgencyDispatchFramework.Game
                 case TimePeriod.Afternoon:
                     return TimeSpan.FromHours(16).Subtract(todaysTime);
                 case TimePeriod.EarlyEvening:
-                    return TimeSpan.FromHours(25).Subtract(todaysTime);
+                    return TimeSpan.FromHours(20).Subtract(todaysTime);
                 default:
                     return TimeSpan.FromHours(24).Subtract(todaysTime);
             }

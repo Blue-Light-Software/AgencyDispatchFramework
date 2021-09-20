@@ -1,4 +1,5 @@
 ﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Scripting;
 using LSPD_First_Response;
 using LSPD_First_Response.Engine.Scripting.Entities;
 using Rage;
@@ -141,7 +142,7 @@ namespace AgencyDispatchFramework.Simulation
                 switch (Status)
                 {
                     case OfficerStatus.OnScene:
-                        CompleteCall(CallCloseFlag.Completed);
+                        CompleteCall(EventClosedFlag.Completed);
                         break;
                     case OfficerStatus.Dispatched:
                         OnScene();
@@ -159,7 +160,7 @@ namespace AgencyDispatchFramework.Simulation
         /// Assigns this officer to the specified call
         /// </summary>
         /// <param name="call"></param>
-        internal override void AssignToCall(PriorityCall call, bool forcePrimary = false)
+        internal override void AssignToCall(ActiveEvent call, bool forcePrimary = false)
         {
             // Call base first
             base.AssignToCall(call, forcePrimary);
@@ -175,12 +176,12 @@ namespace AgencyDispatchFramework.Simulation
         /// This method is called by <see cref="Dispatch"/> for the Player ONLY.
         /// AI units call it themselves
         /// </remarks>
-        internal override void CompleteCall(CallCloseFlag flag)
+        internal override void CompleteCall(EventClosedFlag flag)
         {
             // Tell dispatch we are done here
             if (CurrentCall.PrimaryOfficer == this)
             {
-                Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} completed call '{CurrentCall.ScenarioInfo.Name}' with flag: {flag}");
+                Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} completed call '{CurrentCall.ScenarioMeta.ScenarioName}' with flag: {flag}");
                 Dispatch.RegisterCallComplete(CurrentCall);
             }
 
@@ -189,7 +190,7 @@ namespace AgencyDispatchFramework.Simulation
             Assignment = null;
 
             // Next task
-            if (flag == CallCloseFlag.Completed)
+            if (flag == EventClosedFlag.Completed)
             {
                 TakeBreak();
             }
@@ -200,17 +201,17 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Drives the <see cref="Officer"/> to the current <see cref="PriorityCall"/>
+        /// Drives the <see cref="Officer"/> to the current <see cref="ActiveEvent"/>
         /// assigned.
         /// </summary>
         private void DriveToCall()
         {
             // Close this task
-            Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} responding to call '{CurrentCall.ScenarioInfo.Name}'");
+            Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} responding to call '{CurrentCall.ScenarioMeta.ScenarioName}'");
             int mins = 30;
 
             // Repond code 3?
-            if (CurrentCall.ScenarioInfo.ResponseCode == ResponseCode.Code3)
+            if (CurrentCall.ScenarioMeta.ResponseCode == ResponseCode.Code3)
             {
                 // Calculate drive times
             }
@@ -245,7 +246,7 @@ namespace AgencyDispatchFramework.Simulation
 
             // Determine how long we will be on scene
             var random = new CryptoRandom();
-            var callTime = random.Next(CurrentCall.ScenarioInfo.SimulationTime);
+            var callTime = random.Next(CurrentCall.ScenarioMeta.SimulationTime);
             NextStatusChange = LastStatusChange.AddMinutes(callTime);
         }
 
@@ -271,7 +272,7 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Assigns this <see cref="AIOfficerUnit"/> to a <see cref="PriorityCall"/> with
+        /// Assigns this <see cref="AIOfficerUnit"/> to a <see cref="ActiveEvent"/> with
         /// a random completion percentage. This method is to be called when the player goes
         /// on duty, and only on officers that were part of the previous <see cref="Game.TimePeriod"/>
         /// </summary>
@@ -279,7 +280,7 @@ namespace AgencyDispatchFramework.Simulation
         /// This method helps going on shift feel more realistic
         /// </remarks>
         /// <param name="call">The call to assign to this instance</param>
-        internal void AssignToCallWithRandomCompletion(PriorityCall call)
+        internal void AssignToCallWithRandomCompletion(ActiveEvent call)
         {
             // Assign ourselves
             base.AssignToCall(call, true);
@@ -291,7 +292,7 @@ namespace AgencyDispatchFramework.Simulation
             if (onScene)
             {
                 // Random time to completion
-                var callTime = random.Next(CurrentCall.ScenarioInfo.SimulationTime);
+                var callTime = random.Next(CurrentCall.ScenarioMeta.SimulationTime);
                 double percent = random.Next(10, 80);
                 var timeToComplete = Convert.ToInt32(callTime / percent);
                 var timeOnScene = callTime - timeToComplete;
@@ -300,7 +301,7 @@ namespace AgencyDispatchFramework.Simulation
                 Position = CurrentCall.Location.Position;
 
                 // Set status
-                call.CallStatus = CallStatus.OnScene;
+                call.Status = EventStatus.OnScene;
                 Status = OfficerStatus.OnScene;
                 LastStatusChange = World.DateTime.AddMinutes(-timeOnScene);
                 NextStatusChange = LastStatusChange.AddMinutes(timeToComplete);

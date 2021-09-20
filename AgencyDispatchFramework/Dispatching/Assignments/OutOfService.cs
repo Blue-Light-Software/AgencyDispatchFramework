@@ -11,7 +11,7 @@ namespace AgencyDispatchFramework.Dispatching.Assignments
         public OutOfService()
         {
             Description = "Out of Service";
-            Priority = CallPriority.Immediate;
+            Priority = EventPriority.Immediate;
         }
     }
 }
