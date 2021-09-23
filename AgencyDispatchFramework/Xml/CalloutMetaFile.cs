@@ -123,6 +123,7 @@ namespace AgencyDispatchFramework.Xml
                 {
                     ScenarioName = scenarioNode.Name,
                     ControllerName = calloutName,
+                    ControllerType = CalloutType,
                     ScriptType = scriptType,
                     ProbabilityMultipliers = multipliers
                 };

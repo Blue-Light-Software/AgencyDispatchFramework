@@ -50,6 +50,7 @@
     <Policies>
       <EnablePursiuts>True</EnablePursiuts>
       <ContinuePursiutOutsideJurisdiciton>True</ContinuePursiutOutsideJurisdiciton>
+      <DoesFieldSobrietyTest>True</DoesFieldSobrietyTest>
     </Policies>
     <Units>
       <!-- 

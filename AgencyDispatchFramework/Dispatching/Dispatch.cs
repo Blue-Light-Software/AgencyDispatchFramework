@@ -563,7 +563,7 @@ namespace AgencyDispatchFramework
 
             // If we are here, maybe the player used a console command to start the callout.
             // At this point, see if we have anything in the call Queue
-            if (ScenarioPool.ScenariosByCalloutName.ContainsKey(calloutName))
+            if (ScriptEngine.Callouts.ScenariosByCalloutName.ContainsKey(calloutName))
             {
                 EventStatus[] status = { EventStatus.Created, EventStatus.Waiting, EventStatus.Dispatched };
                 var playerPosition = Rage.Game.LocalPlayer.Character.Position;
@@ -587,7 +587,7 @@ namespace AgencyDispatchFramework
                 }
 
                 // Still here? Maybe we can create a call?
-                if (ScenarioPool.ScenariosByCalloutName[calloutName].TrySpawn(out EventScenarioMeta scenarioInfo))
+                if (ScriptEngine.Callouts.ScenariosByCalloutName[calloutName].TrySpawn(out EventScenarioMeta scenarioInfo))
                 {
                     // Log
                     Log.Info($"Dispatch.RequestPlayerCallInfo: It appears that the player requested a callout of type '{calloutName}' using an outside source. Creating a call out of thin air");
@@ -774,6 +774,10 @@ namespace AgencyDispatchFramework
 
             // Register first for events
             call.OnEnded += EndCall;
+
+            // Set to reported if the status is default
+            if (call.Status == EventStatus.Created)
+                call.Status = EventStatus.Reported;
 
             // Add call to priority Queue
             lock (_threadLock)

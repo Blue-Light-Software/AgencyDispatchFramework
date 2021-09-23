@@ -3,6 +3,7 @@ using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
 using AgencyDispatchFramework.Integration;
 using AgencyDispatchFramework.NativeUI;
+using AgencyDispatchFramework.Scripting;
 using AgencyDispatchFramework.Simulation;
 using AgencyDispatchFramework.Xml;
 using LSPD_First_Response.Mod.API;
@@ -231,11 +232,6 @@ namespace AgencyDispatchFramework
                         // Flag
                         HasBeenOnDuty = true;
                     }
-                    else
-                    {
-                        // Clear scenario pool
-                        ScenarioPool.Reset();
-                    }
 
                     // Yield to prevent freezing
                     GameFiber.Yield();
@@ -247,7 +243,7 @@ namespace AgencyDispatchFramework
                     GameFiber.Yield();
 
                     // Load scenarios for updated probabilities
-                    ScenarioPool.RegisterCalloutsFromPath(Path.Combine(FrameworkFolderPath, "Callouts"), typeof(Main).Assembly);
+                    ScriptEngine.RegisterCalloutsFromPath(Path.Combine(FrameworkFolderPath, "Callouts"), typeof(Main).Assembly);
 
                     // Yield to prevent freezing
                     GameFiber.Yield();

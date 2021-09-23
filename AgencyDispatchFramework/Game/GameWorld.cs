@@ -256,10 +256,49 @@ namespace AgencyDispatchFramework.Game
         /// will transition immediately</param>
 		public static void TransitionToWeather(Weather weather, float duration)
         {
-            if (Enum.IsDefined(typeof(Weather), weather) && weather != Weather.Unknown)
+            if (weather != Weather.Unknown)
             {
                 Natives.SetWeatherTypeOvertimePersist(WeatherNames[(int)weather], duration);
             }
+        }
+
+        /// <summary>
+		/// Sets the specified weather.
+		/// </summary>
+		/// <param name="weather">The weather to transition to</param>
+		public static void SetWeather(Weather weather)
+        {
+            if (weather != Weather.Unknown)
+            {
+                Natives.SetWeatherTypeNow(WeatherNames[(int)weather]);
+            }
+        }
+
+        /// <summary>
+		/// Sets the weather to a random weather.
+		/// </summary>
+		public static void RandomizeWeather()
+        {
+            Natives.SetRandomWeatherType();
+        }
+
+        /// <summary>
+		/// Sets the rain, rain sounds and the creation of puddles in game.
+		/// </summary>
+		/// <param name="level">Strength of rain effects, between 0.0 and 1.0</param>
+        /// <remarks>
+        /// With an level higher than 0.5f, only the creation of puddles gets faster,
+        /// rain and rain sound won't increase after that.
+        /// 
+        /// With an level of 0.0f rain and rain sounds are disabled and there won't be
+        /// any new puddles.
+        /// 
+        /// To use the rain level of the current weather, call this native with -1f as level.
+        /// </remarks>
+        /// <seealso cref="https://docs.fivem.net/natives/?_0x643E26EA6E024D92"/>
+		public static void SetRainLevel(float level)
+        {
+            Natives.SetRainLevel(level);
         }
 
         /// <summary>

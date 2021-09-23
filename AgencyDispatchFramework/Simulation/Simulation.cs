@@ -18,11 +18,10 @@ namespace AgencyDispatchFramework.Simulation
         {
             // Do we fade the screen?
             bool fadeScreen = settings.ForceWeather || settings.RandomWeather || settings.FastForward || settings.SyncTime;
-            bool changedTimeScale = false;
 
             // local variables to fallback onto
+            bool changedTimeScale = false;
             int currentMult = TimeScale.GetCurrentTimeScaleMultiplier();
-            var weather = GameWorld.CurrentWeather;
             var now = DateTime.Now;
             var gameNow = World.DateTime;
             var time = gameNow.TimeOfDay;
@@ -85,7 +84,7 @@ namespace AgencyDispatchFramework.Simulation
                 // Transition weather
                 if (settings.ForceWeather)
                 {
-                    GameWorld.TransitionToWeather(settings.SelectedWeather, 0f);
+                    GameWorld.SetWeather(settings.SelectedWeather);
                 }
                 else if (settings.RandomWeather)
                 {
@@ -93,12 +92,11 @@ namespace AgencyDispatchFramework.Simulation
                     if (settings.RealisticWeather)
                     {
                         var weathers = GameWorld.GetRealisticWeatherListByDateTime();
-                        GameWorld.TransitionToWeather(rnd.PickOne(weathers), 0f);
+                        GameWorld.SetWeather(rnd.PickOne(weathers));
                     }
                     else
                     {
-                        var weathers = (Weather[])Enum.GetValues(typeof(Weather));
-                        GameWorld.TransitionToWeather(rnd.PickOne(weathers), 0f);
+                        GameWorld.RandomizeWeather();
                     }
                 }
 

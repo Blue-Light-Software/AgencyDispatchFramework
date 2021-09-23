@@ -1,6 +1,7 @@
 ﻿using AgencyDispatchFramework.Conversation;
 using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Simulation;
+using System;
 using System.Collections.Generic;
 
 namespace AgencyDispatchFramework.Scripting
@@ -25,6 +26,11 @@ namespace AgencyDispatchFramework.Scripting
         /// this meta describes.
         /// </summary>
         public string ControllerName { get; set; }
+
+        /// <summary>
+        /// Gets the class <see cref="System.Type"/> of the controller script
+        /// </summary>
+        public Type ControllerType { get; internal set; }
 
         /// <summary>
         /// Gets the <see cref="EventType"/>

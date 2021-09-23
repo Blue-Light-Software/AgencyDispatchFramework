@@ -98,7 +98,7 @@ namespace AgencyDispatchFramework.NativeUI
                 BuildScenarioPage();
 
                 // Register for events to add scenarios
-                ScenarioPool.OnCalloutPackLoaded += (path, assembly, items) => BuildScenarioPage();
+                ScriptEngine.OnCalloutPackLoaded += (path, assembly, items) => BuildScenarioPage();
 
                 // Flag
                 Initialized = true;
@@ -145,7 +145,7 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Add each registered callout scenario to the list
             var iList = new List<TabInteractiveListItem>();
-            foreach (var scenes in ScenarioPool.ScenariosByAssembly)
+            foreach (var scenes in ScriptEngine.Callouts.ScenariosByAssembly)
             {
                 var menuItems = new List<UIMenuItem<EventScenarioMeta>>(scenes.Value.Count);
                 foreach (var scenario in scenes.Value)

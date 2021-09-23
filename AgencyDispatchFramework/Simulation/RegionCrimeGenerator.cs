@@ -413,7 +413,7 @@ namespace AgencyDispatchFramework.Simulation
                 {
                     // Spawn crime type from our spawned zone
                     CallCategory type = zone.GetNextRandomCrimeType();
-                    if (!ScenarioPool.ScenariosByCalloutType[type].TrySpawn(out EventScenarioMeta scenario))
+                    if (!ScriptEngine.Callouts.ScenariosByCategory[type].TrySpawn(out EventScenarioMeta scenario))
                     {
                         Log.Warning($"RegionCrimeGenerator.GenerateCall(): Unable to find a CalloutScenario of CalloutType '{type}' in '{zone.DisplayName}'");
                         continue;
