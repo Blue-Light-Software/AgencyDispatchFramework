@@ -58,26 +58,25 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Creates a new instance of <see cref="AIOfficerUnit"/>
         /// </summary>
-        /// <param name="startPosition"></param>
-        /// <param name="unitString"></param>
-        internal AIOfficerUnit(VehicleSet vehicleSet, Agency agency, CallSign callSign, ShiftRotation shift, bool isSupervisor) : base(agency, callSign, shift)
+        internal AIOfficerUnit(VehicleSet vehicleSet, Agency a, CallSign c, ShiftRotation s, UnitType role, District d, bool supervisor) 
+            : base(a, c, s, role, d)
         {
             // Grab officer Meta
             if (!vehicleSet.OfficerMetas.TrySpawn(out OfficerModelMeta meta))
             {
-                throw new Exception($"Unable to spawn an OfficerModelMeta for this AIOfficerUnit instance from agency {agency.ScriptName}");
+                throw new Exception($"Unable to spawn an OfficerModelMeta for this AIOfficerUnit instance from agency {a.ScriptName}");
             }
 
             // Grab vehicle Meta
             if (!vehicleSet.VehicleMetas.TrySpawn(out VehicleModelMeta vehicle))
             {
-                throw new Exception($"Unable to spawn an VehicleModelMeta for this AIOfficerUnit instance from agency {agency.ScriptName}");
+                throw new Exception($"Unable to spawn an VehicleModelMeta for this AIOfficerUnit instance from agency {a.ScriptName}");
             }
 
             // Grab HandGun Meta
             if (!vehicleSet.HandGunMetas.TrySpawn(out WeaponMeta handGunMeta) || !vehicleSet.LongGunMetas.TrySpawn(out WeaponMeta longGunMeta))
             {
-                throw new Exception($"Unable to spawn an WeaponMeta for this AIOfficerUnit instance from agency {agency.ScriptName}");
+                throw new Exception($"Unable to spawn an WeaponMeta for this AIOfficerUnit instance from agency {a.ScriptName}");
             }
 
             // Create a randon
@@ -87,7 +86,7 @@ namespace AgencyDispatchFramework.Simulation
             // Create a persona
             string model = meta.Model.ToString();
             Gender gender = model.Contains("_f_") ? Gender.Female : Gender.Male;
-            var birthday = rnd.NextDateTime(now.AddYears(-55), now.AddYears((isSupervisor) ? -30 : -22));
+            var birthday = rnd.NextDateTime(now.AddYears(-55), now.AddYears((supervisor) ? -30 : -22));
             var name = RandomNameGenerator.Generate(gender);
 
             // Set persona

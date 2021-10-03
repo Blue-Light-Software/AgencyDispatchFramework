@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- https://gta.fandom.com/wiki/Banham_Canyon -->
-<BANHAMCA>
+<BHAMCA>
   <Name>Banham Canyon</Name>
   <Size>Large</Size>
   <Type>Rural</Type>
@@ -26,4 +26,4 @@
     </Probabilities>
   </Crime>
   
-</BANHAMCA>
+</BHAMCA>

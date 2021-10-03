@@ -78,6 +78,11 @@ namespace AgencyDispatchFramework.Dispatching
         public ActiveEvent CurrentCall { get; protected set; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        internal District District { get; set; }
+
+        /// <summary>
         /// Temporary
         /// </summary>
         internal DateTime NextStatusChange { get; set; }
@@ -106,11 +111,13 @@ namespace AgencyDispatchFramework.Dispatching
         /// <summary>
         /// Creates a new instance of <see cref="OfficerUnit"/> for an AI unit
         /// </summary>
-        internal OfficerUnit(Agency agency, CallSign callSign, ShiftRotation shift)
+        internal OfficerUnit(Agency agency, CallSign callSign, ShiftRotation shift, UnitType primaryRole, District district)
         {
             Agency = agency;
             CallSign = callSign;
             Shift = shift;
+            PrimaryRole = primaryRole;
+            District = district;
 
             OfficerId = OfficerCounter++;
         }

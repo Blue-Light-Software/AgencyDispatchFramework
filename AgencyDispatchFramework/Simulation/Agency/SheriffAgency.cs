@@ -7,8 +7,8 @@ namespace AgencyDispatchFramework.Simulation
     {
         public override AgencyType AgencyType => AgencyType.CountySheriff;
 
-        internal SheriffAgency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle)
-            : base(scriptName, friendlyName, staffLevel, signStyle)
+        internal SheriffAgency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle, string[] zoneNames)
+            : base(scriptName, friendlyName, staffLevel, signStyle, zoneNames)
         {
 
         }

@@ -1,1 +1,164 @@
-﻿<?xml version="1.0" encoding="utf-8" ?> 
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Defines district areas for the AI officers to patrol in for each ACTIVE agency.
+  
+  IMPORTANT !!
+  Anytime an Agency is added or removed from the list of agencies in game, or if a zone
+  is moved from one agencies jurisdiction into a different agencies jurisdiction, than 
+  this file must be updated.
+  
+  For zone name references, Please see: https://www.lcpdfr.com/wiki/lspdfr/04/modding/doc/zone/
+  
+  This district file is modeled after the Jurisdictions+ Option 4 map.
+-->
+<Districts>
+  <Agency name="lspd">
+    <District name="Central">
+      <Zone>DOWNT</Zone>
+      <Zone>PBOX</Zone>
+      <Zone>LEGSQU</Zone>
+      <Zone>STRAW</Zone>
+      <Zone>KOREAT</Zone>
+      <Zone>TEXTI</Zone>
+      <Zone>SKID</Zone>
+    </District>
+    <District name="North">
+      <Zone>WVINE</Zone>
+      <Zone>DTVINE</Zone>
+      <Zone>HAWICK</Zone>
+      <Zone>ALTA</Zone>
+      <Zone>BURTON</Zone>
+      <Zone>ROCKF</Zone>
+      <Zone>GOLF</Zone>
+      <Zone>VINE</Zone>
+      <Zone>MOVIE</Zone>
+    </District>
+    <District name="East">
+      <Zone>HORS</Zone>
+      <Zone>EAST_V</Zone>
+      <Zone>MIRR</Zone>
+      <Zone>MURRI</Zone>
+      <Zone>LMESA</Zone>
+      <Zone>CYPRE</Zone>
+      <Zone>EBURO</Zone>
+    </District>
+    <District name="West">
+      <Zone>BEACH</Zone>
+      <Zone>VESP</Zone>
+      <Zone>VCANA</Zone>
+      <Zone>DELPE</Zone>
+      <Zone>DELBE</Zone>
+      <Zone>MORN</Zone>
+      <Zone>RICHM</Zone>
+      <Zone>PBLUFF</Zone>
+    </District>
+    <District name="South">
+      <Zone>CHAMH</Zone>
+      <Zone>DAVIS</Zone>
+      <Zone>RANCHO</Zone>
+      <Zone>STAD</Zone>
+      <Zone>BANNING</Zone>
+      <Zone>LOSPUER</Zone>
+    </District>
+  </Agency>
+
+  <Agency name="pap">
+    <District name="Central">
+      <Zone>TERMINA</Zone>
+      <Zone>ELYSIAN</Zone>
+      <Zone>ZP_ORT</Zone>
+    </District>
+  </Agency>
+
+  <Agency name="cpsrh">
+    <District name="Central">
+      <Zone>RICHM</Zone>
+    </District>
+  </Agency>
+  
+  <Agency name="lssd">
+    <District name="North">
+      <Zone>GREATC</Zone>
+      <Zone>DESRT</Zone>
+      <Zone>RTRAK</Zone>
+      <Zone>JAIL</Zone>
+    </District>
+    <District name="East">
+      <Zone>PALHIGH</Zone>
+      <Zone>TATAMO</Zone>
+      <Zone>LACT</Zone>
+      <Zone>LDAM</Zone>
+      <Zone>WINDF</Zone>
+      <Zone>PALMPOW</Zone>
+      <Zone>ZQ_UAR</Zone>
+    </District>
+    <District name="South">
+      <Zone>CHIL</Zone>
+      <Zone>GALLI</Zone>
+    </District>
+    <District name="West">
+      <Zone>CHU</Zone>
+      <Zone>BHAMCA</Zone>
+      <Zone>BANHAMC</Zone>
+      <Zone>RGLEN</Zone>
+      <Zone>TONGVAV</Zone>
+      <Zone>TONGVAH</Zone>
+    </District>
+  </Agency>
+  
+  <Agency name="bcso">
+    <District name="North">
+      <Zone>PROCOB</Zone>
+      <Zone>BRADP</Zone>
+      <Zone>BRADT</Zone>
+      <Zone>MTCHIL</Zone>
+      <Zone>GALFISH</Zone>
+      <Zone>PALCOV</Zone>
+      <Zone>CMSW</Zone>
+      <!-- <Zone>PALETO</Zone> -->
+    </District>
+    <District name="East">
+      <Zone>MTGORDO</Zone>
+      <Zone>SANCHIA</Zone>
+      <Zone>HUMLAB</Zone>
+      <Zone>ELGORL</Zone>
+      <!-- <Zone>GRAPES</Zone> -->
+    </District>
+    <District name="South">
+      <Zone>HARMO</Zone>
+      <Zone>DESRT</Zone>
+      <Zone>SLAB</Zone>
+      <Zone>ZANCUDO</Zone>
+      <Zone>ALAMO</Zone>
+      <!-- <Zone>SANDY</Zone> -->
+    </District>
+    <District name="West">
+      <Zone>CALAFB</Zone>
+      <Zone>CCREAK</Zone>
+      <Zone>CANNY</Zone>
+      <Zone>NCHU</Zone>
+      <Zone>MTJOSE</Zone>
+      <Zone>LAGO</Zone>
+      <Zone>ARMYB</Zone>
+    </District>
+  </Agency>
+  
+  <Agency name="sspd">
+    <District name="Central">
+      <Zone>SANDY</Zone>
+    </District>
+  </Agency>
+  
+  <Agency name="gspd">
+    <District name="Central">
+      <Zone>GRAPES</Zone>
+    </District>
+  </Agency>
+
+  <Agency name="pbpd">
+    <District name="Central">
+      <Zone>PALETO</Zone>
+      <Zone>PALFOR</Zone>
+    </District>
+  </Agency>
+</Districts>

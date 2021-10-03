@@ -222,9 +222,16 @@ namespace AgencyDispatchFramework.Xml
                     style = CallSignStyle.LAPD;
                 }
 
+                // If not zones, skip!
+                if (!agencyZones.ContainsKey(sname) || agencyZones[sname].Count == 0)
+                {
+                    Log.Debug($"AgenciesFile.Parse(): Agency '{sname}' does not have any zones, assuming it is disabled. Skipping...");
+                    continue;
+                }
+
                 // Create the agency
                 var unitMapping = new Dictionary<UnitType, SpecializedUnit>();
-                Agency agency = Agency.CreateAgency(type, sname, name, staffing, style);
+                Agency agency = Agency.CreateAgency(type, sname, name, staffing, style, agencyZones[sname].ToArray());
 
                 // Parse units
                 foreach (XmlNode unitNode in unitsNode.SelectNodes("Unit"))
@@ -254,16 +261,6 @@ namespace AgencyDispatchFramework.Xml
                 if (!String.IsNullOrWhiteSpace(county) && Enum.TryParse(county, out County c))
                 {
                     agency.BackingCounty = c;
-                }
-
-                // Set zones for agency
-                if (agencyZones.ContainsKey(agency.ScriptName))
-                {
-                    agency.ZoneNames = agencyZones[agency.ScriptName].ToArray();
-                }
-                else
-                {
-                    Log.Debug($"AgenciesFile.Parse(): Agency '{agency.ScriptName}' does not have any zones in its jurisdiction!");
                 }
 
                 // Add agency

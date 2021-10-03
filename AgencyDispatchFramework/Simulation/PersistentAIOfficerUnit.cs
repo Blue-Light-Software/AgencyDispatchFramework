@@ -34,7 +34,12 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Gets the next task for this AI unit on <see cref="AILogicFiber"/> ticks
         /// </summary>
-        private TaskSignal NextTask { get; set; }
+        private TaskFragment NextTask { get; set; }
+
+        /// <summary>
+        /// Gets the next task for this AI unit on <see cref="AILogicFiber"/> ticks
+        /// </summary>
+        private TaskFragment CurrentTask { get; set; }
 
         /// <summary>
         /// Gets the <see cref="Vehicle"/> this officer uses as his police cruiser
@@ -82,18 +87,98 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="virtualAI"></param>
         internal PersistentAIOfficerUnit(AIOfficerUnit virtualAI)
         {
+            // Save
+            VirtualUnit = virtualAI;
+
             // Get location @todo Make better
             var pos = virtualAI.GetPosition();
 
+            // Create Officer
+            CreateOfficerPed();
+
+            // Create police car
+            var location = World.GetNextPositionOnStreet(Officer.Position.Around(25));
+            var sp = new SpawnPoint(location);
+            CreatePoliceCar(sp);
+
+            // Place officer inside his vehicle and create blip
+            Officer.WarpIntoVehicle(PoliceCar, -1);
+            SetBlipColor(OfficerStatusColor.Available);
+
+            // Load model
+            Officer.Model.Load();
+            PoliceCar.Model.Load();
+
+            // Create logic fiber
+            AILogicFiber = new GameFiber(Process);
+            AILogicFiber.Start();
+        }
+
+        /// <summary>
+        /// Our main process loop for this AI unit
+        /// </summary>
+        private void Process()
+        {
+            while (Simulation.IsRunning)
+            {
+                // Always be nice and yield
+                GameFiber.Sleep(300);
+
+                // If we do not have a new task, continue doing
+                // what we are doing
+                if (NextTask == TaskFragment.None)
+                {
+
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates the officers police vehicle at the specfied position
+        /// </summary>
+        /// <param name="position"></param>
+        private void CreatePoliceCar(SpawnPoint position)
+        {
+            // Spawn vehicle @todo Make positioning better
+            var pos = position.Position;
+            Vector3Extensions.GetVehicleSpawnPointTowardsStartPoint(pos, 50, false, out SpawnPoint sp);
+            if (sp != null && sp != Vector3.Zero)
+            {
+                PoliceCar = new Vehicle(VirtualUnit.VehicleMeta.Model, sp.Position, sp.Heading);
+            }
+            else
+            {
+                PoliceCar = new Vehicle(VirtualUnit.VehicleMeta.Model, pos, 1);
+            }
+
+            // Setup vehicle
+            PoliceCar.MakePersistent();
+            PoliceCar.SetLivery(VirtualUnit.VehicleMeta.LiveryIndex);
+
+            // Set Extras
+            foreach (var extra in VirtualUnit.VehicleMeta.Extras)
+            {
+                PoliceCar.SetExtraEnabled(extra.Key, extra.Value);
+            }
+
+            // Attach blip
+            AttachBlip();
+        }
+
+        /// <summary>
+        /// Creates the officer <see cref="Ped"/> unit in the <see cref="GameWorld"/>
+        /// </summary>
+        private void CreateOfficerPed()
+        {
             // Spawn using persona
-            Officer = Persona.CreatePed(virtualAI.Persona, pos);
+            Officer = Persona.CreatePed(VirtualUnit.Persona, VirtualUnit.GetPosition());
             Officer.IsPersistent = true;
             Officer.BlockPermanentEvents = true;
             Officer.RelationshipGroup = RelationshipGroup.Cop;
 
             // Get weather snapshot
             var snapshot = GameWorld.GetWeatherSnapshot();
-            var variationMeta = virtualAI.PedMeta.GetVariationMeta(snapshot);
+            var variationMeta = VirtualUnit.PedMeta.GetVariationMeta(snapshot);
 
             // Set component variations
             foreach (var comp in variationMeta.Components)
@@ -132,54 +217,22 @@ namespace AgencyDispatchFramework.Simulation
             }
 
             // Give officer thier weapons!
-            if (virtualAI.HandGun != null)
+            if (VirtualUnit.HandGun != null)
             {
-                HandGun = GiveOfficerWeapon(virtualAI.HandGun);
+                HandGun = GiveOfficerWeapon(VirtualUnit.HandGun);
             }
 
-            if (virtualAI.LongGun != null)
+            if (VirtualUnit.LongGun != null)
             {
-                LongGun = GiveOfficerWeapon(virtualAI.LongGun);
+                LongGun = GiveOfficerWeapon(VirtualUnit.LongGun);
             }
 
             // Give non-lethals
             NonLethalWeapons = new Dictionary<string, WeaponDescriptor>();
-            foreach (string weapon in virtualAI.NonLethalWeapons)
+            foreach (string weapon in VirtualUnit.NonLethalWeapons)
             {
                 NonLethalWeapons.Add(weapon, GiveOfficerWeapon(weapon));
             }
-
-            // Spawn vehicle @todo Make positioning better
-            Vector3Extensions.GetVehicleSpawnPointTowardsStartPoint(pos, 50, false, out SpawnPoint sp);
-            if (sp != null && sp != Vector3.Zero)
-            {
-                PoliceCar = new Vehicle(virtualAI.VehicleMeta.Model, sp.Position, sp.Heading);
-            }
-            else
-            {
-                PoliceCar = new Vehicle(virtualAI.VehicleMeta.Model, pos, 1);
-            }
-
-            // Setup vehicle
-            PoliceCar.MakePersistent();
-            PoliceCar.SetLivery(virtualAI.VehicleMeta.LiveryIndex);
-
-            // Set Extras
-            foreach (var extra in virtualAI.VehicleMeta.Extras)
-            {
-                PoliceCar.SetExtraEnabled(extra.Key, extra.Value);
-            }
-
-            // Place officer inside his vehicle and create blip
-            Officer.WarpIntoVehicle(PoliceCar, -1);
-            SetBlipColor(OfficerStatusColor.Available);
-                
-            // Save
-            VirtualUnit = virtualAI;
-
-            // Load model
-            Officer.Model.Load();
-            PoliceCar.Model.Load();
         }
 
         /// <summary>
@@ -260,6 +313,26 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
+        /// Attaches a new <see cref="Blip"/> to the <see cref="PoliceCar"/>. Deletes the old 
+        /// <see cref="Blip"/> of it still exists in game.
+        /// </summary>
+        private void AttachBlip()
+        {
+            // Always do this
+            SanityCheck();
+
+            // Current blip is good? If so, delete it
+            if (VehicleBlip.Exists())
+            {
+                VehicleBlip.Delete();
+            }
+
+            VehicleBlip = PoliceCar.AttachBlip();
+            VehicleBlip.Color = OfficerStatusColor.Available;
+            VehicleBlip.Sprite = BlipSprite.PolicePatrol;
+        }
+
+        /// <summary>
         /// Sets the <see cref="Blip"/> color of the <see cref="PoliceCar"/>
         /// </summary>
         /// <param name="color"></param>
@@ -309,7 +382,7 @@ namespace AgencyDispatchFramework.Simulation
                     var sp = new SpawnPoint(location);
 
                     // Create car
-                    PoliceCar = null; //Dispatch.PlayerAgency.GetRandomPoliceVehicle(PatrolVehicleType.Marked, sp);
+                    CreatePoliceCar(sp);
                     PoliceCar.Model.LoadAndWait();
                     PoliceCar.MakePersistent();
 
@@ -337,11 +410,10 @@ namespace AgencyDispatchFramework.Simulation
                     Log.Debug($"Officer is invalid for unit {VirtualUnit.CallSign} of {VirtualUnit.Agency.FullName}... Creating a new one");
 
                     // Tell the old Ped to piss off
-                    Officer.Dismiss();
+                    Officer?.Dismiss();
 
                     // Create new ped
-                    Officer = PoliceCar.CreateRandomDriver();
-                    Officer.MakePersistent();
+                    CreateOfficerPed();
                 }
 
                 // Another check?
@@ -364,7 +436,6 @@ namespace AgencyDispatchFramework.Simulation
             PoliceCar.Heading = heading;
         }
 
-
         /// <summary>
         /// Drives the <see cref="Officer"/> around aimlessly. 
         /// Must be used in a <see cref="GameFiber"/> as this method is a
@@ -372,7 +443,7 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         private void Cruise()
         {
-            NextTask = TaskSignal.None;
+            NextTask = TaskFragment.None;
             EnsureInPoliceCar();
             Officer.Tasks.CruiseWithVehicle(PoliceCar, 10, VehicleDrivingFlags.Normal);
         }
@@ -400,17 +471,62 @@ namespace AgencyDispatchFramework.Simulation
         /// A Task enumeration used to Signal the AI's thread into the
         /// next task.
         /// </summary>
-        private enum TaskSignal
+        private enum TaskFragment
         {
             None,
 
-            TakeABreak,
+            /// <summary>
+            /// Walking to a specific <see cref="SpawnPoint"/>
+            /// </summary>
+            WalkToPoint,
 
-            Cruise,
+            /// <summary>
+            /// Walking to a specific <see cref="SpawnPoint"/>
+            /// </summary>
+            RunToPoint,
 
-            DriveToCall,
+            /// <summary>
+            /// Pulls out clipboard and writes
+            /// </summary>
+            TakeNotes,
+            
+            /// <summary>
+            /// Getting into the police cruiser
+            /// </summary>
+            GetIntoCar,
 
-            DoScene
+            /// <summary>
+            /// Getting out of the police cruiser
+            /// </summary>
+            GetOutOfCar,
+
+            /// <summary>
+            /// Looks at the MDT
+            /// </summary>
+            LookIntoMDT,
+
+            Investigate,
+
+            KneelDown,
+
+            PreformCPR,
+
+            ArrestSuspect,
+
+            AimWeapon,
+        }
+
+        private enum TaskMode
+        {
+            ProactivePolicing,
+
+            DriveToLocation,
+
+            ProcessingEvent,
+
+            TakingABreak,
+
+            InPursuit
         }
     }
 }

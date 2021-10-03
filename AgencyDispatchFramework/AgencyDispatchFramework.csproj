@@ -103,6 +103,9 @@
     <Compile Include="Conversation\SequenceCollection.cs" />
     <Compile Include="Conversation\PedResponseEventHandler.cs" />
     <Compile Include="Conversation\Question.cs" />
+    <Compile Include="Dispatching\CallSigns\LAPDCallSignGenerator.cs" />
+    <Compile Include="Dispatching\CallSigns\NumericCallSignGenerator.cs" />
+    <Compile Include="Dispatching\CallSigns\SeniorityGroup.cs" />
     <Compile Include="Dispatching\Enums\MessageEvent.cs" />
     <Compile Include="Dispatching\RadioMessageMeta.cs" />
     <Compile Include="Game\Checkpoint.cs" />
@@ -130,7 +133,7 @@
     <Compile Include="Simulation\Agency\FireAgency.cs" />
     <Compile Include="Simulation\Agency\SheriffAgency.cs" />
     <Compile Include="Dispatching\Enums\CallSignStyle.cs" />
-    <Compile Include="Dispatching\CallSigns\NumberStyleCallsign.cs" />
+    <Compile Include="Dispatching\CallSigns\NumericStyleCallsign.cs" />
     <Compile Include="Dispatching\Assignments\BusinessCheck.cs" />
     <Compile Include="Dispatching\Assignments\FelonyTrafficStop.cs" />
     <Compile Include="Dispatching\Assignments\PrisonerTransport.cs" />
@@ -166,6 +169,7 @@
     <Compile Include="Dispatching\Assignments\TrafficAccident.cs" />
     <Compile Include="Dispatching\Assignments\StandardTrafficStop.cs" />
     <Compile Include="Simulation\CrimeProjection.cs" />
+    <Compile Include="Simulation\District.cs" />
     <Compile Include="Simulation\Enums\OutfitVariation.cs" />
     <Compile Include="Simulation\ShiftRotation.cs" />
     <Compile Include="Scripting\Events\AiOfficerEvent.cs" />
@@ -343,6 +347,7 @@
     <Compile Include="Xml\BaseProbabilitiesXmlFile.cs" />
     <Compile Include="Xml\CalloutMetaFile.cs" />
     <Compile Include="Xml\DialogueFile.cs" />
+    <Compile Include="Xml\DistrictsFile.cs" />
     <Compile Include="Xml\PedModelMetaFile.cs" />
     <Compile Include="Xml\PedVariantsFile.cs" />
     <Compile Include="Xml\WorldZoneFile.cs" />
@@ -377,7 +382,10 @@
     <Content Include="AgencyDispatchFramework\Callouts\DomesticViolence\ReportsOfArguingThreats\Victim.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="AgencyDispatchFramework\Districts.xml" />
+    <Content Include="AgencyDispatchFramework\Districts.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AgencyDispatchFramework\Events\HotPursuit\EventMeta.xml" />
     <Content Include="AgencyDispatchFramework\Examples\Dialogue.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -405,7 +413,7 @@
     <Content Include="AgencyDispatchFramework\Locations\BANHAMC.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="AgencyDispatchFramework\Locations\BANHAMCA.xml">
+    <Content Include="AgencyDispatchFramework\Locations\BHAMCA.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="AgencyDispatchFramework\Locations\BANNING.xml">
@@ -707,6 +715,8 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="AgencyDispatchFramework\Events\TrafficStop\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

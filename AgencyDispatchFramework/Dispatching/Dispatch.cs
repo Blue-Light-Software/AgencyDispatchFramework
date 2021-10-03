@@ -555,7 +555,7 @@ namespace AgencyDispatchFramework
                 {
                     // Cancel
                     ActivePlayerEvent.DeclinedByPlayer = true;
-                    ActivePlayerEvent.Status = EventStatus.Created;
+                    ActivePlayerEvent.Status = EventStatus.Reported;
                     ActivePlayerEvent = null;
                     Log.Warning($"Dispatch.RequestPlayerCallInfo: Player active call type does not match callout of type {calloutName}");
                 }
@@ -1193,7 +1193,7 @@ namespace AgencyDispatchFramework
             CrimeGenerator = new RegionCrimeGenerator(Zones.ToArray());
 
             // Create player, and initialize all agencies
-            PlayerUnit = PlayerAgency.AddPlayerUnit(settings.PrimaryRole, settings.SetCallSign, settings.SelectedShift, settings.Supervisor);
+            PlayerUnit = PlayerAgency.AddPlayerUnit(settings);
 
             // Log for debugging
             foreach (var agency in EnabledAgenciesByName.Values)

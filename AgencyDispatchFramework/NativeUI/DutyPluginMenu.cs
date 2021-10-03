@@ -55,7 +55,9 @@ namespace AgencyDispatchFramework.NativeUI
 
         private UIMenuListItem ShiftSelectMenuItem { get; set; }
 
-        private UIMenuListItem SetRoleMenuItem { get; set; }
+        private UIMenuListItem DistrictSelectMenuItem { get; set; }
+
+        private UIMenuListItem RoleSelectMenuItem { get; set; }
 
         private UIMenuListItem PatrolAreaMenuButton { get; set; }
 
@@ -109,7 +111,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// Gets the <see cref="GameFiber"/> for this set of menus
         /// </summary>
         private GameFiber ListenFiber { get; set; }
-       
+
         /// <summary>
         /// 
         /// </summary>
@@ -282,6 +284,8 @@ namespace AgencyDispatchFramework.NativeUI
 
         private void BuildPatrolMenu()
         {
+            var playerAgency = Agency.GetCurrentPlayerAgency();
+
             // Create patrol menu
             PatrolUIMenu = new UIMenu(MENU_NAME, "~b~Patrol Settings Menu")
             {
@@ -297,6 +301,13 @@ namespace AgencyDispatchFramework.NativeUI
             BeginSimuButton = new UIMenuItem("Begin Simulation", "Start the ADF simulation.") { BackColor = Color.Green, ForeColor = Color.Black };
             BeginSimuButton.Activated += BeginSimuButton_Activated;
 
+            // Setup  Districts
+            DistrictSelectMenuItem = new UIMenuListItem("District Selection", "Sets the district you will be assigned to.");
+            foreach (District dist in playerAgency.Districts.Values)
+            {
+                DistrictSelectMenuItem.Collection.Add(dist, dist.Name);
+            }
+
             // Setup Shift items
             ShiftSelectMenuItem = new UIMenuListItem("Shift Selection", "Sets the shift you will be patrolling.");
             foreach (ShiftRotation shift in Enum.GetValues(typeof(ShiftRotation)))
@@ -308,10 +319,10 @@ namespace AgencyDispatchFramework.NativeUI
             ShiftSelectMenuItem.Index = 0;
 
             // Setup Patrol Menu
-            SetRoleMenuItem = new UIMenuListItem("Primary Role", "Sets your primary role in the department. This will determine that types of calls you will dispatched to.");
-            foreach (UnitType role in Agency.GetCurrentPlayerAgency().GetSupportedUnitTypes())
+            RoleSelectMenuItem = new UIMenuListItem("Primary Role", "Sets your primary role in the department. This will determine that types of calls you will dispatched to.");
+            foreach (UnitType role in playerAgency.GetSupportedUnitTypes())
             {
-                SetRoleMenuItem.Collection.Add(role, Enum.GetName(typeof(UnitType), role));
+                RoleSelectMenuItem.Collection.Add(role, Enum.GetName(typeof(UnitType), role));
             }
 
             // Build sub menus
@@ -320,7 +331,8 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Add patrol menu buttons
             PatrolUIMenu.AddItem(SupervisorBox);
-            PatrolUIMenu.AddItem(SetRoleMenuItem);
+            PatrolUIMenu.AddItem(DistrictSelectMenuItem);
+            PatrolUIMenu.AddItem(RoleSelectMenuItem);
             PatrolUIMenu.AddItem(ShiftSelectMenuItem);
             PatrolUIMenu.AddItem(WorldSettingsButton);
             PatrolUIMenu.AddItem(CallSignsButton);
@@ -643,7 +655,8 @@ namespace AgencyDispatchFramework.NativeUI
                 // Create the settings struct
                 var settings = new SimulationSettings()
                 {
-                    PrimaryRole = (UnitType)SetRoleMenuItem.SelectedValue,
+                    SelectedDistrict = (District)DistrictSelectMenuItem.SelectedValue,
+                    PrimaryRole = (UnitType)RoleSelectMenuItem.SelectedValue,
                     SelectedShift = (ShiftRotation)ShiftSelectMenuItem.SelectedValue,
                     TimeScaleMult = (int)TimeScaleMenuItem.SelectedValue,
                     FastForward = FastForwardBox.Checked,

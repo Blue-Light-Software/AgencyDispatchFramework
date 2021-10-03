@@ -2,7 +2,7 @@
 
 namespace AgencyDispatchFramework.Dispatching
 {
-    public class NumberStyleCallsign : CallSign
+    public class NumericStyleCallsign : CallSign
     {
         /// <summary>
         /// Gets or sets the unit number for this callsign
@@ -23,7 +23,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// 
         /// </summary>
         /// <param name="number"></param>
-        public NumberStyleCallsign(int number)
+        public NumericStyleCallsign(int number)
         {
             // Ensure number is in range
             if (!number.InRange(1, 999))

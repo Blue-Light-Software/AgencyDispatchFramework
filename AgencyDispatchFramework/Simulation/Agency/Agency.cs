@@ -29,6 +29,11 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         private static Dictionary<string, Agency> Agencies { get; set; }
 
+        /// <summary>
+        /// A hash look up of agency districts, ids and zones
+        /// </summary>
+        protected static Dictionary<string, Dictionary<string, Tuple<int, HashSet<string>>>> DistrictData { get; private set; }
+
         #endregion
 
         #region Instance Properties
@@ -47,16 +52,6 @@ namespace AgencyDispatchFramework.Simulation
         /// Gets the full script name of this agency
         /// </summary>
         public string ScriptName { get; private set; }
-
-        /// <summary>
-        /// Gets the <see cref="Dispatching.AgencyType"/> for this <see cref="Agency"/>
-        /// </summary>
-        public abstract AgencyType AgencyType { get; }
-
-        /// <summary>
-        /// Gets the <see cref="ServiceSector"/> of this agency
-        /// </summary>
-        public abstract ServiceSector Sector { get;  }
 
         /// <summary>
         /// Gets the <see cref="Dispatching.CallSignStyle"/> this department uses when assigning 
@@ -79,6 +74,11 @@ namespace AgencyDispatchFramework.Simulation
         /// Contains a list of zone names in this jurisdiction
         /// </summary>
         internal string[] ZoneNames { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal Dictionary<string, District> Districts { get; set; }
 
         /// <summary>
         /// 
@@ -143,23 +143,23 @@ namespace AgencyDispatchFramework.Simulation
         /// </remarks>
         public bool IsLawEnforcementAgency
         {
-            get
-            {
-                var type = AgencyType;
-                return (
-                    type == AgencyType.HighwayPatrol
-                    || type == AgencyType.StateParks
-                    || type == AgencyType.StatePolice
-                    || type == AgencyType.CountySheriff
-                    || type == AgencyType.CityPolice
-                );
-            }
+            get => Sector == ServiceSector.Police;
         }
 
         /// <summary>
         /// Gets or sets the backing county of this <see cref="Agency"/>
         /// </summary>
         public County BackingCounty { get; internal set; }
+
+        /// <summary>
+        /// Gets the <see cref="Dispatching.AgencyType"/> for this <see cref="Agency"/>
+        /// </summary>
+        public abstract AgencyType AgencyType { get; }
+
+        /// <summary>
+        /// Gets the <see cref="ServiceSector"/> of this agency
+        /// </summary>
+        public abstract ServiceSector Sector { get; }
 
         #endregion
 
@@ -176,7 +176,18 @@ namespace AgencyDispatchFramework.Simulation
             IsInitialized = true;
 
             // Load and parse the xml file
-            string path = Path.Combine(Main.FrameworkFolderPath, "Agencies.xml");
+            string path = Path.Combine(Main.FrameworkFolderPath, "Districts.xml");
+            using (var file = new DistrictsFile(path))
+            {
+                // Parse XML
+                file.Parse();
+
+                // Fetch data
+                DistrictData = file.Districts;
+            }
+
+            // Load and parse the xml file
+            path = Path.Combine(Main.FrameworkFolderPath, "Agencies.xml");
             using (var file = new AgenciesFile(path))
             {
                 // Parse XML
@@ -195,18 +206,18 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="name"></param>
         /// <param name="staffing"></param>
         /// <returns></returns>
-        internal static Agency CreateAgency(AgencyType type, string sname, string name, StaffLevel staffing, CallSignStyle signStyle)
+        internal static Agency CreateAgency(AgencyType type, string sname, string name, StaffLevel staffing, CallSignStyle signStyle, string[] zoneNames)
         {
             switch (type)
             {
                 case AgencyType.CityPolice:
-                    return new PoliceAgency(sname, name, staffing, signStyle);
+                    return new PoliceAgency(sname, name, staffing, signStyle, zoneNames);
                 case AgencyType.CountySheriff:
                 case AgencyType.StateParks:
-                    return new SheriffAgency(sname, name, staffing, signStyle);
+                    return new SheriffAgency(sname, name, staffing, signStyle, zoneNames);
                 case AgencyType.StatePolice:
                 case AgencyType.HighwayPatrol:
-                    return new HighwayPatrolAgency(sname, name, staffing, signStyle);
+                    return new HighwayPatrolAgency(sname, name, staffing, signStyle, zoneNames);
                 default:
                     throw new NotImplementedException($"The AgencyType '{type}' is yet supported");
             }
@@ -259,17 +270,23 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="scriptName"></param>
         /// <param name="friendlyName"></param>
         /// <param name="staffLevel"></param>
-        internal Agency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle)
+        internal Agency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle, string[] zoneNames)
         {
+            // Set properties
             ScriptName = scriptName ?? throw new ArgumentNullException(nameof(scriptName));
             FullName = friendlyName ?? throw new ArgumentNullException(nameof(friendlyName));
             StaffLevel = staffLevel;
             CallSignStyle = signStyle;
+            ZoneNames = zoneNames;
 
-            // Initiate vars
+            // Initialize collections
             CallsByPeriod = new Dictionary<TimePeriod, double>();
             Units = new Dictionary<UnitType, SpecializedUnit>();
             OnDutyOfficers = new HashSet<OfficerUnit>();
+            Districts = new Dictionary<string, District>();
+
+            // Initialize districts
+            InitDistricts();
         }
 
         /// <summary>
@@ -298,29 +315,26 @@ namespace AgencyDispatchFramework.Simulation
             // Saftey
             if (IsActive) return;
 
-            // Get our zones of jurisdiction, and ensure each zone has the primary agency set
-            Zones = WorldZone.GetZonesByName(ZoneNames, out int loaded, out int locations);
+            // --------------------------------------------------
+            // NOTE: These invocations must be done in order!
+            // --------------------------------------------------
 
-            // Assign zone agencies
+            // Second, Assign this agency to the zones. This must be abstract, since each agency
+            // type will assign themselves differently
             AssignZones();
 
-            // Calculate agency size
+            // Now we calculate agency size. This must be abstract, since each agency has
+            // a custom way of assinging units.
             CalculateAgencySize();
 
-            // Load officers
-            OfficersByShift = new Dictionary<ShiftRotation, List<OfficerUnit>>();
-            foreach (ShiftRotation period in Enum.GetValues(typeof(ShiftRotation)))
-            {
-                OfficersByShift.Add(period, new List<OfficerUnit>());
-            }
-
-            // Create dispatcher
+            // Create dispatcher. This must be abstract, as each dispatcher ahdnles calls and 
+            // dispatches units differently based on the agency type.
             Dispatcher = CreateDispatcher();
 
-            // Create AI officer units
+            // Finally, Create AI officer units to fill the roster
             CreateOfficerUnits();
 
-            // Register for TimeOfDay changes!
+            // Register for Shift changes with the primary dispatcher!
             Dispatch.OnShiftStart += Dispatch_OnShiftStart;
 
             // Finally, flag
@@ -341,8 +355,66 @@ namespace AgencyDispatchFramework.Simulation
             // Dispose officer units
             DisposeAIUnits();
 
+            // Reset districts
+            Districts = new Dictionary<string, District>();
+            InitDistricts();
+
             // flag
             IsActive = false;
+        }
+
+        /// <summary>
+        /// Initializes this <see cref="Agency"/>'s districts
+        /// </summary>
+        protected virtual void InitDistricts()
+        {
+            // Persistant call sign generator?
+            CallSignGenerator generator = null;
+            if (CallSignStyle == CallSignStyle.Numeric)
+            {
+                generator = new NumericCallSignGenerator();
+            }
+
+            // Get all of our jurisdiction zones for this agency
+            Zones = Zones ?? WorldZone.GetZonesByName(ZoneNames, out int loaded, out int locations);
+
+            // Does this agency have an entry in the districts.xml?
+            if (DistrictData.ContainsKey(ScriptName))
+            {
+                var data = DistrictData[ScriptName];
+                foreach (var districtMeta in data)
+                {
+                    // Extract data
+                    var districtName = districtMeta.Key;
+                    var districtIndex = districtMeta.Value.Item1;
+                    var zoneNames = districtMeta.Value.Item2;
+
+                    // Get zones by name
+                    var zones = Zones.Where(x => zoneNames.Contains(x.ScriptName)).ToArray();
+
+                    // Are we using LAPD style callsigns? If so, each district gets its own generator!
+                    if (CallSignStyle == CallSignStyle.LAPD)
+                    {
+                        generator = new LAPDCallSignGenerator(districtIndex);
+                    }
+
+                    // Create district
+                    var district = new District(districtIndex, districtName, zones, generator);
+                    Districts.Add(districtName, district);
+                }
+            }
+            else
+            {
+                // Are we using LAPD style callsigns? If so, each district gets its own generator!
+                if (CallSignStyle == CallSignStyle.LAPD)
+                {
+                    generator = new LAPDCallSignGenerator(1);
+                }
+
+                // Create district
+                var district = new District(1, "Central", Zones, generator);
+                Districts.Add("Central", district);
+            }
         }
 
         /// <summary>
@@ -350,40 +422,57 @@ namespace AgencyDispatchFramework.Simulation
         /// </summary>
         protected virtual void CreateOfficerUnits()
         {
+            // Fill the roster hash table
+            OfficersByShift = new Dictionary<ShiftRotation, List<OfficerUnit>>();
+            foreach (ShiftRotation period in Enum.GetValues(typeof(ShiftRotation)))
+            {
+                OfficersByShift.Add(period, new List<OfficerUnit>());
+            }
+
             // Define which units create supervisors
             var supervisorUnits = new[] { UnitType.Patrol, UnitType.Traffic };
 
             // For each unit type!
             foreach (SpecializedUnit unit in Units.Values)
             {
-                // Get shift counts
-                var shiftCounts = unit.CalculateShiftCount();
-                var unitName = Enum.GetName(typeof(UnitType), unit.UnitType);
-
-                // Create officers for every shift
-                foreach (var shift in shiftCounts)
+                // Each district
+                foreach (District district in Districts.Values)
                 {
-                    var shiftName = Enum.GetName(typeof(ShiftRotation), shift.Key);
-                    var aiPatrolCount = shift.Value;
-                    var toCreate = aiPatrolCount;
+                    // Get shift counts
+                    var shiftCounts = unit.CalculatePatrolShiftCount(district);
+                    var unitName = Enum.GetName(typeof(UnitType), unit.UnitType);
 
-                    // Calculate sergeants, needs at least 3 units on shift
-                    if (supervisorUnits.Contains(unit.UnitType) && aiPatrolCount > 2)
+                    // Create officers for every shift
+                    foreach (var shift in shiftCounts)
                     {
-                        // Subtract an officer unit
-                        toCreate -= 1;
+                        var shiftName = Enum.GetName(typeof(ShiftRotation), shift.Key);
+                        var aiPatrolCount = shift.Value;
+                        var toCreate = aiPatrolCount;
 
-                        // Create officer and add it to the shift roster
-                        var officer = unit.CreateOfficerUnit(true, shift.Key);
-                        OfficersByShift[shift.Key].Add(officer);
-                    }
+                        // Calculate sergeants, needs at least 3 units on shift
+                        if (supervisorUnits.Contains(unit.UnitType) && aiPatrolCount > 2)
+                        {
+                            // Subtract an officer unit
+                            toCreate -= 1;
 
-                    // Create officer units
-                    for (int i = 0; i < toCreate; i++)
-                    {
-                        // Create officer and add it to the shift roster
-                        var officer = unit.CreateOfficerUnit(false, shift.Key);
-                        OfficersByShift[shift.Key].Add(officer);
+                            // Create officer and add it to the shift roster
+                            var officer = unit.CreateOfficerUnit(true, shift.Key, district);
+
+                            // Add officer to rosters
+                            OfficersByShift[shift.Key].Add(officer);
+                            district.OfficersByShift[shift.Key].Add(officer);
+                        }
+
+                        // Create officer units
+                        for (int i = 0; i < toCreate; i++)
+                        {
+                            // Create officer and add it to the shift roster
+                            var officer = unit.CreateOfficerUnit(false, shift.Key, district);
+
+                            // Add officer to rosters
+                            OfficersByShift[shift.Key].Add(officer);
+                            district.OfficersByShift[shift.Key].Add(officer);
+                        }
                     }
                 }
             }
@@ -414,10 +503,11 @@ namespace AgencyDispatchFramework.Simulation
         /// @todo Creates the player <see cref="OfficerUnit"/> and adds them to this <see cref="Agency"/> roster.
         /// </summary>
         /// <returns></returns>
-        internal OfficerUnit AddPlayerUnit(UnitType role, CallSign callSign, ShiftRotation shift, bool supervisor)
+        internal OfficerUnit AddPlayerUnit(SimulationSettings s)
         {
             // Create player
-            var playerUnit = new PlayerOfficerUnit(Rage.Game.LocalPlayer, this, callSign, shift);
+            var p = Rage.Game.LocalPlayer;
+            var playerUnit = new PlayerOfficerUnit(p, this, s.SetCallSign, s.PrimaryRole, s.SelectedDistrict, s.SelectedShift);
 
             // @todo replace an AI unit with the player
 
@@ -528,12 +618,15 @@ namespace AgencyDispatchFramework.Simulation
             var locs = new List<RoadShoulder>(desiredCount);
             foreach (var zone in Zones)
             {
-                //locs.AddRange(zone.RoadShoulders);
+                var items = LocationsDB.RoadShoulders.Include(x => x.Zone).Find(x => x.Zone.Id == zone.Id);
+                foreach (RoadShoulder item in items)
+                {
+                    locs.Add(item);
+                }
             }
 
             // Shuffle
             locs.Shuffle();
-
             return locs.Take(desiredCount).ToArray();
         }
 

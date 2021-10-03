@@ -191,12 +191,18 @@ namespace AgencyDispatchFramework
                 // Catch exceptions
                 try
                 {
+                    // Load base probabilities. This has to happen first!
+                    BaseProbabilitiesXmlFile.Load();
+
+                    // Load locations database. This must happen before Agency.Initialize()!
+                    LocationsDB.Initialize();
+
+                    // Yield to prevent freezing
+                    GameFiber.Yield();
+
                     // Only initialize these classes once!
                     if (!HasBeenOnDuty)
                     {
-                        // Load base probabilities
-                        BaseProbabilitiesXmlFile.Load();
-
                         // Load postals
                         Postal.Initialize();
 
@@ -232,12 +238,6 @@ namespace AgencyDispatchFramework
                         // Flag
                         HasBeenOnDuty = true;
                     }
-
-                    // Yield to prevent freezing
-                    GameFiber.Yield();
-
-                    // Load locations database
-                    LocationsDB.Initialize();
 
                     // Yield to prevent freezing
                     GameFiber.Yield();

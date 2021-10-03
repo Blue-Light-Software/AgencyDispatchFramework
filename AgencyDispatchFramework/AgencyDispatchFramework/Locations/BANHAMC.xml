@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- https://gta.fandom.com/wiki/Banham_Canyon -->
+<!--
+  Banham Canyon Dr https://gta.fandom.com/wiki/Banham_Canyon_Drive
+-->
 <BANHAMC>
-  <Name>Banham Canyon</Name>
+  <Name>Banham Canyon Dr</Name>
   <Size>Large</Size>
   <Type>Rural</Type>
   <Class>Working</Class>

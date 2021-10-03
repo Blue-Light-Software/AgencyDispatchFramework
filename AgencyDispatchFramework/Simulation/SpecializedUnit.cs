@@ -34,7 +34,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Gets the optimum patrol count based on <see cref="ShiftRotation" />. Lazy Loaded
         /// </summary>
-        internal Dictionary<TimePeriod, int> OptimumPatrols { get; set; }
+        internal Dictionary<TimePeriod, double> OptimumPatrols { get; set; }
 
         /// <summary>
         /// Gets the optimum patrol count based on <see cref="ShiftRotation" />. Lazy Loaded
@@ -58,7 +58,7 @@ namespace AgencyDispatchFramework.Simulation
             SupervisorSets = new ProbabilityGenerator<VehicleSet>();
 
             // Lazy load!
-            OptimumPatrols = new Dictionary<TimePeriod, int>()
+            OptimumPatrols = new Dictionary<TimePeriod, double>()
             {
                 { TimePeriod.Night, 0 },
                 { TimePeriod.EarlyMorning, 0 },
@@ -82,15 +82,36 @@ namespace AgencyDispatchFramework.Simulation
         /// that are unique to this <see cref="SpecializedUnit"/>
         /// </summary>
         /// <returns></returns>
-        internal Dictionary<ShiftRotation, int> CalculateShiftCount()
+        internal Dictionary<ShiftRotation, int> CalculatePatrolShiftCount()
         {
             // Create
-            var patrols = new Dictionary<ShiftRotation, int>();
+            var patrols = new Dictionary<ShiftRotation, int>
+            {
+                { ShiftRotation.Day, GetOfficerCount(OptimumPatrols[TimePeriod.LateMorning], OptimumPatrols[TimePeriod.Afternoon]) },
+                { ShiftRotation.Swing, GetOfficerCount(OptimumPatrols[TimePeriod.EarlyEvening], OptimumPatrols[TimePeriod.LateEvening]) },
+                { ShiftRotation.Night, GetOfficerCount(OptimumPatrols[TimePeriod.Night], OptimumPatrols[TimePeriod.EarlyMorning]) }
+            };
 
-            // Calculate
-            patrols.Add(ShiftRotation.Day, GetOfficerCount(OptimumPatrols[TimePeriod.LateMorning], OptimumPatrols[TimePeriod.Afternoon]));
-            patrols.Add(ShiftRotation.Swing, GetOfficerCount(OptimumPatrols[TimePeriod.EarlyEvening], OptimumPatrols[TimePeriod.LateEvening]));
-            patrols.Add(ShiftRotation.Night, GetOfficerCount(OptimumPatrols[TimePeriod.Night], OptimumPatrols[TimePeriod.EarlyMorning]));
+            // Returns
+            return patrols;
+        }
+
+        /// <summary>
+        /// Calculate the number of patrol cars needed to cover the number crime calls generated
+        /// that are unique to this <see cref="SpecializedUnit"/>
+        /// </summary>
+        /// <returns></returns>
+        internal Dictionary<ShiftRotation, int> CalculatePatrolShiftCount(District district)
+        {
+            var optimumPatrols = district.OptimumPatrols[UnitType];
+
+            // Create
+            var patrols = new Dictionary<ShiftRotation, int>
+            {
+                { ShiftRotation.Day, GetOfficerCount(optimumPatrols[TimePeriod.LateMorning], optimumPatrols[TimePeriod.Afternoon]) },
+                { ShiftRotation.Swing, GetOfficerCount(optimumPatrols[TimePeriod.EarlyEvening], optimumPatrols[TimePeriod.LateEvening]) },
+                { ShiftRotation.Night, GetOfficerCount(optimumPatrols[TimePeriod.Night], optimumPatrols[TimePeriod.EarlyMorning]) }
+            };
 
             // Returns
             return patrols;
@@ -100,7 +121,7 @@ namespace AgencyDispatchFramework.Simulation
         /// Creates a new <see cref="AIOfficerUnit"/> and adds them to the roster
         /// </summary>
         /// <param name="supervisor"></param>
-        internal AIOfficerUnit CreateOfficerUnit(bool supervisor, ShiftRotation shift)
+        internal AIOfficerUnit CreateOfficerUnit(bool supervisor, ShiftRotation shift, District district)
         {
             // Grab specialized unit
             var generator = (supervisor) ? SupervisorSets : OfficerSets;
@@ -112,11 +133,16 @@ namespace AgencyDispatchFramework.Simulation
                 throw new Exception($"Unable to spawn a VehicleSet from Unit '{name}' as part of agency '{AssignedAgency.FullName}'; Supervisor={supervisor}");
             }
 
-            // Come up with a unique callsign for this unit @TODO
-            CallSign.TryParse("1A-1", out CallSign callSign);
+            // Come up with a unique callsign for this unit
+            CallSign callSign = district.CallSignGenerator.Next(UnitType, supervisor);
 
             // Create officer
-            var officer = new AIOfficerUnit(vehicleSet, AssignedAgency, callSign, shift, supervisor);
+            var officer = new AIOfficerUnit(vehicleSet, AssignedAgency, callSign, shift, UnitType, district, supervisor);
+
+            // Log for debugging
+            string sname = Enum.GetName(typeof(ShiftRotation), shift);
+            string uname = Enum.GetName(typeof(UnitType), UnitType);
+            Log.Debug($"Created officer unit {officer.Persona.FullName} ({callSign.Value}) on {sname} shift for {AssignedAgency.ScriptName} as part of the {uname} unit");
 
             // Add to roster
             Roster.Add(officer);
@@ -132,9 +158,9 @@ namespace AgencyDispatchFramework.Simulation
         /// <param name="v1"></param>
         /// <param name="v2"></param>
         /// <returns></returns>
-        private int GetOfficerCount(int v1, int v2)
+        private int GetOfficerCount(double v1, double v2)
         {
-            return Math.Max(1, Math.Max(v1, v2));
+            return (int)Math.Ceiling(Math.Max(1, Math.Max(v1, v2)));
         }
 
         /// <summary>

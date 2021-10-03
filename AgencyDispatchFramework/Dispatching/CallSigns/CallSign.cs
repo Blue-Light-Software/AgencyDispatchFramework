@@ -30,7 +30,7 @@ namespace AgencyDispatchFramework.Dispatching
                 // Check for number style first
                 if (Int32.TryParse(input, out int num))
                 {
-                    callSign = new NumberStyleCallsign(num);
+                    callSign = new NumericStyleCallsign(num);
                     return true;
                 }
                 else

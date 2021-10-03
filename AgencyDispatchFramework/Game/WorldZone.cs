@@ -311,6 +311,31 @@ namespace AgencyDispatchFramework.Game
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="inactiveOnly">If true, will only return a <see cref="WorldLocation"/> that is not currently in use</param>
+        public WorldLocation GetRandomLocation(LocationTypeCode locationType, FlagFilterGroup filters, bool inactiveOnly = false)
+        {
+            switch (locationType)
+            {
+                case LocationTypeCode.Business:
+                    break;
+                case LocationTypeCode.Coordinate:
+                    break;
+                case LocationTypeCode.Intersection:
+                    break;
+                case LocationTypeCode.Residence:
+                    return GetRandomResidence(filters, inactiveOnly);
+                case LocationTypeCode.RoadPosition:
+                    break;
+                case LocationTypeCode.RoadShoulder:
+                    return GetRandomRoadShoulder(filters, inactiveOnly);
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Loads the specified zones from the database and from the Locations.xml into
         /// memory, caches the instances, and returns the total number of locations.
         /// </summary>
@@ -412,7 +437,11 @@ namespace AgencyDispatchFramework.Game
                 // Do we need to add?
                 if (needToAdd)
                 {
+                    // Insert
+                    dbZone = file.Zone;
                     var id = LocationsDB.WorldZones.Insert(dbZone);
+
+                    // Set the ID
                     dbZone.Id = id.AsInt32;
                 }
 
@@ -453,5 +482,20 @@ namespace AgencyDispatchFramework.Game
 
             return RegionZones[region].ToArray();
         }
+
+        #region overrides
+
+        public override int GetHashCode()
+        {
+            return (Id != 0) ? Id.GetHashCode() : ScriptName.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as WorldZone;
+            return (Id != 0 && other.Id != 0) ? Id.Equals(other.Id) : ScriptName.Equals(other.ScriptName);
+        }
+
+        #endregion overrides
     }
 }

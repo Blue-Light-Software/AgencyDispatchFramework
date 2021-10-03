@@ -10,8 +10,8 @@ namespace AgencyDispatchFramework.Simulation
     {
         public override AgencyType AgencyType => AgencyType.HighwayPatrol; 
 
-        internal HighwayPatrolAgency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle)
-            : base(scriptName, friendlyName, staffLevel, signStyle)
+        internal HighwayPatrolAgency(string scriptName, string friendlyName, StaffLevel staffLevel, CallSignStyle signStyle, string[] zoneNames)
+            : base(scriptName, friendlyName, staffLevel, signStyle, zoneNames)
         {
         }
 

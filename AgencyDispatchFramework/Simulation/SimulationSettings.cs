@@ -7,6 +7,8 @@ namespace AgencyDispatchFramework.Simulation
     {
         public bool Supervisor { get; set; }
 
+        public District SelectedDistrict { get; set; }
+
         public bool FastForward { get; set; }
 
         public bool SyncTime { get; set; }

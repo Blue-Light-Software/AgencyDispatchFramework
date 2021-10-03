@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<EventMeta>
+  <Author>Wilson212</Author>
+  <Controller>
+    <Script>AgencyDispatchFramework.Scripting.Events.HotPursuit.Controller</Script>
+    <Type>Event</Type>
+  </Controller>
+  <Scenarios>
+
+    <NeverStopped>
+      <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
+      <Probabilities>
+        <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Afternoon clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <EarlyEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <LateEvening clear="10" overcast="10" rain="10" snow="10" storm="10" />
+        <Night clear="10" overcast="10" rain="10" snow="10" storm="10" />
+      </Probabilities>
+      <!-- Location requirements for scenario -->
+      <Locations>
+        <Location probability="10">
+          <Type>RoadShoulder</Type>
+          <RequiredFlags mode="Any">
+            <!-- <Requirement mode="All" inverse="false"></Requirement> -->
+          </RequiredFlags>
+        </Location>
+      </Locations>
+      <Dispatch>
+        <!-- Agencies that initially get dispatched to handle this scenario -->
+        <Agencies>
+          <Agency target="Police" unitCount="6" />
+        </Agencies>
+        <Category>Pursuit</Category>
+        <EventType>Crime</EventType>
+        <EventSource>OfficerInitiated</EventSource>
+        <Priority>Emergency</Priority>
+        <Response>Code3</Response>
+        <MDT>
+          <!-- CAD texture for this call in call details -->
+          <Texture dictionary="char_chat_call">char_chat_call</Texture>
+          <IncidentType abbreviation="AP">Pursuit</IncidentType>
+          <Descriptions>
+            <Description probability="10">
+              <Text>OFFICER REPORTED PURSUIT</Text>
+            </Description>
+          </Descriptions>
+        </MDT>
+      </Dispatch>
+      <!-- Scanner Audio data for call -->
+      <Scanner>
+        <Event name="OnReported" priority="Normal">
+          <AudioString>WE_HAVE_01 CRIME_DOMESTIC_DISTURBANCE_02 IN_OR_ON_POSITION UNITS_RESPOND_CODE_03_02</AudioString>
+          <PrefixCallSign>False</PrefixCallSign>
+          <UsePosition>True</UsePosition>
+        </Event>
+      </Scanner>
+      <!-- AI Simulation Info -->
+      <Simulation>
+        <!-- In game minutes -->
+        <CallTime min="20" max="45" />
+        <!-- Chance that a ped gets arrested -->
+        <Arrests></Arrests>
+        <Escalation chance="0" />
+      </Simulation>
+      <!-- Different circumstances for this event -->
+      <Circumstances>
+        <Circumstance id="drugs" probability="10" />
+      </Circumstances>
+    </NeverStopped>
+    
+  </Scenarios>
+</EventMeta>
