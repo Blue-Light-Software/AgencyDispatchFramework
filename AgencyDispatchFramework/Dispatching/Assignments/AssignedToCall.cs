@@ -9,9 +9,9 @@ namespace AgencyDispatchFramework.Dispatching.Assignments
 {
     public class AssignedToCall : BaseAssignment
     {
-        public AssignedToCall(ActiveEvent call)
+        public AssignedToCall(PriorityCall call)
         {
-            Priority = (EventPriority)call.OriginalPriority;
+            Priority = call.Priority;
         }
     }
 }

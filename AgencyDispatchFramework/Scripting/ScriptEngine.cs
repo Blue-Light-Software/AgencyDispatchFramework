@@ -14,14 +14,16 @@ using System.Threading;
 namespace AgencyDispatchFramework.Scripting
 {
     /// <summary>
-    /// A class that handles the processing of <see cref="IEventController"/>s
+    /// A class that handles the processing of <see cref="Events.AmbientEvent"/>(s)
+    /// as well as keeping persistent data related to <see cref="WorldLocation"/>(s)
+    /// that are current in use by <see cref="ActiveEvent"/>s
     /// </summary>
     public static class ScriptEngine
     {
         /// <summary>
         /// An event counter used to assign unique ambient event ids
         /// </summary>
-        private static int EventCounter = 0;
+        private static int NextEventId = 1;
 
         /// <summary>
         /// Our lock object to prevent multi-threading issues
@@ -32,6 +34,12 @@ namespace AgencyDispatchFramework.Scripting
         /// Contains a hashset of active events in the <see cref="Rage.World"/> from this mod
         /// </summary>
         private static HashSet<IEventController> ActiveEvents { get; set; }
+
+        /// <summary>
+        /// Contains a hash table of <see cref="WorldLocation"/>s that are currently in use by the Call Queue
+        /// </summary>
+        /// <remarks>HashSet{T}.Contains is an O(1) operation</remarks>
+        private static HashSet<WorldLocation> ActiveLocations { get; set; }
 
         /// <summary>
         /// Contains the active <see cref="GameFiber"/> or null
@@ -74,10 +82,14 @@ namespace AgencyDispatchFramework.Scripting
         /// </summary>
         static ScriptEngine()
         {
-            ActiveEvents = new HashSet<IEventController>();
+            // Initialize scenario pools
             Callouts = new ScenarioPool();
             PlayerEvents = new ScenarioPool();
             AIEvents = new ScenarioPool();
+
+            // Intialize a hash table of active events and locations
+            ActiveEvents = new HashSet<IEventController>();
+            ActiveLocations = new HashSet<WorldLocation>();
         }
 
         /// <summary>
@@ -86,7 +98,7 @@ namespace AgencyDispatchFramework.Scripting
         /// <returns></returns>
         internal static int GetNewEventId()
         {
-            return Interlocked.Increment(ref EventCounter);
+            return Interlocked.Increment(ref NextEventId);
         }
 
         /// <summary>
@@ -175,7 +187,7 @@ namespace AgencyDispatchFramework.Scripting
                 if (AIEvents.ScenariosByCategory[category].TrySpawn(out scenario))
                 {
                     // Start event
-                    activeEvent = StartEvent(scenario, officerLocation);
+                    activeEvent = CreateEvent(scenario, officerLocation);
                     return activeEvent != null;
                 }
             }
@@ -192,38 +204,68 @@ namespace AgencyDispatchFramework.Scripting
         /// Adds and begins processing the specified event
         /// </summary>
         /// <param name="event"></param>
-        private static ActiveEvent StartEvent(EventScenarioMeta scenario, WorldLocation location)
+        internal static ActiveEvent CreateEvent(EventScenarioMeta scenario, WorldLocation location)
         {
             // Ensure we are actively running!
             if (EventsFiber == null) return null;
 
-            // WE do not handle callouts here
-            if (scenario.ScriptType == ScriptType.Callout)
+            try
             {
+                // Create the event handle
+                var activeEvent = new ActiveEvent(GetNewEventId(), scenario, location);
+
+                // WE do not handle callouts here, so return the event
+                if (scenario.ScriptType == ScriptType.Event)
+                {
+                    // Create controller instance
+                    IEventController instance = Activator.CreateInstance(activeEvent.ScenarioMeta.ControllerType, new[] { activeEvent }) as IEventController;
+                    if (instance == null)
+                    {
+                        var name = scenario.ControllerType.Name;
+                        throw new Exception($"Unable to create instance of {name} and cast as an IEventController");
+                    }
+
+                    // Prevent threading issues
+                    lock (_threadLock)
+                    {
+                        // Add event
+                        ActiveEvents.Add(instance);
+
+                        // Add event location. Do this manually since we have already locked the thread
+                        if (ActiveLocations.Add(activeEvent.Location))
+                        {
+                            // Register for events
+                            activeEvent.OnEnded += ActiveEvent_OnEnded;
+                        }
+                        else
+                        {
+                            // Failed to add?
+                            var zName = activeEvent.Location.Zone.DisplayName;
+                            var message = $"Tried to register an ActiveEvent Location in zone '{zName}', but the location selected was already in use.";
+                            Log.Error($"ScriptEngine.RegisterEventLocation(): {message}");
+                        }
+                    }
+
+                    // Log
+                    Log.Info($"Started AmbientEvent scenario '{scenario.ScenarioName}'");
+                }
+                else
+                {
+                    // Call method, since it locks the thread accordingly
+                    RegisterEventLocation(activeEvent);
+
+                    // Log
+                    Log.Info($"Created ActiveEvent scenario '{scenario.ScenarioName}'");
+                }
+
+                // Return event
+                return activeEvent;
+            }
+            catch (Exception e)
+            {
+                Log.Exception(e, "Attempted to create an ActiveEvent");
                 return null;
             }
-
-            // Create the event handle
-            var e = new ActiveEvent(GetNewEventId(), scenario, location);
-
-            // Create controller instance
-            IEventController instance = Activator.CreateInstance(e.ScenarioMeta.ControllerType, new[] { e }) as IEventController;
-            if (instance == null)
-            {
-                var name = scenario.ControllerType.Name;
-                throw new Exception($"Unable to create instance of {name} and cast as an IEventController");
-            }
-
-            // Prevent threading issues
-            lock (_threadLock)
-            {
-                // Add event
-                ActiveEvents.Add(instance);
-            }
-
-            // Log
-            Log.Info($"Started AmbientEvent scenario '{scenario.ScenarioName}'");
-            return e;
         }
 
         /// <summary>
@@ -338,6 +380,59 @@ namespace AgencyDispatchFramework.Scripting
         }
 
         /// <summary>
+        /// Gets an array of <see cref="WorldLocation"/>s currently in use based
+        /// on the specified type <typeparamref name="T"/>
+        /// </summary>
+        /// <param name="type"></param>
+        /// <exception cref="InvalidCastException">thrown if the <paramref name="type"/> does not match the <typeparamref name="T"/></exception>
+        /// <typeparam name="T">A type that inherits from <see cref="WorldLocation"/></typeparam>
+        /// <returns></returns>
+        public static T[] GetActiveLocationsOfType<T>() where T : WorldLocation
+        {
+            return (from x in ActiveLocations where x is T select (T)x).ToArray();
+        }
+
+        /// <summary>
+        /// Gets an array of locations that are not currently in use from the provided
+        /// <see cref="WorldLocation"/> pool
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="pool"></param>
+        /// <returns></returns>
+        public static T[] GetInactiveLocationsFromPool<T>(IEnumerable<T> pool) where T : WorldLocation
+        {
+            return (from x in pool where !ActiveLocations.Contains(x) select x).ToArray();
+        }
+
+        /// <summary>
+        /// Thread-Safe. Adds the location in an internal <see cref="HashSet{T}"/> to prevent
+        /// other <see cref="ActiveEvent"/>(s) from using the same location at the same time.
+        /// </summary>
+        /// <param name="activeEvent"></param>
+        /// <returns></returns>
+        public static bool RegisterEventLocation(ActiveEvent activeEvent)
+        {
+            // Add call to priority Queue
+            lock (_threadLock)
+            {
+                if (ActiveLocations.Add(activeEvent.Location))
+                {
+                    // Register for events
+                    activeEvent.OnEnded += ActiveEvent_OnEnded;
+                    return true;
+                }
+                else
+                {
+                    // Failed to add?
+                    var zName = activeEvent.Location.Zone.DisplayName;
+                    var message = $"Tried to register an ActiveEvent Location in zone '{zName}', but the location selected was already in use.";
+                    Log.Error($"ScriptEngine.RegisterEventLocation(): {message}");
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="officerLocation"></param>
@@ -350,6 +445,19 @@ namespace AgencyDispatchFramework.Scripting
 
             // We must find the zone
             return GameWorld.GetZoneAtLocation(officerLocation.Position);
+        }
+
+        /// <summary>
+        /// When the <see cref="ActiveEvent"/> has ended, this method frees the <see cref="WorldLocation"/>
+        /// </summary>
+        /// <param name="details"></param>
+        /// <param name="closeFlag"></param>
+        private static void ActiveEvent_OnEnded(ActiveEvent details, EventClosedFlag closeFlag)
+        {
+            lock (_threadLock)
+            {
+                ActiveLocations.Remove(details.Location);
+            }
         }
     }
 }

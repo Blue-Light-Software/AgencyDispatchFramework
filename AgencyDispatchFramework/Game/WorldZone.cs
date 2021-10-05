@@ -1,6 +1,7 @@
 ﻿using AgencyDispatchFramework.Dispatching;
 using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game.Locations;
+using AgencyDispatchFramework.Scripting;
 using AgencyDispatchFramework.Simulation;
 using AgencyDispatchFramework.Xml;
 using LiteDB;
@@ -245,13 +246,13 @@ namespace AgencyDispatchFramework.Game
             }
 
             // Filter results
-            var locations = locationPool.Include(x => x.Zone).Where(x => x.Zone.Id == Id).ToList();
+            var locations = locationPool.Include(x => x.Zone).Where(x => x.Zone.Id == Id).ToArray();
 
             // Filtering by flags? Do this first so we can log debugging info if there are no available locations with these required flags in this zone
             if (filters != null && filters.Requirements.Count > 0)
             {
-                locations = locations.Filter(filters).ToList();
-                if (locations.Count == 0)
+                locations = locations.Filter(filters).ToArray();
+                if (locations.Length == 0)
                 {
                     Log.Warning($"WorldZone.GetRandomLocationFromPool<T>(): There are no locations of type '{typeof(T).Name}' in zone '{ScriptName}' using the following flags:");
                     Log.Warning($"\t{filters}");
@@ -265,7 +266,7 @@ namespace AgencyDispatchFramework.Game
                 try
                 {
                     // Find all locations not in use
-                    locations = Dispatch.GetInactiveLocationsFromPool(locations);
+                    locations = ScriptEngine.GetInactiveLocationsFromPool(locations);
                 }
                 catch (InvalidCastException ex)
                 {
@@ -275,7 +276,7 @@ namespace AgencyDispatchFramework.Game
             }
 
             // If no locations are available
-            if (locations.Count == 0)
+            if (locations.Length == 0)
             {
                 Log.Debug($"WorldZone.GetRandomLocationFromPool<T>(): Unable to pull an available '{typeof(T).Name}' location from zone '{ScriptName}' because they are all in use");
                 return null;
@@ -283,7 +284,7 @@ namespace AgencyDispatchFramework.Game
 
             // Load randomizer
             var random = new CryptoRandom();
-            return random.PickOne(locations.ToArray());
+            return random.PickOne(locations);
         }
 
         /// <summary>

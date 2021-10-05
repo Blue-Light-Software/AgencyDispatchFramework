@@ -8,10 +8,16 @@ namespace AgencyDispatchFramework.Scripting.Events.TrafficStop
 {
     internal class ShotsFiredEvent : AmbientEvent
     {
+        public override string Name => "ADF.ShotsFired";
 
         public override void Process()
         {
-            throw new NotImplementedException();
+
+        }
+
+        public override void End()
+        {
+
         }
     }
 }

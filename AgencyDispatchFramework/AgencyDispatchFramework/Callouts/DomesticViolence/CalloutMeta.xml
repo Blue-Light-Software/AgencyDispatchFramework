@@ -8,6 +8,9 @@
   <Scenarios>
 
     <ReportsOfArguingThreats>
+      <EventType>Crime</EventType>
+      <EventSource>Reported</EventSource>
+      <Category>Disturbance</Category>
       <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
       <Probabilities>
         <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
@@ -28,14 +31,13 @@
       </Locations>
       <Dispatch>
         <!-- Agencies that initially get dispatched to handle this scenario -->
-        <Agencies>
-          <Agency target="Police" unitCount="2" />
-        </Agencies>
-        <Category>Disturbance</Category>
-        <EventType>Crime</EventType>
-        <EventSource>Reported</EventSource>
-        <Priority>Emergency</Priority>
-        <Response>Code3</Response>
+        <Directives>
+          <Agency target="Police">
+            <Priority>Expedited</Priority>
+            <UnitCount>1</UnitCount>
+            <Response>Code2</Response>
+          </Agency>
+        </Directives>
         <MDT>
           <!-- CAD texture for this call in call details -->
           <Texture dictionary="char_chat_call">char_chat_call</Texture>

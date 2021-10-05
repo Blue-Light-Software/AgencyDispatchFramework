@@ -37,7 +37,7 @@ namespace AgencyDispatchFramework.Dispatching
             foreach (UnitType type in Enum.GetValues(typeof(UnitType)))
             {
                 // Supervisors start at 1-10
-                var beats = Enumerable.Range(11, 99).ToList();
+                var beats = Enumerable.Range(11, 88).ToList();
 
                 // Shuffle beats
                 beats.Shuffle();
@@ -80,6 +80,24 @@ namespace AgencyDispatchFramework.Dispatching
             int unitTypeIndex = (int)unit % 32;
 
             return new LAPDStyleCallsign(DistrictIndex, unitTypeIndex, callSignQueue.Dequeue());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="unitType"></param>
+        /// <param name="supervisor"></param>
+        /// <returns></returns>
+        public override HashSet<int> GetAvailableBeats(UnitType unitType, bool supervisor)
+        {
+            // Get next beat
+            var callSignQueue = (supervisor) ? SupervisorCallSigns[unitType] : OfficerCallSigns[unitType];
+            if (callSignQueue.Count == 0)
+            {
+                return new HashSet<int>();
+            }
+
+            return callSignQueue.ToHashSet();
         }
 
         /// <summary>

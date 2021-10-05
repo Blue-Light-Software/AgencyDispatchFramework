@@ -30,6 +30,39 @@ namespace AgencyDispatchFramework.Dispatching
         public override CallSignStyle Style => CallSignStyle.LAPD;
 
         /// <summary>
+        /// Containts a list of LAPD phonetic radiotelephony alphabet spelling words
+        /// </summary>
+        public static string[] LAPDphonetic { get; set; } = new string[]
+        {
+            "ADAM",
+            "BOY",
+            "CHARLES",
+            "DAVID",
+            "EDWARD",
+            "FRANK",
+            "GEORGE",
+            "HENRY",
+            "IDA",
+            "JOHN",
+            "KING",
+            "LINCOLN",
+            "MARY",
+            "NORA",
+            "OCEAN",
+            "PAUL",
+            "QUEEN",
+            "ROBERT",
+            "SAM",
+            "TOM",
+            "UNION",
+            "VICTOR",
+            "WILLIAM",
+            "XRAY",
+            "YOUNG",
+            "ZEBRA"
+        };
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="division"></param>
@@ -50,7 +83,7 @@ namespace AgencyDispatchFramework.Dispatching
                 //throw new ArgumentException("Callsign beat number out of range", nameof(beat));
 
             Division = division;
-            UnitTypeString = Dispatch.LAPDphonetic[phoneticUnitId - 1];
+            UnitTypeString = LAPDphonetic[phoneticUnitId - 1];
             Beat = beat;
 
             char unit = char.ToUpper(UnitTypeString[0]);

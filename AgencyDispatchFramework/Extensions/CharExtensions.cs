@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AgencyDispatchFramework.Dispatching;
+using System;
 
 namespace AgencyDispatchFramework.Extensions
 {
@@ -19,7 +20,7 @@ namespace AgencyDispatchFramework.Extensions
             }
 
             int index = (int)upper - (int)'A';
-            return Dispatch.LAPDphonetic[index];
+            return LAPDStyleCallsign.LAPDphonetic[index];
         }
     }
 }

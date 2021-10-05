@@ -8,9 +8,16 @@ namespace AgencyDispatchFramework.Scripting.Events.TrafficStop
 {
     internal class K9RequestEvent : AiOfficerEvent
     {
+        public override string Name => "ADF.K9Request";
+
         public override void Process()
         {
-            throw new NotImplementedException();
+
+        }
+
+        public override void End()
+        {
+
         }
     }
 }

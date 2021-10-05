@@ -64,7 +64,7 @@ namespace AgencyDispatchFramework.Dispatching
         private IEnumerable<int> GetShuffledQueue(int minRange, int maxRange)
         {
             // Supervisors start at 1-10
-            var beats = Enumerable.Range(minRange, maxRange).ToList();
+            var beats = Enumerable.Range(minRange, maxRange - minRange).ToList();
 
             // Shuffle beats
             beats.Shuffle();
@@ -89,6 +89,24 @@ namespace AgencyDispatchFramework.Dispatching
 
             // Create
             return new NumericStyleCallsign(callSignQueue.Dequeue());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="unitType"></param>
+        /// <param name="supervisor"></param>
+        /// <returns></returns>
+        public override HashSet<int> GetAvailableBeats(UnitType unitType, bool supervisor)
+        {
+            // Get next beat
+            var callSignQueue = (supervisor) ? SupervisorCallSigns[unitType] : OfficerCallSigns[unitType];
+            if (callSignQueue.Count == 0)
+            {
+                return new HashSet<int>();
+            }
+
+            return callSignQueue.ToHashSet();
         }
     }
 }

@@ -8,9 +8,16 @@ namespace AgencyDispatchFramework.Scripting.Events
 {
     internal class DrunkDriver : AmbientEvent
     {
+        public override string Name => "ADF.DrunkDriver";
+
         public override void Process()
         {
-            throw new NotImplementedException();
+
+        }
+
+        public override void End()
+        {
+
         }
     }
 }

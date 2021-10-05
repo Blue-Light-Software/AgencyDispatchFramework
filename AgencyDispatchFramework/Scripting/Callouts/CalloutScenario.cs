@@ -34,7 +34,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts
         {
             Parser = new ExpressionParser();
             Parser.SetParamater("Weather", GameWorld.GetWeatherSnapshot());
-            Parser.SetParamater("Call", Dispatch.ActivePlayerEvent);
+            Parser.SetParamater("Call", Dispatch.ActivePlayerCall);
             ScenarioMeta = scenarioInfo;
 
             // Select a random Circumstance for this scenario

@@ -3,7 +3,12 @@
     public interface IEventController
     {
         /// <summary>
-        /// Gets the <see cref="Scripting.ActiveEvent"/> of this instance
+        /// 
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
+        /// Gets the <see cref="ActiveEvent"/> of this instance
         /// </summary>
         ActiveEvent Event { get; }
 
@@ -11,5 +16,10 @@
         /// On tick processing method
         /// </summary>
         void Process();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void End();
     }
 }

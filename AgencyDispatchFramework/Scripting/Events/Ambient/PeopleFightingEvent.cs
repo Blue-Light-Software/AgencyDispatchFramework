@@ -8,9 +8,16 @@ namespace AgencyDispatchFramework.Scripting.Events
 {
     internal class PeopleFightingEvent : AmbientEvent
     {
+        public override string Name => "ADF.PeopleFighting";
+
         public override void Process()
         {
-            throw new NotImplementedException();
+
+        }
+
+        public override void End()
+        {
+
         }
     }
 }

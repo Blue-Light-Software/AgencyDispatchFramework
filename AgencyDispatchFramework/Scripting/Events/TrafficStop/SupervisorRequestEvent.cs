@@ -8,9 +8,16 @@ namespace AgencyDispatchFramework.Scripting.Events.TrafficStop
 {
     internal class SupervisorRequestEvent : AiOfficerEvent 
     {
+        public override string Name => "ADF.SupervisorRequest";
+
         public override void Process()
         {
-            throw new NotImplementedException();
+
+        }
+
+        public override void End()
+        {
+
         }
     }
 }

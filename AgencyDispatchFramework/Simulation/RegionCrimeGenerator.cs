@@ -11,15 +11,10 @@ using System.Linq;
 namespace AgencyDispatchFramework.Simulation
 {
     /// <summary>
-    /// This class is responsible for generating crime related <see cref="ActiveEvent"/>s.
+    /// This class is responsible for generating crime related <see cref="Scripting.ActiveEvent"/>s.
     /// </summary>
     internal class RegionCrimeGenerator
     {
-        /// <summary>
-        /// Contains the last Call ID used
-        /// </summary>
-        protected static int NextCallId { get; set; }
-
         /// <summary>
         /// Randomizer method used to randomize callouts and locations
         /// </summary>
@@ -84,7 +79,6 @@ namespace AgencyDispatchFramework.Simulation
 
             // Create next random call ID
             Randomizer = new CryptoRandom();
-            NextCallId = Randomizer.Next(21234, 34567);
         }
 
         /// <summary>
@@ -263,8 +257,8 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Generates a new <see cref="ActiveEvent"/> within a set range of time,
-        /// determined by the <see cref="Agency.OverallCrimeLevel"/>
+        /// Generates a new <see cref="Scripting.ActiveEvent"/> within a set range of time,
+        /// determined by the <see cref="CrimeLevel"/>
         /// </summary>
         private void ProcessCrimeLogic()
         {
@@ -298,8 +292,8 @@ namespace AgencyDispatchFramework.Simulation
                 }
 
                 // Generate a new call
-                var call = GenerateCall();
-                if (call == null)
+                var activeEvent = CreateCalloutEvent();
+                if (activeEvent == null)
                 {
                     // If we keep failing, then show the player a message and quit
                     if (timesFailed > 3)
@@ -330,14 +324,14 @@ namespace AgencyDispatchFramework.Simulation
                 else
                 {
                     // Register call so that it can be dispatched
-                    Dispatch.AddIncomingCall(call);
+                    Dispatch.Report(activeEvent);
 
                     // Do we have another incomming call in the queue?
                     if (NextIncomingCallTimes.TryPeek(out time))
                     {
                         // Determine random time till next call
-                        var next = time - tod;
-                        Log.Debug($"Starting next call in {next.TotalMinutes} in-game minutes");
+                        var next = (int)(time - tod).TotalMinutes;
+                        Log.Debug($"Starting next call in {next} in-game minutes");
                     }
                     else
                     {
@@ -352,12 +346,12 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Creates a <see cref="ActiveEvent"/> with a crime location for the <paramref name="scenario"/>.
+        /// Creates a <see cref="Scripting.ActiveEvent"/> with a crime location for the <paramref name="scenario"/>.
         /// This method does not add the call to <see cref="Dispatch"/> call queue
         /// </summary>
         /// <param name="scenario"></param>
         /// <returns></returns>
-        internal ActiveEvent CreateCallFromScenario(EventScenarioMeta scenario)
+        internal ActiveEvent CreateEventFromScenario(EventScenarioMeta scenario)
         {
             // Try to generate a call
             for (int i = 0; i < Settings.MaxLocationAttempts; i++)
@@ -381,7 +375,7 @@ namespace AgencyDispatchFramework.Simulation
                     }
 
                     // Add call to the dispatch Queue
-                    return new ActiveEvent(NextCallId++, scenario, location);
+                    return ScriptEngine.CreateEvent(scenario, location);
                 }
                 catch (Exception ex)
                 {
@@ -393,10 +387,10 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Creates a new <see cref="ActiveEvent"/> using <see cref="WorldStateMultipliers"/>
+        /// Creates a new <see cref="Scripting.ActiveEvent"/> using <see cref="WorldStateMultipliers"/>
         /// </summary>
         /// <returns></returns>
-        public virtual ActiveEvent GenerateCall()
+        public virtual ActiveEvent CreateCalloutEvent()
         {
             // Spawn a zone in our jurisdiction
             WorldZone zone = GetNextRandomCrimeZone();
@@ -429,7 +423,7 @@ namespace AgencyDispatchFramework.Simulation
                     }
 
                     // Add call to the dispatch Queue
-                    return new ActiveEvent(NextCallId++, scenario, location);
+                    return ScriptEngine.CreateEvent(scenario, location);
                 }
                 catch (Exception ex)
                 {

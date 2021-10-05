@@ -1,4 +1,5 @@
-﻿using LSPD_First_Response.Mod.Callouts;
+﻿using AgencyDispatchFramework.Dispatching;
+using LSPD_First_Response.Mod.Callouts;
 using System;
 using System.IO;
 using System.Xml;
@@ -15,6 +16,16 @@ namespace AgencyDispatchFramework.Scripting.Callouts
         /// Stores the current <see cref="Dispatching.Event"/>
         /// </summary>
         public ActiveEvent Event { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="Callout.ScriptInfo.Name"/>
+        /// </summary>
+        public abstract string Name { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public abstract PriorityCall Call { get; protected set; }
 
         /// <summary>
         /// Loads an xml file and returns the XML document back as an object
@@ -63,17 +74,26 @@ namespace AgencyDispatchFramework.Scripting.Callouts
 
         public override bool OnBeforeCalloutDisplayed()
         {
+            // Did the callout do thier ONE AND ONLY TASK???
+            if (Call == null)
+            {
+                Log.Error($"AgencyCallout.OnBeforeCalloutDisplayed(): Call was never set by parent Callout named '{Name}'");
+                return false;
+            }
+
+            // Store data
+            Event = Call.EventHandle;
             return base.OnBeforeCalloutDisplayed();
         }
 
         public override bool OnCalloutAccepted()
         {
             // Did the callout do thier ONE AND ONLY TASK???
-            if (Event == null)
-                throw new ArgumentNullException(nameof(Event));
+            if (Call == null)
+                throw new ArgumentNullException(nameof(Call));
 
             // Tell dispatch
-            Dispatch.CalloutAccepted(Event, this);
+            Dispatch.CalloutAccepted(Call, this);
             
             // Base must be called last!
             return base.OnCalloutAccepted();
@@ -91,7 +111,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts
             }
 
             // Tell dispatch
-            Dispatch.CalloutNotAccepted(Event);
+            Dispatch.CalloutNotAccepted(Call);
 
             // Base must be called last!
             base.OnCalloutNotAccepted();
@@ -99,7 +119,7 @@ namespace AgencyDispatchFramework.Scripting.Callouts
 
         public override void End()
         {
-            Dispatch.RegisterCallComplete(Event);
+            Dispatch.RegisterCallComplete(Call);
             base.End();
         }
     }

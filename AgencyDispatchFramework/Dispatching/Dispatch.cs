@@ -39,6 +39,11 @@ namespace AgencyDispatchFramework
         private static int _timeSinceCalloutAttempt = 9999;
 
         /// <summary>
+        /// Contains the last Call ID used
+        /// </summary>
+        private static int NextCallId { get; set; }
+
+        /// <summary>
         /// Gets a value in seconds that have elapsed since a callout was declined by the player
         /// </summary>
         public static int TimeSinceLastCalloutAttempt
@@ -71,19 +76,13 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Indicates whether the player is actively on a callout, or is being displayed a callout for acceptance.
         /// </summary>
-        public static bool IsPlayerOnACallout => (IsExternalCalloutRunning || ActivePlayerEvent != null || IsCalloutBeingDisplayed);
+        public static bool IsPlayerOnACallout => (IsExternalCalloutRunning || ActivePlayerCall != null || IsCalloutBeingDisplayed);
 
         /// <summary>
         /// Gets the value of <see cref="Functions.IsPlayerAvailableForCalls()"/> value before dispatching
-        /// a player to a <see cref="ActiveEvent"/>, so we can set it back afterwards
+        /// a player to a <see cref="Scripting.ActiveEvent"/>, so we can set it back afterwards
         /// </summary>
         private static bool? PreviousLSPDFRAvailability { get; set; }
-
-        /// <summary>
-        /// Contains a hash table of <see cref="WorldLocation"/>s that are currently in use by the Call Queue
-        /// </summary>
-        /// <remarks>HashSet{T}.Contains is an O(1) operation</remarks>
-        internal static HashSet<WorldLocation> ActiveCrimeLocations { get; set; }
 
         /// <summary>
         /// Gets the player's current selected <see cref="Agency"/>
@@ -127,7 +126,7 @@ namespace AgencyDispatchFramework
 
         /// <summary>
         /// Gets or sets the <see cref="RegionCrimeGenerator"/>, responsible for spawning
-        /// <see cref="ActiveEvent"/>s
+        /// <see cref="Scripting.ActiveEvent"/>s
         /// </summary>
         internal static RegionCrimeGenerator CrimeGenerator { get; set; }
 
@@ -169,17 +168,17 @@ namespace AgencyDispatchFramework
         /// <summary>
         /// Our open calls list
         /// </summary>
-        private static Dictionary<EventPriority, List<ActiveEvent>> OpenCalls { get; set; }
+        private static Dictionary<CallPriority, List<PriorityCall>> OpenCalls { get; set; }
 
         /// <summary>
         /// Contains the priority call being dispatched to the player currently
         /// </summary>
-        public static ActiveEvent ActivePlayerEvent { get; private set; }
+        public static PriorityCall ActivePlayerCall { get; private set; }
 
         /// <summary>
         /// Contains the priority call that needs to be dispatched to the player on next Tick
         /// </summary>
-        private static ActiveEvent InvokeForPlayer { get; set; }
+        private static PriorityCall InvokeForPlayer { get; set; }
 
         /// <summary>
         /// Signals that the next callout should be given to the player, regardless of distance
@@ -188,52 +187,16 @@ namespace AgencyDispatchFramework
         private static bool SendNextCallToPlayer { get; set; } = false;
 
         /// <summary>
-        /// Containts a list of LAPD phonetic radiotelephony alphabet spelling words
-        /// </summary>
-        public static string[] LAPDphonetic { get; set; } = new string[]
-        {
-            "ADAM",
-            "BOY",
-            "CHARLES",
-            "DAVID",
-            "EDWARD",
-            "FRANK",
-            "GEORGE",
-            "HENRY",
-            "IDA",
-            "JOHN",
-            "KING",
-            "LINCOLN",
-            "MARY",
-            "NORA",
-            "OCEAN",
-            "PAUL",
-            "QUEEN",
-            "ROBERT",
-            "SAM",
-            "TOM",
-            "UNION",
-            "VICTOR",
-            "WILLIAM",
-            "XRAY",
-            "YOUNG",
-            "ZEBRA"
-        };
-
-        /// <summary>
         /// Static method called the first time this class is referenced anywhere
         /// </summary>
         static Dispatch()
         {
-            // Intialize a hash table of active crime locations
-            ActiveCrimeLocations = new HashSet<WorldLocation>();
-
             // Create call Queue
             // See also: https://grantpark.org/info/16029
-            OpenCalls = new Dictionary<EventPriority, List<ActiveEvent>>();
-            foreach (EventPriority priority in Enum.GetValues(typeof(EventPriority)))
+            OpenCalls = new Dictionary<CallPriority, List<PriorityCall>>();
+            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
             {
-                OpenCalls.Add(priority, new List<ActiveEvent>());
+                OpenCalls.Add(priority, new List<PriorityCall>());
             }
 
             // Create agency lookup
@@ -246,6 +209,10 @@ namespace AgencyDispatchFramework
 
             // Register for event
             Dispatcher.OnCallRaised += Dispatcher_OnCallRaised;
+
+            // Create next random call ID
+            var randomizer = new CryptoRandom();
+            NextCallId = randomizer.Next(21234, 34567);
         }
 
         #region Public API Methods
@@ -298,7 +265,7 @@ namespace AgencyDispatchFramework
         /// </summary>
         /// <param name="priority"></param>
         /// <returns></returns>
-        public static ActiveEvent[] GetCallList(EventPriority priority)
+        public static PriorityCall[] GetCallList(CallPriority priority)
         {
             return OpenCalls[priority].ToArray();
         }
@@ -307,7 +274,7 @@ namespace AgencyDispatchFramework
         /// Gets the number of calls in an array by priority
         /// </summary>
         /// <returns></returns>
-        public static Dictionary<EventPriority, int> GetCallCount()
+        public static Dictionary<CallPriority, int> GetCallCount()
         {
             return OpenCalls.ToDictionary(x => x.Key, y => y.Value.Count);
         }
@@ -328,7 +295,7 @@ namespace AgencyDispatchFramework
         /// <param name="agency"></param>
         /// <param name="call"></param>
         /// <returns></returns>
-        public static bool CanAssignAgencyToCall(Agency agency, ActiveEvent call)
+        public static bool CanAssignAgencyToCall(Agency agency, PriorityCall call)
         {
             // Check
             switch (agency.AgencyType)
@@ -336,40 +303,15 @@ namespace AgencyDispatchFramework
                 case AgencyType.CountySheriff:
                     // Sheriffs can take this call IF not assigned already, or the
                     // primary agency was dispatched already but needs support
-                    return (call.CurrentPriority == EventPriority.Immediate || call.PrimaryOfficer == null || call.NeedsMoreOfficers);
+                    return (call.Priority == CallPriority.Immediate || call.PrimaryOfficer == null || call.NeedsMoreOfficers);
                 case AgencyType.CityPolice:
                     // City police can only take calls in their primary jurisdiction
-                    return agency.Zones.Contains(call.Location.Zone);
+                    return agency.Zones.Contains(call.EventHandle.Location.Zone);
                 case AgencyType.HighwayPatrol:
-                    return call.ScenarioMeta.Category == CallCategory.Traffic;
+                    return call.EventHandle.ScenarioMeta.Category == CallCategory.Traffic;
                 default:
-                    return call.ScenarioMeta.InitialDispatch.ContainsKey(ServiceSector.Police);
+                    return call.EventHandle.ScenarioMeta.DispatchDirectives.ContainsKey(ServiceSector.Police);
             }
-        }
-
-        /// <summary>
-        /// Gets an array of <see cref="WorldLocation"/>s currently in use based
-        /// on the specified type <typeparamref name="T"/>
-        /// </summary>
-        /// <param name="type"></param>
-        /// <exception cref="InvalidCastException">thrown if the <paramref name="type"/> does not match the <typeparamref name="T"/></exception>
-        /// <typeparam name="T">A type that inherits from <see cref="WorldLocation"/></typeparam>
-        /// <returns></returns>
-        public static T[] GetActiveLocationsOfType<T>() where T : WorldLocation
-        {
-            return (from x in ActiveCrimeLocations where x is T select (T)x).ToArray();
-        }
-
-        /// <summary>
-        /// Gets an array of locations that are not currently in use from the provided
-        /// <see cref="WorldLocation"/> pool
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="pool"></param>
-        /// <returns></returns>
-        public static List<T> GetInactiveLocationsFromPool<T>(IEnumerable<T> pool) where T : WorldLocation
-        {
-            return (from x in pool where !ActiveCrimeLocations.Contains(x) select x).ToList();
         }
 
         /// <summary>
@@ -397,7 +339,7 @@ namespace AgencyDispatchFramework
 
                     // Order calls by distance from player
                     var call = list.OrderBy(x => (x.DeclinedByPlayer) ? 1 : 0)
-                        .ThenBy(x => x.Location.Position.DistanceTo(location))
+                        .ThenBy(x => x.EventHandle.Location.Position.DistanceTo(location))
                         .FirstOrDefault();
 
                     // Invoke callout
@@ -446,7 +388,7 @@ namespace AgencyDispatchFramework
         /// </summary>
         /// <param name="call"></param>
         /// <returns></returns>
-        public static bool InvokeCallForPlayer(ActiveEvent call)
+        public static bool InvokeCallForPlayer(PriorityCall call)
         {
             if (CanPlayerHandleCall(call))
             {
@@ -473,20 +415,20 @@ namespace AgencyDispatchFramework
             }
 
             // Acceptable status'
-            EventStatus[] acceptable = { EventStatus.Completed, EventStatus.Dispatched, EventStatus.Waiting };
+            CallStatus[] acceptable = { CallStatus.Completed, CallStatus.Dispatched, CallStatus.Waiting };
 
             // Is an external callout running?
             if (IsCalloutBeingDisplayed)
             {
                 // Maybe an external call is being displayed?
-                if (ActivePlayerEvent == null)
+                if (ActivePlayerCall == null)
                 {
                     return false;
                 }
                 else
                 {
                     // We will allow the by-pass
-                    return acceptable.Contains(ActivePlayerEvent.Status);
+                    return acceptable.Contains(ActivePlayerCall.Status);
                 }
             }
             else if (IsExternalCalloutRunning)
@@ -495,7 +437,7 @@ namespace AgencyDispatchFramework
             }
 
             // default
-            return ActivePlayerEvent == null || acceptable.Contains(ActivePlayerEvent.Status);
+            return ActivePlayerCall == null || acceptable.Contains(ActivePlayerCall.Status);
         }
 
         /// <summary>
@@ -503,22 +445,22 @@ namespace AgencyDispatchFramework
         /// dependant on thier current assignment, call status and jurisdiction limits.
         /// </summary>
         /// <returns></returns>
-        public static bool CanPlayerHandleCall(ActiveEvent call)
+        public static bool CanPlayerHandleCall(PriorityCall call)
         {
             // If a call is less priority than a players current assignment
-            if (PlayerUnit.Assignment != null && (int)call.CurrentPriority >= (int)PlayerUnit.Assignment.Priority)
+            if (PlayerUnit.Assignment != null && (int)call.Priority >= (int)PlayerUnit.Assignment.Priority)
             {
                 return false;
             }
 
             // Check to make sure the agency can preform this type of call
-            if (!call.ScenarioMeta.InitialDispatch.ContainsKey(PlayerAgency.Sector))
+            if (!call.EventHandle.ScenarioMeta.DispatchDirectives.ContainsKey(PlayerAgency.Sector))
             {
                 return false;
             }
 
             // Check jurisdiction
-            return call.Location.Zone.DoesAgencyHaveJurisdiction(PlayerAgency);
+            return call.EventHandle.Location.Zone.DoesAgencyHaveJurisdiction(PlayerAgency);
         }
 
         #endregion Public API Methods
@@ -526,46 +468,46 @@ namespace AgencyDispatchFramework
         #region Public API Callout Methods
 
         /// <summary>
-        /// Requests a <see cref="ActiveEvent"/> from dispatch using the specified
+        /// Requests a <see cref="Scripting.ActiveEvent"/> from dispatch using the specified
         /// <see cref="Callout"/> type.
         /// </summary>
         /// <param name="calloutType"></param>
         /// <returns></returns>
-        public static ActiveEvent RequestPlayerCallInfo(Callout callout)
+        public static PriorityCall RequestPlayerCallInfo(IEventController controller)
         {
             // Extract Callout Name
-            string calloutName = callout.ScriptInfo.Name;
+            string controllerName = controller.Name;
 
             // Have we sent a call to the player?
-            if (ActivePlayerEvent != null)
+            if (ActivePlayerCall != null)
             {
                 // Do our types match?
-                if (calloutName.Equals(ActivePlayerEvent.ScenarioMeta.ControllerName))
+                if (controllerName.Equals(ActivePlayerCall.EventHandle.ScenarioMeta.ControllerName))
                 {
-                    return ActivePlayerEvent;
+                    return ActivePlayerCall;
                 }
-                else if (ActivePlayerEvent.Status != EventStatus.Waiting)
+                else if (ActivePlayerCall.Status != CallStatus.Waiting)
                 {
                     // This call is currently running!
                     EndPlayerCallout();
-                    ActivePlayerEvent = null;
-                    Log.Error($"Dispatch.RequestPlayerCallInfo: Player was already on a call out when a request from {calloutName} was recieved");
+                    ActivePlayerCall = null;
+                    Log.Error($"Dispatch.RequestPlayerCallInfo: Player was already on a call out when a request from {controllerName} was recieved");
                 }
                 else
                 {
                     // Cancel
-                    ActivePlayerEvent.DeclinedByPlayer = true;
-                    ActivePlayerEvent.Status = EventStatus.Reported;
-                    ActivePlayerEvent = null;
-                    Log.Warning($"Dispatch.RequestPlayerCallInfo: Player active call type does not match callout of type {calloutName}");
+                    ActivePlayerCall.DeclinedByPlayer = true;
+                    ActivePlayerCall.Status = CallStatus.Created;
+                    ActivePlayerCall = null;
+                    Log.Warning($"Dispatch.RequestPlayerCallInfo: Player active call type does not match callout of type {controllerName}");
                 }
             }
 
             // If we are here, maybe the player used a console command to start the callout.
             // At this point, see if we have anything in the call Queue
-            if (ScriptEngine.Callouts.ScenariosByCalloutName.ContainsKey(calloutName))
+            if (ScriptEngine.Callouts.ScenariosByCalloutName.ContainsKey(controllerName))
             {
-                EventStatus[] status = { EventStatus.Created, EventStatus.Waiting, EventStatus.Dispatched };
+                CallStatus[] status = { CallStatus.Created, CallStatus.Waiting, CallStatus.Dispatched };
                 var playerPosition = Rage.Game.LocalPlayer.Character.Position;
 
                 // Lets see if we have a call already created
@@ -573,28 +515,30 @@ namespace AgencyDispatchFramework
                 {
                     var calls = (
                         from x in callList.Value
-                        where x.ScenarioMeta.ControllerName.Equals(calloutName) && status.Contains(x.Status)
-                        orderby x.Location.Position.DistanceTo(playerPosition) ascending
+                        where x.EventHandle.Controller.Name.Equals(controllerName) && status.Contains(x.Status)
+                        orderby x.EventHandle.Location.Position.DistanceTo(playerPosition) ascending
                         select x
                     ).ToArray();
 
                     // Do we have any active calls?
                     if (calls.Length > 0)
                     {
-                        ActivePlayerEvent = calls[0];
+                        ActivePlayerCall = calls[0];
                         return calls[0];
                     }
                 }
 
+                /*
+
                 // Still here? Maybe we can create a call?
-                if (ScriptEngine.Callouts.ScenariosByCalloutName[calloutName].TrySpawn(out EventScenarioMeta scenarioInfo))
+                if (ScriptEngine.Callouts.ScenariosByCalloutName[controllerName].TrySpawn(out EventScenarioMeta scenarioInfo))
                 {
                     // Log
-                    Log.Info($"Dispatch.RequestPlayerCallInfo: It appears that the player requested a callout of type '{calloutName}' using an outside source. Creating a call out of thin air");
+                    Log.Info($"Dispatch.RequestPlayerCallInfo: It appears that the player requested a callout of type '{controllerName}' using an outside source. Creating a call out of thin air");
 
                     // Create the call
-                    var call = CrimeGenerator.CreateCallFromScenario(scenarioInfo);
-                    if (call == null)
+                    var eventt = CrimeGenerator.CreateEventFromScenario(scenarioInfo);
+                    if (eventt == null)
                     {
                         return null;
                     }
@@ -602,19 +546,21 @@ namespace AgencyDispatchFramework
                     // Add call to priority Queue
                     lock (_threadLock)
                     {
-                        OpenCalls[call.OriginalPriority].Add(call);
-                        Log.Debug($"Dispatch: Added Call to Queue '{call.ScenarioMeta.ScenarioName}' in zone '{call.Location.Zone.DisplayName}'");
+                        OpenCalls[eventt.DispatchInfo.Priority].Add(eventt);
+                        Log.Debug($"Dispatch: Added Call to Queue '{eventt.EventHandle.ScenarioMeta.ScenarioName}' in zone '{eventt.EventHandle.Location.Zone.DisplayName}'");
 
                         // Invoke the next callout for player
-                        InvokeForPlayer = call;
+                        InvokeForPlayer = eventt;
                     }
 
-                    return call;
+                    return eventt;
                 }
+
+                */
             }
 
             // cant do anything at this point
-            Log.Warning($"Dispatch.RequestCallInfo(): Unable to spawn a scenario for {calloutName}");
+            Log.Warning($"Dispatch.RequestCallInfo(): Unable to spawn a scenario for {controllerName}");
             return null;
         }
 
@@ -622,7 +568,7 @@ namespace AgencyDispatchFramework
         /// Tells dispatch that the call is complete
         /// </summary>
         /// <param name="call"></param>
-        public static void RegisterCallComplete(ActiveEvent call)
+        public static void RegisterCallComplete(PriorityCall call)
         {
             // Ensure the call is not null. This can happen when trying
             // to initiate a scenario from a menu
@@ -640,7 +586,7 @@ namespace AgencyDispatchFramework
         /// Tells dispatch that we are on scene
         /// </summary>
         /// <param name="call"></param>
-        public static void RegisterOnScene(OfficerUnit unit, ActiveEvent call)
+        public static void RegisterOnScene(OfficerUnit unit, PriorityCall call)
         {
             if (unit == PlayerUnit)
             {
@@ -653,7 +599,7 @@ namespace AgencyDispatchFramework
             }
 
             // Update call status
-            call.Status = EventStatus.OnScene;
+            call.Status = CallStatus.OnScene;
         }
 
         /// <summary>
@@ -661,7 +607,7 @@ namespace AgencyDispatchFramework
         /// </summary>
         /// <param name="call"></param>
         /// <remarks>Used for Player only, not AI</remarks>
-        public static void CalloutAccepted(ActiveEvent call, Callout callout)
+        public static void CalloutAccepted(PriorityCall call, IEventController callout)
         {
             // Clear radio block
             Scanner.IsWaitingPlayerResponse = false;
@@ -672,7 +618,7 @@ namespace AgencyDispatchFramework
             SetPlayerStatus(OfficerStatus.Dispatched);
 
             // Assign callout property
-            call.Callout = callout;
+            call.EventHandle.Controller = callout;
 
             // Fire event
             OnPlayerCallAccepted?.Invoke(call);
@@ -683,13 +629,13 @@ namespace AgencyDispatchFramework
         /// </summary>
         /// <param name="call"></param>
         /// <remarks>Used for Player only, not AI</remarks>
-        public static void CalloutNotAccepted(ActiveEvent call)
+        public static void CalloutNotAccepted(PriorityCall call)
         {
             // Cancel callout
-            if (ActivePlayerEvent != null && call == ActivePlayerEvent)
+            if (ActivePlayerCall != null && call == ActivePlayerCall)
             {
                 // Remove player from call
-                call.Status = EventStatus.Created;
+                call.Status = CallStatus.Created;
                 call.DeclinedByPlayer = true;
                 SetPlayerStatus(OfficerStatus.Available);
 
@@ -697,9 +643,9 @@ namespace AgencyDispatchFramework
                 call.RemoveOfficer(PlayerUnit);
 
                 // Ensure this is null
-                ActivePlayerEvent = null;
+                ActivePlayerCall = null;
                 TimeCalloutWaiting = 0;
-                Log.Info($"Dispatch: Player declined callout scenario {call.ScenarioMeta.ScenarioName}");
+                Log.Info($"Dispatch: Player declined callout scenario {call.EventHandle.ScenarioMeta.ScenarioName}");
 
                 // Clear radio block
                 Scanner.IsWaitingPlayerResponse = false;
@@ -725,12 +671,12 @@ namespace AgencyDispatchFramework
         public static void EndPlayerCallout()
         {
             bool calloutRunning = Functions.IsCalloutRunning();
-            if (ActivePlayerEvent != null)
+            if (ActivePlayerCall != null)
             {
                 // Do we have a callout instance?
-                if (ActivePlayerEvent.Callout != null)
+                if (ActivePlayerCall.EventHandle.Controller != null)
                 {
-                    ActivePlayerEvent.Callout.End();
+                    ActivePlayerCall.EventHandle.Controller.End();
                 }
                 else if (calloutRunning)
                 {
@@ -740,12 +686,12 @@ namespace AgencyDispatchFramework
 
                 // If the call still isnt ended... do it manually
                 // Need to do a null check!!! Callout.End() could set PlayerActiveCall to null
-                if (ActivePlayerEvent != null && !ActivePlayerEvent.HasEnded)
+                if (ActivePlayerCall != null && !ActivePlayerCall.EventHandle.HasEnded)
                 {
-                    RegisterCallComplete(ActivePlayerEvent);
+                    RegisterCallComplete(ActivePlayerCall);
                 }
                 
-                ActivePlayerEvent = null;
+                ActivePlayerCall = null;
             }
             else if (calloutRunning)
             {
@@ -759,92 +705,99 @@ namespace AgencyDispatchFramework
         #region Internal Callout Methods
 
         /// <summary>
-        /// Adds the specified <see cref="ActiveEvent"/> to the Dispatch Queue
+        /// Reports the <see cref="ActiveEvent"/> so that a <see cref="PriorityCall"/> can
+        /// be made for each <see cref="DispatchDirective"/>, and added to the Call Queue.
         /// </summary>
-        /// <param name="call"></param>
-        internal static void AddIncomingCall(ActiveEvent call)
+        /// <param name="activeEvent"></param>
+        internal static void Report(ActiveEvent activeEvent)
         {
-            // Ensure the call is not null. This can happen when trying
-            // to initiate a scenario from a menu
-            if (call == null || call.Location == null)
+            // Create calls
+            foreach (var item in activeEvent.ScenarioMeta.DispatchDirectives)
             {
-                Log.Error("Dispatch.AddIncomingCall(): Tried to add a call that is a null reference, or has a null location reference");
-                return;
-            }
+                // Local vars
+                var sector = item.Key;
+                var directive = item.Value;
 
-            // Register first for events
-            call.OnEnded += EndCall;
+                // Create call
+                var call = new PriorityCall(NextCallId++, activeEvent, directive);
 
-            // Set to reported if the status is default
-            if (call.Status == EventStatus.Created)
-                call.Status = EventStatus.Reported;
-
-            // Add call to priority Queue
-            lock (_threadLock)
-            {
-                if (ActiveCrimeLocations.Add(call.Location))
+                // Attempt to add the call
+                if (AddIncomingCall(call, sector))
                 {
-                    OpenCalls[call.OriginalPriority].Add(call);
-                    Log.Debug($"Dispatch.AddIncomingCall(): Added Call to Queue '{call.ScenarioMeta.ScenarioName}' in zone '{call.Location.Zone.DisplayName}'");
-                }
-                else
-                {
-                    // Failed to add?
-                    Log.Error($"Dispatch.AddIncomingCall(): Tried to add a call to Queue in zone '{call.Location.Zone.DisplayName}', but the location selected was already in use.");
-                    return;
-                }
-            }
-
-            // Grab cached zone
-            var zone = WorldZone.GetZoneByName(call.Location.Zone.ScriptName);
-
-            // Decide which agency gets this call
-            switch (call.ScenarioMeta.Type)
-            {
-                case EventType.Crime:
-                    zone.GetPoliceAgencies()[0].Dispatcher.AddCall(call);
-                    break;
-                case EventType.Fire:
-                case EventType.Medical:
-                    throw new NotSupportedException();
-            }
-
-            // Call event
-            OnCallAdded?.Invoke(call);
-
-            // Invoke the next callout for player?
-            if (SendNextCallToPlayer)
-            {
-                // Check jurisdiction
-                if (!call.Location.Zone.DoesAgencyHaveJurisdiction(PlayerAgency))
-                {
-                    return;
-                }
-
-                // Check call type
-                if (!call.ScenarioMeta.InitialDispatch.ContainsKey(PlayerAgency.Sector))
-                {
-                    return;
-                }
-
-                // Unflag
-                SendNextCallToPlayer = false;
-
-                // Ensure player isnt in a callout already!
-                if (ActivePlayerEvent == null)
-                {
-                    // Set call to invoke
-                    InvokeForPlayer = call;
+                    activeEvent.AttachCall(sector, call);
                 }
             }
         }
 
         /// <summary>
-        /// Method called when a call is ended <see cref="ActiveEvent.OnEnded"/>
+        /// Adds the specified <see cref="PriorityCall"/> to the Dispatch Queue
+        /// </summary>
+        /// <param name="call"></param>
+        private static bool AddIncomingCall(PriorityCall call, ServiceSector sector)
+        {
+            // Ensure the call is not null. This can happen when trying
+            // to initiate a scenario from a menu
+            if (call?.EventHandle == null || call.EventHandle.Location == null)
+            {
+                Log.Error("Dispatch.AddIncomingCall(): Tried to add a call that is a null reference, or has a null location reference");
+                return false;
+            }
+
+            // Grab cached zone
+            //var zone = WorldZone.GetZoneByName(call.EventHandle.Location.Zone.ScriptName);
+            var zone = call.EventHandle.Location.Zone;
+
+            // Decide which agency gets this call
+            switch (sector)
+            {
+                case ServiceSector.Police:
+                    zone.GetPoliceAgencies()[0].Dispatcher.AddCall(call);
+                    break;
+                case ServiceSector.Fire:
+                case ServiceSector.Medical:
+                    throw new NotSupportedException();
+            }
+
+            // Prevent threading issues
+            lock (_threadLock)
+            {
+                // Add call to list
+                OpenCalls[call.DispatchInfo.Priority].Add(call);
+            }
+
+            // Register first for events
+            call.OnEnded += EndCall;
+
+            // Call event
+            OnCallAdded?.Invoke(call);
+
+            // Invoke the next callout for player?
+            if (SendNextCallToPlayer && sector == PlayerAgency.Sector)
+            {
+                // Check jurisdiction
+                if (call.EventHandle.Location.Zone.DoesAgencyHaveJurisdiction(PlayerAgency))
+                {
+                    // Unflag
+                    SendNextCallToPlayer = false;
+
+                    // Ensure player isnt in a callout already!
+                    if (ActivePlayerCall == null)
+                    {
+                        // Set call to invoke
+                        InvokeForPlayer = call;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Method called when a call is ended <see cref="Scripting.ActiveEvent.OnEnded"/>
         /// </summary>
         /// <param name="call"></param>
         /// <param name="flag"></param>
-        internal static void EndCall(ActiveEvent call, EventClosedFlag flag)
+        internal static void EndCall(PriorityCall call, EventClosedFlag flag)
         {
             // Unregister
             call.OnEnded -= EndCall;
@@ -861,8 +814,7 @@ namespace AgencyDispatchFramework
             // Remove call
             lock (_threadLock)
             {
-                OpenCalls[call.OriginalPriority].Remove(call);
-                ActiveCrimeLocations.Remove(call.Location);
+                OpenCalls[call.DispatchInfo.Priority].Remove(call);
             }
 
             // Set player status
@@ -876,7 +828,7 @@ namespace AgencyDispatchFramework
                     Functions.SetPlayerAvailableForCalls(PreviousLSPDFRAvailability.Value);
 
                 // Set active call to null
-                ActivePlayerEvent = null;
+                ActivePlayerCall = null;
 
                 // Fire event
                 OnPlayerCallCompleted?.Invoke(call);
@@ -891,10 +843,10 @@ namespace AgencyDispatchFramework
         /// sending the player to a callout
         /// </summary>
         /// <param name="call"></param>
-        internal static void AssignedPlayerToCall(ActiveEvent call)
+        internal static void AssignedPlayerToCall(PriorityCall call)
         {
             // wait for the radio to be clear before actually dispatching the player
-            ActivePlayerEvent = call;
+            ActivePlayerCall = call;
 
             // Store this value for after our callout is ended, so we can
             // allows LSPFDFR the ability to still gives calls to the player
@@ -902,10 +854,10 @@ namespace AgencyDispatchFramework
                 PreviousLSPDFRAvailability = Functions.IsPlayerAvailableForCalls();
 
             // If this is a callout requiring acceptance
-            if (call.ScenarioMeta.ScriptType == ScriptType.Callout)
+            if (call.EventHandle.ScenarioMeta.ScriptType == ScriptType.Callout)
             {
                 // Fetch meta if we have one
-                if (call.ScenarioMeta.RadioMessages.TryGetValue("OnAssigned", out RadioMessageMeta meta))
+                if (call.EventHandle.ScenarioMeta.RadioMessages.TryGetValue("OnAssigned", out RadioMessageMeta meta))
                 {
                     // Create radio message
                     var message = new RadioMessage(meta.AudioString);
@@ -913,7 +865,7 @@ namespace AgencyDispatchFramework
                     // Are we using location?
                     if (meta.UsePosition)
                     {
-                        message.LocationInfo = call.Location.Position;
+                        message.LocationInfo = call.EventHandle.Location.Position;
                     }
 
                     // Add callsign?
@@ -923,7 +875,7 @@ namespace AgencyDispatchFramework
                     }
 
                     // Set call status
-                    ActivePlayerEvent.Status = EventStatus.Waiting;
+                    ActivePlayerCall.Status = CallStatus.Waiting;
 
                     // Bind event
                     message.BeforePlayed += CalloutMessage_BeforePlayed;
@@ -944,7 +896,7 @@ namespace AgencyDispatchFramework
 
                     // Start callout
                     TimeSinceLastCalloutAttempt = 0;
-                    Functions.StartCallout(ActivePlayerEvent.ScenarioMeta.ControllerName);
+                    Functions.StartCallout(ActivePlayerCall.EventHandle.ScenarioMeta.ControllerName);
                 }
             }
             else
@@ -976,7 +928,7 @@ namespace AgencyDispatchFramework
             TimeSinceLastCalloutAttempt = 0;
 
             // Start callout
-            Functions.StartCallout(ActivePlayerEvent.ScenarioMeta.ControllerName);
+            Functions.StartCallout(ActivePlayerCall.EventHandle.ScenarioMeta.ControllerName);
         }
 
         /// <summary>
@@ -1015,7 +967,7 @@ namespace AgencyDispatchFramework
         /// <param name="agency">The agency that raised the call</param>
         /// <param name="call">The call that requires additional resources</param>
         /// <param name="args">Container that directs the dispatch of what resoures are being requested</param>
-        private static void Dispatcher_OnCallRaised(Agency agency, ActiveEvent call, CallRaisedEventArgs args)
+        private static void Dispatcher_OnCallRaised(Agency agency, PriorityCall call, CallRaisedEventArgs args)
         {
             // Of we are not on duty, then wth
             if (!Main.OnDutyLSPDFR) return;
@@ -1030,17 +982,17 @@ namespace AgencyDispatchFramework
                 {
                     case AgencyType.CityPolice:
                         // Grab county agency
-                        newAgency = call.Location.Zone.GetPoliceAgencies().Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
+                        newAgency = call.EventHandle.Location.Zone.GetPoliceAgencies().Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
                         break;
                     case AgencyType.StateParks:
                     case AgencyType.CountySheriff:
                         // Grab state agency
-                        newAgency = call.Location.Zone.GetPoliceAgencies().Where(x => x.IsStateAgency && x.AgencyType != AgencyType.StateParks).FirstOrDefault();
+                        newAgency = call.EventHandle.Location.Zone.GetPoliceAgencies().Where(x => x.IsStateAgency && x.AgencyType != AgencyType.StateParks).FirstOrDefault();
                         break;
                     case AgencyType.HighwayPatrol:
                     case AgencyType.StatePolice:
                         // We need to grab the county that has jurisdiction here
-                        newAgency = call.Location.Zone.GetPoliceAgencies().Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
+                        newAgency = call.EventHandle.Location.Zone.GetPoliceAgencies().Where(x => x.AgencyType == AgencyType.CountySheriff).FirstOrDefault();
                         break;
                     default:
                         throw new NotSupportedException();
@@ -1058,12 +1010,12 @@ namespace AgencyDispatchFramework
                 // Only log if the call was added successfully
                 if (newAgency.Dispatcher.AddCall(call))
                 {
-                    Log.Debug($"{agency.ScriptName.ToUpper()} Dispatcher: Requested assistance with call '{call.ScenarioMeta.ScenarioName}' from {newAgency.ScriptName.ToUpper()}");
+                    Log.Debug($"{agency.ScriptName.ToUpper()} Dispatcher: Requested assistance with call '{call.EventHandle.ScenarioMeta.ScenarioName}' from {newAgency.ScriptName.ToUpper()}");
                 }
             }
             else
             {
-                Log.Debug($"{agency.ScriptName.ToUpper()} Dispatcher: Attemtped to request assitance with call '{call.ScenarioMeta.ScenarioName}', but there is other agency.");
+                Log.Debug($"{agency.ScriptName.ToUpper()} Dispatcher: Attemtped to request assitance with call '{call.EventHandle.ScenarioMeta.ScenarioName}', but there is other agency.");
             }
         }
 
@@ -1387,14 +1339,14 @@ namespace AgencyDispatchFramework
                 Interlocked.Increment(ref _timeSinceCalloutAttempt);
 
                 // Are we waiting for a player to accept a callout?
-                if (ActivePlayerEvent?.Status == EventStatus.Waiting)
+                if (ActivePlayerCall?.Status == CallStatus.Waiting)
                 {
                     // A callout should call this method when expired, but just in
                     // case, we will check after a safe amount of time
                     if (TimeCalloutWaiting > 20)
                     {
                         // Ensure this is called, since the callout failed!
-                        CalloutNotAccepted(ActivePlayerEvent);
+                        CalloutNotAccepted(ActivePlayerCall);
                     }
                     else
                     {
@@ -1484,11 +1436,11 @@ namespace AgencyDispatchFramework
         private static void LSPDFR_OnCalloutAccepted(LHandle handle)
         {
             // If we detect no active call, must be external
-            if (ActivePlayerEvent == null)
+            if (ActivePlayerCall == null)
             {
                 IsExternalCalloutRunning = true;
             }
-            else if (ActivePlayerEvent.Callout == null)
+            else if (ActivePlayerCall.EventHandle.Controller == null)
             {
                 Log.Warning("Dispatch: Player call is not null, but the Callout property is not set!");
                 IsExternalCalloutRunning = true;
@@ -1497,14 +1449,14 @@ namespace AgencyDispatchFramework
             {
                 // Check to ensure our callout is running!
                 var runningName = Functions.GetCalloutName(handle);
-                var calloutName = ActivePlayerEvent.Callout.ScriptInfo.Name;
+                var calloutName = ((Callout)ActivePlayerCall.EventHandle.Controller).ScriptInfo.Name;
                 if (!calloutName.Equals(runningName))
                 {
                     // Log
                     Log.Warning($"Dispatch: Player active callout ({calloutName}) does not match the running callout name ({runningName})!");
 
                     // Close the player callout
-                    ActivePlayerEvent = null;
+                    ActivePlayerCall = null;
 
                     // Set flag
                     IsExternalCalloutRunning = true;

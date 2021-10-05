@@ -14,18 +14,18 @@ namespace AgencyDispatchFramework.Scripting
         /// <summary>
         /// Gets the <see cref="WorldStateMultipliers"/> for this scenario
         /// </summary>
-        public WorldStateMultipliers ProbabilityMultipliers { get; set; }
+        public WorldStateMultipliers ProbabilityMultipliers { get; internal set; }
 
         /// <summary>
         /// Gets the name of the Scenario
         /// </summary>
-        public string ScenarioName { get; set; }
+        public string ScenarioName { get; internal set; }
 
         /// <summary>
         /// Gets the name of the <see cref="IEventController"/> that processes the <see cref="ActiveEvent"/> 
         /// this meta describes.
         /// </summary>
-        public string ControllerName { get; set; }
+        public string ControllerName { get; internal set; }
 
         /// <summary>
         /// Gets the class <see cref="System.Type"/> of the controller script
@@ -45,23 +45,23 @@ namespace AgencyDispatchFramework.Scripting
         /// <summary>
         /// Indicates whether this <see cref="Event"/> is a Callout or an AmbientEvent
         /// </summary>
-        public ScriptType ScriptType { get; set; }
+        public ScriptType ScriptType { get; internal set; }
 
         /// <summary>
         /// Gets the priority level of the call
         /// </summary>
-        public EventPriority Priority { get; set; }
+        public CallPriority Priority { get; internal set; }
 
         /// <summary>
         /// Indicates whether the responding unit should respond Code 3
         /// </summary>
-        public ResponseCode ResponseCode { get; set; }
+        public ResponseCode ResponseCode { get; internal set; }
 
         /// <summary>
         /// Contains an array of <see cref="Agency"/>s that should be dispatched to
         /// the call, and the unit count of each agency
         /// </summary>
-        public Dictionary<ServiceSector, int> InitialDispatch { get; internal set; }
+        public Dictionary<ServiceSector, DispatchDirective> DispatchDirectives { get; internal set; }
 
         /// <summary>
         /// Contains a time range of how long this scenario could take when the AI is on scene
@@ -77,12 +77,12 @@ namespace AgencyDispatchFramework.Scripting
         /// <summary>
         /// Gets the incident text
         /// </summary>
-        public string CADEventText { get; set; }
+        public string CADEventText { get; internal set; }
 
         /// <summary>
         /// Gets the incident abbreviation text
         /// </summary>
-        public string CADEventAbbreviation { get; set; }
+        public string CADEventAbbreviation { get; internal set; }
 
         /// <summary>
         /// Gets the texture sprite name to display in the CAD
@@ -97,7 +97,7 @@ namespace AgencyDispatchFramework.Scripting
         /// <summary>
         /// Gets an array of call descriptions
         /// </summary>
-        public ProbabilityGenerator<EventDescription> Descriptions { get; set; }
+        public ProbabilityGenerator<EventDescription> Descriptions { get; internal set; }
 
         /// <summary>
         /// Contains a list of <see cref="Circumstance"/> from the CalloutMeta.xml
@@ -112,7 +112,7 @@ namespace AgencyDispatchFramework.Scripting
         /// <summary>
         /// Contains meta data for choosing locations for this <see cref="EventScenarioMeta"/>
         /// </summary>
-        public ProbabilityGenerator<PossibleLocationMeta> PossibleLocationMetas { get; set; }
+        public ProbabilityGenerator<PossibleLocationMeta> PossibleLocationMetas { get; internal set; }
 
         /// <summary>
         /// Selects a random <see cref="Circumstance"/>, using an <see cref="ExpressionParser"/>

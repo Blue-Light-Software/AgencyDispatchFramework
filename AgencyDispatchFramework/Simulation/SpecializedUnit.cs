@@ -139,11 +139,6 @@ namespace AgencyDispatchFramework.Simulation
             // Create officer
             var officer = new AIOfficerUnit(vehicleSet, AssignedAgency, callSign, shift, UnitType, district, supervisor);
 
-            // Log for debugging
-            string sname = Enum.GetName(typeof(ShiftRotation), shift);
-            string uname = Enum.GetName(typeof(UnitType), UnitType);
-            Log.Debug($"Created officer unit {officer.Persona.FullName} ({callSign.Value}) on {sname} shift for {AssignedAgency.ScriptName} as part of the {uname} unit");
-
             // Add to roster
             Roster.Add(officer);
             OfficersByShift[shift].Add(officer);

@@ -400,7 +400,7 @@ namespace AgencyDispatchFramework.Xml
 
             // Try and extract priority value
             XmlNode childNode = dispatchNode.SelectSingleNode("Priority");
-            if (!Enum.TryParse(childNode.InnerText, out EventPriority priority))
+            if (!Enum.TryParse(childNode.InnerText, out CallPriority priority))
             {
                 Log.Warning(
                     $"CalloutMetaFile.Parse(): Unable to extract scenario priority value for '{calloutDirName}/CalloutMeta.xml -> {scenarioNode.Name}'"
@@ -537,7 +537,7 @@ namespace AgencyDispatchFramework.Xml
             scenario.Category = crimeType;
             scenario.Priority = priority;
             scenario.ResponseCode = code;
-            scenario.InitialDispatch = agencies;
+            scenario.DispatchDirectives = agencies;
             scenario.Descriptions = descriptions;
             scenario.CADEventText = childNode.InnerText;
             scenario.CADEventAbbreviation = childNode.Attributes["abbreviation"].Value;

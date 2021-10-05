@@ -295,27 +295,27 @@ namespace AgencyDispatchFramework.NativeUI
         /// <returns></returns>
         private Color GetCallItemColor(PriorityCallTabItem priorityCallTabItem)
         {
-            ActiveEvent call = priorityCallTabItem.Call;
+            var call = priorityCallTabItem.Call;
             switch (call.Status)
             {
                 default:
-                case EventStatus.Created: return Color.DodgerBlue;
-                case EventStatus.Dispatched: return Color.Purple;
-                case EventStatus.OnScene: return Color.LimeGreen;
-                case EventStatus.Waiting: return Color.Orange;
+                case CallStatus.Created: return Color.DodgerBlue;
+                case CallStatus.Dispatched: return Color.Purple;
+                case CallStatus.OnScene: return Color.LimeGreen;
+                case CallStatus.Waiting: return Color.Orange;
             }
         }
 
         #region Event Callback Methods
 
-        private void Dispatch_OnCallCompleted(ActiveEvent call)
+        private void Dispatch_OnCallCompleted(PriorityCall call)
         {
             lock (_threadLock)
             {
-                int i = Items.FindIndex(x => x.Call.EventId == call.EventId);
+                int i = Items.FindIndex(x => x.Call.CallId == call.CallId);
                 if (i == -1)
                 {
-                    Log.Error($"OpenCallListTabPage.Dispatch_OnCallCompleted(): Unable to remove call '{call.ScenarioMeta.ScenarioName}' with id {call.EventId} as it does not exist in the list");
+                    Log.Error($"OpenCallListTabPage.Dispatch_OnCallCompleted(): Unable to remove call '{call.EventHandle.ScenarioMeta.ScenarioName}' with id {call.CallId} as it does not exist in the list");
                     return;
                 }
 
@@ -325,7 +325,7 @@ namespace AgencyDispatchFramework.NativeUI
             }
         }
 
-        private void Dispatch_OnCallAdded(ActiveEvent call)
+        private void Dispatch_OnCallAdded(PriorityCall call)
         {
             lock (_threadLock)
             {
@@ -335,7 +335,7 @@ namespace AgencyDispatchFramework.NativeUI
 
                 // Apply ordering
                 Items = Items.OrderByDescending(x => Dispatch.CanAssignAgencyToCall(Dispatch.PlayerAgency, x.Call))
-                    .ThenBy(x => (int)x.Call.CurrentPriority)
+                    .ThenBy(x => (int)x.Call.Priority)
                     .ThenBy(x => x.Call.Created).ToList();
 
                 // Always refresh

@@ -6,7 +6,7 @@
     /// <remarks>
     /// VERY IMPORTANT to keep priorities ordered!
     /// </remarks>
-    public enum EventPriority
+    public enum CallPriority
     {
         /// <summary>
         /// Calls that are absolute emergencies where someone's

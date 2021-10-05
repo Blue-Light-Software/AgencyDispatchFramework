@@ -29,7 +29,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Contains the active <see cref="Event"/> the player is on
         /// </summary>
-        internal ActiveEvent Call { get; private set; }
+        internal PriorityCall Call { get; private set; }
 
         /// <summary>
         /// Creates a new instance of this Tab Page
@@ -53,7 +53,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// Method called when the player completes a call
         /// </summary>
         /// <param name="call"></param>
-        private void Dispatch_OnPlayerCallCompleted(ActiveEvent call)
+        private void Dispatch_OnPlayerCallCompleted(PriorityCall call)
         {
             // Set internal
             Call = null;
@@ -70,7 +70,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// Method called when the player accepts a callout
         /// </summary>
         /// <param name="call"></param>
-        private void Dispatch_OnPlayerCallAccepted(ActiveEvent call)
+        private void Dispatch_OnPlayerCallAccepted(PriorityCall call)
         {
             // Clear old
             Items.Clear();

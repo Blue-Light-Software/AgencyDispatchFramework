@@ -36,9 +36,9 @@ namespace AgencyDispatchFramework.Integration
         private TextBox text_source;
         private Button btn_dispatch;
 
-        public ActiveEvent Call { get; set; }
+        public PriorityCall Call { get; set; }
 
-        public CallDetailsGwenForm(ActiveEvent call) : base(typeof(CallDetailsGwenFormTemplate))
+        public CallDetailsGwenForm(PriorityCall call) : base(typeof(CallDetailsGwenFormTemplate))
         {
             Call = call;
         }
@@ -68,18 +68,18 @@ namespace AgencyDispatchFramework.Integration
             text_unit.KeyboardInputEnabled = false;
 
             // Set text fields
-            var locationText = Call.Location.StreetName ?? World.GetStreetName(Call.Location.Position);
+            var locationText = Call.EventHandle.Location.StreetName ?? World.GetStreetName(Call.EventHandle.Location.Position);
             text_call_id.Text = Guid.NewGuid().ToString();
             text_agency.Text = Dispatch.PlayerAgency.ScriptName.ToUpperInvariant();
-            text_event_id.Text = Call.EventId.ToString();
+            text_event_id.Text = Call.CallId.ToString();
             text_datetime.Text = Call.Created.ToString();
             text_location.Text = locationText;
-            text_incident.Text = Call.ScenarioMeta.CADEventText;
-            text_priority.Text = GetPriorityText((int)Call.OriginalPriority);
+            text_incident.Text = Call.EventHandle.ScenarioMeta.CADEventText;
+            text_priority.Text = GetPriorityText((int)Call.Priority);
             text_status.Text = Call.Status.ToString();
             text_source.Text = "CITIZEN";
             text_response.Text = Call.ResponseCode == ResponseCode.Code3 ? "CODE 3" : "CODE 2";
-            text_comments.Text = Call.Description.Text
+            text_comments.Text = Call.EventHandle.Description.Text
                 .Replace("{{location}}", locationText)
                 .WordWrap(450, text_comments.Font.FaceName.ToString()
             );

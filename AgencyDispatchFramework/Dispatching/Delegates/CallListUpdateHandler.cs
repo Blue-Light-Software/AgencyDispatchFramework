@@ -1,6 +1,4 @@
-﻿using AgencyDispatchFramework.Scripting;
-
-namespace AgencyDispatchFramework.Dispatching
+﻿namespace AgencyDispatchFramework.Dispatching
 {
-    public delegate void CallListUpdateHandler(ActiveEvent call);
+    public delegate void CallListUpdateHandler(PriorityCall call);
 }

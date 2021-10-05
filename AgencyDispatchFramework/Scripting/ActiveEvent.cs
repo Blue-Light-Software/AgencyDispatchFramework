@@ -1,17 +1,16 @@
 ﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Extensions;
 using AgencyDispatchFramework.Game;
 using AgencyDispatchFramework.Game.Locations;
-using LSPD_First_Response.Mod.Callouts;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace AgencyDispatchFramework.Scripting
 {
     /// <summary>
     /// Contains the details to a specific <see cref="IEventScenario"/> that is active in the <see cref="GameWorld"/> 
     /// </summary>
-    public sealed class ActiveEvent : IEquatable<ActiveEvent>, IDisposable
+    public sealed class ActiveEvent : IEquatable<ActiveEvent>
     {
         /// <summary>
         /// The unique call ID
@@ -26,24 +25,7 @@ namespace AgencyDispatchFramework.Scripting
         /// <summary>
         /// Gets the Callout handle
         /// </summary>
-        [Obsolete]
-        internal Callout Callout { get; set; }
-
-        /// <summary>
-        /// Gets whether this call has been escelated to a dangerous level, 
-        /// requiring more immediate attention
-        /// </summary>
-        public bool IsEmergency { get; internal set; }
-
-        /// <summary>
-        /// The current <see cref="EventPriority"/>
-        /// </summary>
-        public EventPriority CurrentPriority { get; internal set; }
-
-        /// <summary>
-        /// The <see cref="EventPriority"/> when it was created
-        /// </summary>
-        public EventPriority OriginalPriority => ScenarioMeta.Priority;
+        internal IEventController Controller { get; set; }
 
         /// <summary>
         /// Gets the  <see cref="DateTime"/> when this call was created using Game Time
@@ -61,48 +43,17 @@ namespace AgencyDispatchFramework.Scripting
         public WorldLocation Location { get; internal set; }
 
         /// <summary>
-        /// Gets the primary <see cref="OfficerUnit"/> assigned to this call
-        /// </summary>
-        public OfficerUnit PrimaryOfficer { get; private set; }
-
-        /// <summary>
-        /// Gets a list of officers attached to this <see cref="ActiveEvent"/>
-        /// </summary>
-        private List<OfficerUnit> AttachedOfficers { get; set; }
-
-        /// <summary>
-        /// Indicates whether this Call needs more <see cref="OfficerUnit"/>(s)
-        /// assigned to it.
-        /// </summary>
-        public bool NeedsMoreOfficers => AttachedOfficers.Count < TotalRequiredUnits;
-
-        /// <summary>
-        /// Gets the number of <see cref="OfficerUnit"/>s required for this call
-        /// </summary>
-        public int TotalRequiredUnits { get; internal set; }
-
-        /// <summary>
-        /// Gets the number of additional <see cref="OfficerUnit"/>s still required for this call
-        /// </summary>
-        public int NumberOfAdditionalUnitsRequired => Math.Max(TotalRequiredUnits - AttachedOfficers.Count, 0);
-
-        /// <summary>
-        /// Indicates whether this call was declined by the player
-        /// </summary>
-        public bool DeclinedByPlayer { get; internal set; }
-
-        /// <summary>
-        /// Indicates wether the OfficerUnit should repsond code 3
-        /// </summary>
-        public ResponseCode ResponseCode => (IsEmergency) ? ResponseCode.Code3 : ScenarioMeta.ResponseCode;
-
-        /// <summary>
         /// Gets the description of this event for the MDT
         /// </summary>
         public EventDescription Description { get; internal set; }
 
         /// <summary>
-        /// Gets a value indicated whether the call has ended
+        /// Contains a list of all attached <see cref="PriorityCall"/>(s) to this event
+        /// </summary>
+        internal Dictionary<ServiceSector, PriorityCall> AttachedCalls { get; set; }
+
+        /// <summary>
+        /// Gets a value indicated whether the <see cref="ActiveEvent"/> has ended
         /// </summary>
         public bool HasEnded { get; internal set; }
 
@@ -128,57 +79,50 @@ namespace AgencyDispatchFramework.Scripting
             Created = Rage.World.DateTime;
             ScenarioMeta = scenarioInfo ?? throw new ArgumentNullException(nameof(scenarioInfo));
             Description = scenarioInfo.Descriptions.Spawn();
-            AttachedOfficers = new List<OfficerUnit>(4);
             Status = EventStatus.Created;
             Location = location;
-            CurrentPriority = scenarioInfo.Priority;
+            AttachedCalls = new Dictionary<ServiceSector, PriorityCall>();
         }
 
         /// <summary>
-        /// Assigns the provided <see cref="OfficerUnit"/> as the primary officer of the 
-        /// call if there isnt one, or adds the officer to the <see cref="AttachedOfficers"/>
-        /// list otherwise
+        /// Makes <see cref="Dispatch"/> aware of this <see cref="ActiveEvent"/>,
+        /// and dispatch accordingly
         /// </summary>
-        /// <param name="officer"></param>
-        internal void AssignOfficer(OfficerUnit officer, bool forcePrimary)
+        public void Report()
         {
-            // Do we have a primary? Or are we forcing one?
-            if (PrimaryOfficer == null || forcePrimary)
+            // Check to see if we have a call already!
+            if (Status == EventStatus.Created)
             {
-                PrimaryOfficer = officer;
+                Dispatch.Report(this);
+                Status = EventStatus.Reported;
             }
-
-            // Attach officer
-            AttachedOfficers.Add(officer);
         }
 
         /// <summary>
-        /// Removes the specified <see cref="OfficerUnit"/> from the call. If the 
-        /// <see cref="OfficerUnit"/> was the primary officer, and <see cref="AttachedOfficers"/>
-        /// is populated, the topmost <see cref="OfficerUnit"/> will be the new
-        /// <see cref="PrimaryOfficer"/>
+        /// Attaches the <see cref="PriorityCall"/> to this <see cref="ActiveEvent"/>
         /// </summary>
-        /// <param name="officer"></param>
-        internal void RemoveOfficer(OfficerUnit officer)
+        /// <param name="sector"></param>
+        /// <param name="call"></param>
+        internal void AttachCall(ServiceSector sector, PriorityCall call)
         {
-            // Do we need to assign a new primary officer?
-            if (officer == PrimaryOfficer)
-            {
-                if (AttachedOfficers.Count > 1)
-                {
-                    // Dispatch one more AI unit to this call
-                    var primary = AttachedOfficers.Where(x => x != PrimaryOfficer).FirstOrDefault();
-                    if (primary != null)
-                        PrimaryOfficer = primary;
-                }
-                else
-                {
-                    PrimaryOfficer = null;
-                }
-            }
+            AttachedCalls.AddOrUpdate(sector, call);
+        }
 
-            // Finally, remove
-            AttachedOfficers.Remove(officer);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sector"></param>
+        internal void RemoveCall(ServiceSector sector, EventClosedFlag flag)
+        {
+            // Attempt to remove the call
+            if (AttachedCalls.Remove(sector))
+            {
+                // Was that the last sector?
+                if (AttachedCalls.Count > 0) return;
+
+                // End the event
+                End(flag);
+            }
         }
 
         /// <summary>
@@ -199,7 +143,7 @@ namespace AgencyDispatchFramework.Scripting
             }
         }
 
-        public void Dispose()
+        internal void Dispose()
         {
             // Only dispose once, and on internal calls only
             if (Disposed || !HasEnded) return;
@@ -208,19 +152,11 @@ namespace AgencyDispatchFramework.Scripting
             Disposed = true;
 
             // Clear
-            Callout = null;
+            Controller = null;
             ScenarioMeta = null;
-            AttachedOfficers.Clear();
-            AttachedOfficers = null;
-            PrimaryOfficer = null;
             Location = null;
             Description = null;
         }
-
-        /// <summary>
-        /// Gets a list of officers attached to this <see cref="ActiveEvent"/>
-        /// </summary>
-        public OfficerUnit[] GetAttachedOfficers() => AttachedOfficers.ToArray();
 
         public override string ToString()
         {

@@ -23,7 +23,7 @@ namespace AgencyDispatchFramework.Simulation
 
         public Weather SelectedWeather { get; set; }
 
-        public CallSign SetCallSign { get; set; }
+        public int Beat { get; set; }
 
         public ShiftRotation SelectedShift { get; set; }
 

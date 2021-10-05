@@ -30,15 +30,15 @@ namespace AgencyDispatchFramework.Dispatching
         /// <summary>
         /// Gets a list of calls this instance is responsible for handling
         /// </summary>
-        public HashSet<ActiveEvent> CallQueue { get; set; }
+        public HashSet<PriorityCall> CallQueue { get; set; }
 
         /// <summary>
         /// Gets a list of calls this instance has raised
         /// </summary>
-        public HashSet<ActiveEvent> RaisedCalls { get; set; }
+        public HashSet<PriorityCall> RaisedCalls { get; set; }
 
         /// <summary>
-        /// Event fired when a <see cref="ActiveEvent"/> needs additional resources
+        /// Event fired when a <see cref="Scripting.ActiveEvent"/> needs additional resources
         /// that the <see cref="Agency"/> is unable to provide
         /// </summary>
         public static event CallRaisedHandler OnCallRaised;
@@ -56,8 +56,8 @@ namespace AgencyDispatchFramework.Dispatching
         {
             // Set internals
             Agency = agency ?? throw new ArgumentNullException(nameof(agency));
-            CallQueue = new HashSet<ActiveEvent>(12);
-            RaisedCalls = new HashSet<ActiveEvent>();
+            CallQueue = new HashSet<PriorityCall>(12);
+            RaisedCalls = new HashSet<PriorityCall>();
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="call"></param>
         /// <returns>true if the call was added, false if the call already existed in the call queue.</returns>
-        public virtual bool AddCall(ActiveEvent call)
+        public virtual bool AddCall(PriorityCall call)
         {
             // Stop if we are disposed
             if (IsDisposed) throw new ObjectDisposedException(nameof(Dispatcher));
@@ -80,7 +80,7 @@ namespace AgencyDispatchFramework.Dispatching
                     call.OnEnded += Call_OnCallEnded;
 
                     // Log
-                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Added Call to Queue '{call.ScenarioMeta.ScenarioName}' in zone '{call.Location.Zone.DisplayName}'");
+                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Added Call to Queue '{call.EventHandle.ScenarioMeta.ScenarioName}' in zone '{call.EventHandle.Location.Zone.DisplayName}'");
                     return true;
                 }
                 else
@@ -94,7 +94,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// Removes the call to the <see cref="CallQueue"/> safely
         /// </summary>
         /// <param name="call"></param>
-        public virtual void RemoveCall(ActiveEvent call)
+        public virtual void RemoveCall(PriorityCall call, EventClosedFlag flag)
         {
             // Stop if we are disposed
             if (IsDisposed) throw new ObjectDisposedException(nameof(Dispatcher));
@@ -108,8 +108,11 @@ namespace AgencyDispatchFramework.Dispatching
                     // Unregister
                     call.OnEnded -= Call_OnCallEnded;
 
+                    // End event
+                    call.EventHandle.RemoveCall(Agency.Sector, flag);
+
                     // Log
-                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Removed Call from Queue '{call.ScenarioMeta.ScenarioName}' in zone '{call.Location.Zone.DisplayName}'");
+                    Log.Debug($"{Agency.ScriptName.ToUpper()} Dispatcher: Removed Call from Queue '{call.EventHandle.ScenarioMeta.ScenarioName}' in zone '{call.EventHandle.Location.Zone.DisplayName}'");
                 }
 
                 // Attempt to remove from raised
@@ -123,7 +126,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="call"></param>
         /// <param name="args"></param>
-        protected virtual void RaiseCall(ActiveEvent call, CallRaisedEventArgs args)
+        protected virtual void RaiseCall(PriorityCall call, CallRaisedEventArgs args)
         {
             // Ensure we dont spam
             if (!RaisedCalls.Contains(call))
@@ -141,19 +144,19 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="call"></param>
         /// <param name="closeFlag"></param>
-        protected virtual void Call_OnCallEnded(ActiveEvent call, EventClosedFlag closeFlag)
+        protected virtual void Call_OnCallEnded(PriorityCall call, EventClosedFlag closeFlag)
         {
-            RemoveCall(call);
+            RemoveCall(call, closeFlag);
         }
 
         /// <summary>
         /// Dispatches the provided <see cref="OfficerUnit"/> to the provided
-        /// <see cref="ActiveEvent"/>. If the <paramref name="officer"/> is
+        /// <see cref="Scripting.ActiveEvent"/>. If the <paramref name="officer"/> is
         /// the Player, then the callout is started
         /// </summary>
         /// <param name="officer"></param>
         /// <param name="call"></param>
-        public virtual void AssignUnitToCall(OfficerUnit officer, ActiveEvent call)
+        public virtual void AssignUnitToCall(OfficerUnit officer, PriorityCall call)
         {
             // Stop if we are disposed
             if (IsDisposed) throw new ObjectDisposedException(nameof(Dispatcher));

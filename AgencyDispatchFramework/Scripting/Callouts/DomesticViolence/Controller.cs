@@ -17,6 +17,16 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
     internal class Controller : AgencyCallout
     {
         /// <summary>
+        /// Gets the script info name of this <see cref="Callout"/>
+        /// </summary>
+        public override string Name => ScriptInfo.Name;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override PriorityCall Call { get; protected set; }
+
+        /// <summary>
         /// Stores the <see cref="API.Residence"/> where the accident occured
         /// </summary>
         public Residence Location { get; protected set; }
@@ -36,8 +46,8 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
         public override bool OnBeforeCalloutDisplayed()
         {
             // Grab the priority call dispatched to player
-            ActiveEvent call = Dispatch.RequestPlayerCallInfo(this);
-            if (call == null)
+            Call = Dispatch.RequestPlayerCallInfo(this);
+            if (Call == null)
             {
                 Log.Error("AgencyCallout.DomesticViolence: This is awkward... No PriorityCall of this type for player");
                 return false;
@@ -45,16 +55,15 @@ namespace AgencyDispatchFramework.Scripting.Callouts.DomesticViolence
 
             try
             {
-                // Store data
-                Event = call;
-                Location = call.Location as Residence;
+                // Get location
+                Location = Call.EventHandle.Location as Residence;
 
                 // Create scenario class handler
                 Scenario = CreateScenarioInstance();
 
                 // Show are blip and message
                 ShowCalloutAreaBlipBeforeAccepting(Location.Position, 40f);
-                CalloutMessage = call.ScenarioMeta.CADEventText;
+                CalloutMessage = Call.EventHandle.ScenarioMeta.CADEventText;
                 CalloutPosition = Location.Position;
             }
             catch (Exception e)

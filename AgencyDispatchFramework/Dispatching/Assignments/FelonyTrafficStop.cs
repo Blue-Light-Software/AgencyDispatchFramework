@@ -12,7 +12,7 @@ namespace AgencyDispatchFramework.Dispatching.Assignments
         public FelonyTrafficStop()
         {
             Description = "Felony Traffic Stop";
-            Priority = EventPriority.Emergency;
+            Priority = CallPriority.Emergency;
             Location = Rage.Game.LocalPlayer.Character.Position;
         }
     }

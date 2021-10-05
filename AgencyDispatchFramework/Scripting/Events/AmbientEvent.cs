@@ -5,17 +5,14 @@ namespace AgencyDispatchFramework.Scripting.Events
     /// <summary>
     /// Base class for an ambient event that happens in the world near the player
     /// </summary>
-    public abstract class AmbientEvent : IEventController, IDisposable, IEquatable<AmbientEvent>
+    public abstract class AmbientEvent : IEventController, IEquatable<AmbientEvent>
     {
         /// <summary>
         /// Stores the current <see cref="Scripting.ActiveEvent"/>
         /// </summary>
         public ActiveEvent Event { get; set; }
 
-        /// <summary>
-        /// Gets a bool indicating whether this instance is disposed
-        /// </summary>
-        public bool IsDisposed { get; protected set; }
+        public abstract string Name { get; }
 
         /// <summary>
         /// 
@@ -23,12 +20,9 @@ namespace AgencyDispatchFramework.Scripting.Events
         public abstract void Process();
 
         /// <summary>
-        /// Disposes this instance
+        /// 
         /// </summary>
-        public virtual void Dispose()
-        {
-            IsDisposed = true;
-        }
+        public abstract void End();
 
         public override int GetHashCode() => Event.GetHashCode();
 

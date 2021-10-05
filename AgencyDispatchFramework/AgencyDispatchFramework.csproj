@@ -103,10 +103,14 @@
     <Compile Include="Conversation\SequenceCollection.cs" />
     <Compile Include="Conversation\PedResponseEventHandler.cs" />
     <Compile Include="Conversation\Question.cs" />
+    <Compile Include="Dispatching\Delegates\CallEndedHandler.cs" />
+    <Compile Include="Dispatching\Enums\CallStatus.cs" />
+    <Compile Include="Dispatching\DispatchDirective.cs" />
     <Compile Include="Dispatching\CallSigns\LAPDCallSignGenerator.cs" />
     <Compile Include="Dispatching\CallSigns\NumericCallSignGenerator.cs" />
     <Compile Include="Dispatching\CallSigns\SeniorityGroup.cs" />
     <Compile Include="Dispatching\Enums\MessageEvent.cs" />
+    <Compile Include="Dispatching\PriorityCall.cs" />
     <Compile Include="Dispatching\RadioMessageMeta.cs" />
     <Compile Include="Game\Checkpoint.cs" />
     <Compile Include="Game\Locations\WorldPosition.cs" />
@@ -141,7 +145,7 @@
     <Compile Include="Dispatching\Assignments\TrafficEnforcement.cs" />
     <Compile Include="Dispatching\CallSigns\CallSign.cs" />
     <Compile Include="Dispatching\Delegates\BeforeRadioPlayedHandler.cs" />
-    <Compile Include="Dispatching\Delegates\CallEndedHandler.cs" />
+    <Compile Include="Scripting\Delegates\EventEndedHandler.cs" />
     <Compile Include="Dispatching\Delegates\CallListUpdateHandler.cs" />
     <Compile Include="Dispatching\Delegates\CalloutListUpdateHandler.cs" />
     <Compile Include="Dispatching\Delegates\CalloutPackLoadedHandler.cs" />
@@ -263,7 +267,7 @@
     <Compile Include="Simulation\PersistentAIOfficerUnit.cs" />
     <Compile Include="Scripting\ActiveEvent.cs" />
     <Compile Include="Game\Enums\SocialClass.cs" />
-    <Compile Include="Dispatching\Enums\EventPriority.cs" />
+    <Compile Include="Dispatching\Enums\CallPriority.cs" />
     <Compile Include="Simulation\SpecializedUnit.cs" />
     <Compile Include="Simulation\VehicleModelMeta.cs" />
     <Compile Include="Simulation\VehicleSet.cs" />

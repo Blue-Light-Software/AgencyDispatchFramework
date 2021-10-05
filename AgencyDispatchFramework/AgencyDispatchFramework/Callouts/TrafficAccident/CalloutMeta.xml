@@ -8,6 +8,9 @@
   <Scenarios>
     
     <RearEndNoInjuries>
+      <EventType>Crime</EventType>
+      <EventSource>Reported</EventSource>
+      <Category>Traffic</Category>
       <!-- The probability of this scenario happening relative to every other scenario of this crime catagory -->
       <Probabilities>
         <EarlyMorning clear="10" overcast="10" rain="10" snow="10" storm="10" />
@@ -29,14 +32,13 @@
       <!-- Dispatching information -->
       <Dispatch>
         <!-- Agencies that initially get dispatched to handle this scenario -->
-        <Agencies>
-          <Agency target="Police" unitCount="1" />
-        </Agencies>
-        <Priority>Expedited</Priority>
-        <Category>Traffic</Category>
-        <EventType>Crime</EventType>
-        <EventSource>Reported</EventSource>
-        <Response>Code2</Response>
+        <Directives>
+          <Agency target="Police">
+            <Priority>Expedited</Priority>
+            <UnitCount>1</UnitCount>
+            <Response>Code2</Response>
+          </Agency>
+        </Directives>
         <MDT>
           <!-- CAD texture for this call in call details -->
           <Texture dictionary="char_chat_call">char_chat_call</Texture>
@@ -69,9 +71,9 @@
       <Circumstances>
         <Circumstance id="distracted" probability="10" />
         <Circumstance id="eating" probability="3" />
-        <Circumstance id="tailgating" probability="50000" /> <!-- Testing purposes -->
-        <Circumstance id="wetRoads" probability="7" if="Weather.RoadsAreWet == true and Weather.IsSnowing == false"/>
-        <Circumstance id="snowing" probability="15" if="Weather.IsSnowing == true"/>
+        <Circumstance id="tailgating" probability="5" />
+        <Circumstance id="wetRoads" probability="10" if="Weather.RoadsAreWet == true and Weather.IsSnowing == false"/>
+        <Circumstance id="snowing" probability="20" if="Weather.IsSnowing == true"/>
         <!-- 
         <Circumstance id="drunkDriver" probability="2" />
         <Circumstance id="impaired" probability="2" />

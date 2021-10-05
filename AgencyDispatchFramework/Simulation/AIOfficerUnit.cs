@@ -159,7 +159,7 @@ namespace AgencyDispatchFramework.Simulation
         /// Assigns this officer to the specified call
         /// </summary>
         /// <param name="call"></param>
-        internal override void AssignToCall(ActiveEvent call, bool forcePrimary = false)
+        internal override void AssignToCall(PriorityCall call, bool forcePrimary = false)
         {
             // Call base first
             base.AssignToCall(call, forcePrimary);
@@ -180,7 +180,7 @@ namespace AgencyDispatchFramework.Simulation
             // Tell dispatch we are done here
             if (CurrentCall.PrimaryOfficer == this)
             {
-                Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} completed call '{CurrentCall.ScenarioMeta.ScenarioName}' with flag: {flag}");
+                Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} completed call '{CurrentCall.EventHandle.ScenarioMeta.ScenarioName}' with flag: {flag}");
                 Dispatch.RegisterCallComplete(CurrentCall);
             }
 
@@ -200,17 +200,17 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Drives the <see cref="Officer"/> to the current <see cref="ActiveEvent"/>
+        /// Drives the <see cref="Officer"/> to the current <see cref="Scripting.ActiveEvent"/>
         /// assigned.
         /// </summary>
         private void DriveToCall()
         {
             // Close this task
-            Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} responding to call '{CurrentCall.ScenarioMeta.ScenarioName}'");
+            Log.Debug($"OfficerUnit {CallSign} of {Agency.FullName} responding to call '{CurrentCall.EventHandle.ScenarioMeta.ScenarioName}'");
             int mins = 30;
 
             // Repond code 3?
-            if (CurrentCall.ScenarioMeta.ResponseCode == ResponseCode.Code3)
+            if (CurrentCall.EventHandle.ScenarioMeta.ResponseCode == ResponseCode.Code3)
             {
                 // Calculate drive times
             }
@@ -237,7 +237,7 @@ namespace AgencyDispatchFramework.Simulation
             Dispatch.RegisterOnScene(this, CurrentCall);
 
             // Set updated location
-            Position = CurrentCall.Location.Position;
+            Position = CurrentCall.EventHandle.Location.Position;
 
             // Set status
             Status = OfficerStatus.OnScene;
@@ -245,7 +245,7 @@ namespace AgencyDispatchFramework.Simulation
 
             // Determine how long we will be on scene
             var random = new CryptoRandom();
-            var callTime = random.Next(CurrentCall.ScenarioMeta.SimulationTime);
+            var callTime = random.Next(CurrentCall.EventHandle.ScenarioMeta.SimulationTime);
             NextStatusChange = LastStatusChange.AddMinutes(callTime);
         }
 
@@ -271,7 +271,7 @@ namespace AgencyDispatchFramework.Simulation
         }
 
         /// <summary>
-        /// Assigns this <see cref="AIOfficerUnit"/> to a <see cref="ActiveEvent"/> with
+        /// Assigns this <see cref="AIOfficerUnit"/> to a <see cref="Scripting.ActiveEvent"/> with
         /// a random completion percentage. This method is to be called when the player goes
         /// on duty, and only on officers that were part of the previous <see cref="Game.TimePeriod"/>
         /// </summary>
@@ -279,7 +279,7 @@ namespace AgencyDispatchFramework.Simulation
         /// This method helps going on shift feel more realistic
         /// </remarks>
         /// <param name="call">The call to assign to this instance</param>
-        internal void AssignToCallWithRandomCompletion(ActiveEvent call)
+        internal void AssignToCallWithRandomCompletion(PriorityCall call)
         {
             // Assign ourselves
             base.AssignToCall(call, true);
@@ -291,16 +291,16 @@ namespace AgencyDispatchFramework.Simulation
             if (onScene)
             {
                 // Random time to completion
-                var callTime = random.Next(CurrentCall.ScenarioMeta.SimulationTime);
+                var callTime = random.Next(CurrentCall.EventHandle.ScenarioMeta.SimulationTime);
                 double percent = random.Next(10, 80);
                 var timeToComplete = Convert.ToInt32(callTime / percent);
                 var timeOnScene = callTime - timeToComplete;
 
                 // Set updated location
-                Position = CurrentCall.Location.Position;
+                Position = CurrentCall.EventHandle.Location.Position;
 
                 // Set status
-                call.Status = EventStatus.OnScene;
+                call.Status = CallStatus.OnScene;
                 Status = OfficerStatus.OnScene;
                 LastStatusChange = World.DateTime.AddMinutes(-timeOnScene);
                 NextStatusChange = LastStatusChange.AddMinutes(timeToComplete);
@@ -328,6 +328,16 @@ namespace AgencyDispatchFramework.Simulation
                 // Flag ourselves
                 EndingDuty = true;
             }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }

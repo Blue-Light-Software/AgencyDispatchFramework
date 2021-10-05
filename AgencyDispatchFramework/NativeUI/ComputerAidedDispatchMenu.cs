@@ -167,7 +167,7 @@ namespace AgencyDispatchFramework.NativeUI
 
         /// <summary>
         /// Method called when a scenario is activated from the scenario list. 
-        /// Creates a new <see cref="ActiveEvent"/> using the activated <see cref="CalloutScenario"/>
+        /// Creates a new <see cref="Scripting.ActiveEvent"/> using the activated <see cref="CalloutScenario"/>
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="selectedItem"></param>
@@ -175,12 +175,27 @@ namespace AgencyDispatchFramework.NativeUI
         {
             // Get our scenario info
             var item = selectedItem as UIMenuItem<EventScenarioMeta>;
-            var call = Dispatch.CrimeGenerator.CreateCallFromScenario(item.Tag);
 
-            // Add call to dispatch
-            Dispatch.AddIncomingCall(call);
+            // Get player sector
+            var sector = Dispatch.PlayerAgency.Sector;
+            if (!item.Tag.DispatchDirectives.ContainsKey(sector))
+            {
+                // Alert the user
+                Rage.Game.DisplaySubtitle("~o~Your agency cannot be assigned to this scenario initially!", 5000);
+
+                // Disable item
+                item.Enabled = false;
+                return;
+            }
+
+            // Create the event
+            var eventt = Dispatch.CrimeGenerator.CreateEventFromScenario(item.Tag);
+
+            // Report to Dispatch, so the player can be dispatched to it
+            eventt.Report();
 
             // Try and invoke callout for player
+            var call = eventt.AttachedCalls[sector];
             if (Dispatch.InvokeCallForPlayer(call))
             {
                 Rage.Game.DisplaySubtitle("~b~Call created! You will be dispatched to this call once you exit the menu", 5000);

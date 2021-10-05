@@ -8,9 +8,16 @@ namespace AgencyDispatchFramework.Scripting.Events
 {
     internal class RecklessDriverEvent : AmbientEvent
     {
+        public override string Name => "ADF.RecklessDriver";
+
         public override void Process()
         {
-            throw new NotImplementedException();
+
+        }
+
+        public override void End()
+        {
+
         }
     }
 }

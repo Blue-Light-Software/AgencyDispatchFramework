@@ -432,6 +432,9 @@ namespace AgencyDispatchFramework.Simulation
             // Define which units create supervisors
             var supervisorUnits = new[] { UnitType.Patrol, UnitType.Traffic };
 
+            // Create log entry
+            Log.Debug("\t\tAgency Officer Units:");
+
             // For each unit type!
             foreach (SpecializedUnit unit in Units.Values)
             {
@@ -461,6 +464,9 @@ namespace AgencyDispatchFramework.Simulation
                             // Add officer to rosters
                             OfficersByShift[shift.Key].Add(officer);
                             district.OfficersByShift[shift.Key].Add(officer);
+
+                            // Log for debugging
+                            Log.Debug($"\t\t\t[Supervisor] {officer.Persona.FullName} ({officer.CallSign.Value}) on {shiftName} shift for {ScriptName} as part of the {unitName} unit");
                         }
 
                         // Create officer units
@@ -472,6 +478,9 @@ namespace AgencyDispatchFramework.Simulation
                             // Add officer to rosters
                             OfficersByShift[shift.Key].Add(officer);
                             district.OfficersByShift[shift.Key].Add(officer);
+
+                            // Log for debugging
+                            Log.Debug($"\t\t\t{officer.Persona.FullName} ({officer.CallSign.Value}) on {shiftName} shift for {ScriptName} as part of the {unitName} unit");
                         }
                     }
                 }
@@ -505,11 +514,28 @@ namespace AgencyDispatchFramework.Simulation
         /// <returns></returns>
         internal OfficerUnit AddPlayerUnit(SimulationSettings s)
         {
-            // Create player
-            var p = Rage.Game.LocalPlayer;
-            var playerUnit = new PlayerOfficerUnit(p, this, s.SetCallSign, s.PrimaryRole, s.SelectedDistrict, s.SelectedShift);
+            // -------------------------------------
+            // Create players callSign
+            // -------------------------------------
 
-            // @todo replace an AI unit with the player
+            CallSign callSign = null;
+            if (CallSignStyle == CallSignStyle.LAPD)
+            {
+                // Get alpha index of the unit
+                var unit = LAPDCallSignGenerator.GetUnitTypeChar(s.PrimaryRole);
+                int unitTypeIndex = (int)unit % 32;
+                callSign = new LAPDStyleCallsign(s.SelectedDistrict.Index, unitTypeIndex, s.Beat);
+            }
+            else
+            {
+                callSign = new NumericStyleCallsign(s.Beat);
+            }
+
+            // -------------------------------------
+            // Create player
+            // -------------------------------------
+            var p = Rage.Game.LocalPlayer;
+            var playerUnit = new PlayerOfficerUnit(p, this, callSign, s.PrimaryRole, s.SelectedDistrict, s.SelectedShift);
 
             // Return the player object
             return playerUnit;

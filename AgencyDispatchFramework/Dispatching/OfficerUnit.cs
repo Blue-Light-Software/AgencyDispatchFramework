@@ -10,7 +10,7 @@ namespace AgencyDispatchFramework.Dispatching
 {
     /// <summary>
     /// Represents an Officer unit that a <see cref="Dispatcher"/> will send to 
-    /// respond to <see cref="ActiveEvent"/>(s)
+    /// respond to <see cref="Scripting.ActiveEvent"/>(s)
     /// </summary>
     public abstract class OfficerUnit : IDisposable, IEquatable<OfficerUnit>
     {
@@ -73,9 +73,9 @@ namespace AgencyDispatchFramework.Dispatching
         public DateTime LastStatusChange { get; internal set; }
 
         /// <summary>
-        /// Gets the current <see cref="ActiveEvent"/> if any this unit is assigned to
+        /// Gets the current <see cref="Scripting.ActiveEvent"/> if any this unit is assigned to
         /// </summary>
-        public ActiveEvent CurrentCall { get; protected set; }
+        public PriorityCall CurrentCall { get; protected set; }
 
         /// <summary>
         /// 
@@ -216,7 +216,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// Assigns this officer to the specified call
         /// </summary>
         /// <param name="call"></param>
-        internal virtual void AssignToCall(ActiveEvent call, bool forcePrimary = false)
+        internal virtual void AssignToCall(PriorityCall call, bool forcePrimary = false)
         {
             // Did we get called on for a more important assignment?
             if (CurrentCall != null)
@@ -225,12 +225,12 @@ namespace AgencyDispatchFramework.Dispatching
                 var currentCall = CurrentCall;
 
                 // Is this unit the primary on a lesser important call?
-                if (currentCall.PrimaryOfficer == this && (int)currentCall.CurrentPriority > 2)
+                if (currentCall.PrimaryOfficer == this && (int)currentCall.Priority > 2)
                 {
-                    if (currentCall.Status == EventStatus.OnScene)
+                    if (currentCall.Status == CallStatus.OnScene)
                     {
                         // @todo : If more than 50% complete, close call
-                        var flag = (call.CurrentPriority < currentCall.CurrentPriority) ? EventClosedFlag.Premature : EventClosedFlag.Forced;
+                        var flag = (call.Priority < currentCall.Priority) ? EventClosedFlag.Premature : EventClosedFlag.Forced;
                         CompleteCall(flag);
                     }
                 }
@@ -241,7 +241,7 @@ namespace AgencyDispatchFramework.Dispatching
 
             // Set flags
             call.AssignOfficer(this, forcePrimary);
-            call.Status = EventStatus.Dispatched;
+            call.Status = CallStatus.Dispatched;
 
             Assignment = new AssignedToCall(call);
             CurrentCall = call;

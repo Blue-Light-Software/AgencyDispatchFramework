@@ -40,7 +40,7 @@ namespace AgencyDispatchFramework.Dispatching
         /// </summary>
         /// <param name="call"></param>
         /// <param name="forcePrimary"></param>
-        internal override void AssignToCall(ActiveEvent call, bool forcePrimary = false)
+        internal override void AssignToCall(PriorityCall call, bool forcePrimary = false)
         {
             // === DO NOT CALL BASE FOR PLAYER === //
 
@@ -50,7 +50,7 @@ namespace AgencyDispatchFramework.Dispatching
             // Is this call already dispatched?
             if (call.PrimaryOfficer == this)
             {
-                call.Status = EventStatus.Assigned;
+                call.Status = CallStatus.Assigned;
             }
 
             CurrentCall = call;

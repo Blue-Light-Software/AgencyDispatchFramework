@@ -112,11 +112,16 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         private GameFiber ListenFiber { get; set; }
 
+        private CallSignStyle AgencyCallSignStyle { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
         public DutyPluginMenu()
         {
+            // Grab
+            AgencyCallSignStyle = Agency.GetCurrentPlayerAgency().CallSignStyle;
+
             // Create main menu
             MainUIMenu = new UIMenu(MENU_NAME, "~b~Main Menu")
             {
@@ -216,7 +221,7 @@ namespace AgencyDispatchFramework.NativeUI
                     if (DispatchUIMenu.Visible)
                     {
                         // Disable the Callout menu button if player is not on a callout
-                        EndCallMenuButton.Enabled = Dispatch.ActivePlayerEvent != null;
+                        EndCallMenuButton.Enabled = Dispatch.ActivePlayerCall != null;
                         RequestCallMenuButton.Enabled = Dispatch.CanInvokeAnyCalloutForPlayer(true);
                     }
 
@@ -299,7 +304,6 @@ namespace AgencyDispatchFramework.NativeUI
             WorldSettingsButton = new UIMenuItem("World Settings", "Setup the world settings for this shift.");
             CallSignsButton = new UIMenuItem("Choose CallSign", "Choose your CallSign for your Agency.");
             BeginSimuButton = new UIMenuItem("Begin Simulation", "Start the ADF simulation.") { BackColor = Color.Green, ForeColor = Color.Black };
-            BeginSimuButton.Activated += BeginSimuButton_Activated;
 
             // Setup  Districts
             DistrictSelectMenuItem = new UIMenuListItem("District Selection", "Sets the district you will be assigned to.");
@@ -341,6 +345,12 @@ namespace AgencyDispatchFramework.NativeUI
             // Bind buttons
             PatrolUIMenu.BindMenuToItem(WorldSettingsMenu, WorldSettingsButton);
             PatrolUIMenu.BindMenuToItem(CallSignMenu, CallSignsButton);
+
+            // Events
+            BeginSimuButton.Activated += BeginSimuButton_Activated;
+            SupervisorBox.CheckboxEvent += (s, e) => UpdateCallSignOptions();
+            DistrictSelectMenuItem.OnListChanged += (s, e) => UpdateCallSignOptions();
+            RoleSelectMenuItem.OnListChanged += (s, e) => UpdateCallSignOptions();
         }
 
         private void BuildCallsignsMenu()
@@ -353,42 +363,37 @@ namespace AgencyDispatchFramework.NativeUI
                 WidthOffset = 12
             };
 
-            //
+            // Switch based off of call sign style
             if (Agency.GetCurrentPlayerAgency().CallSignStyle == CallSignStyle.LAPD)
             {
-                // 
-                DivisionMenuButton = new UIMenuListItem("Division", "Sets your division number.");
-                for (int i = 1; i < 11; i++)
+                // Create menu items
+                DivisionMenuButton = new UIMenuListItem("Division", "Displays your division number. This value is changed by changing your District") { Enabled = false };
+                UnitTypeMenuButton = new UIMenuListItem("Unit Designation", "Displays your unit designation code. This value is changed by setting your Role within the Agency")
                 {
-                    string value = i.ToString();
-                    DivisionMenuButton.Collection.Add(i, value);
-                }
+                    Enabled = false
+                };
+                BeatMenuButton = new UIMenuListItem("Beat", "Sets your Beat number within your Unit and District");
 
-                // Find and set index
-                var index = DivisionMenuButton.Collection.IndexOf(Settings.AudioDivision);
-                if (index >= 0)
-                {
-                    DivisionMenuButton.Index = index;
-                }
-
-                BeatMenuButton = new UIMenuListItem("Beat", "Sets your Beat number.");
-                for (int i = 1; i < 25; i++)
-                {
-                    string value = i.ToString();
-                    BeatMenuButton.Collection.Add(i, value);
-                }
-
-                // Find and set index
-                index = BeatMenuButton.Collection.IndexOf(Settings.AudioBeat);
-                if (index >= 0)
-                {
-                    BeatMenuButton.Index = index;
-                }
+                // Add items
+                CallSignMenu.AddItem(DivisionMenuButton);
+                CallSignMenu.AddItem(UnitTypeMenuButton);
+                CallSignMenu.AddItem(BeatMenuButton);
             }
             else
             {
+                // Create menu items
+                BeatMenuButton = new UIMenuListItem("Unit Number", "Sets your Unit Number");
+                BeatMenuButton.Collection.Add(0, "0");
 
+                // Add items
+                CallSignMenu.AddItem(BeatMenuButton);
             }
+
+            // Default
+            BeatMenuButton.Collection.Add(Settings.AudioBeat, Settings.AudioBeat.ToString());
+
+            // Update
+            UpdateCallSignOptions();
         }
 
         private void BuildWorldSettingsMenu()
@@ -604,11 +609,11 @@ namespace AgencyDispatchFramework.NativeUI
             }
 
             // Add each call priority data
-            foreach (EventPriority priority in Enum.GetValues(typeof(EventPriority)))
+            foreach (CallPriority priority in Enum.GetValues(typeof(CallPriority)))
             {
                 var calls = Dispatch.GetCallList(priority);
-                int c1c = calls.Where(x => x.Status == EventStatus.Created || x.NeedsMoreOfficers).Count();
-                int c1b = calls.Where(x => x.Status == EventStatus.Dispatched).Count() + c1c;
+                int c1c = calls.Where(x => x.Status == CallStatus.Created || x.NeedsMoreOfficers).Count();
+                int c1b = calls.Where(x => x.Status == CallStatus.Dispatched).Count() + c1c;
                 builder.Append($"<br />- Priority {priority} Calls: ~b~{c1b} ~w~(~g~{c1c} ~w~Avail)");
             }
 
@@ -649,9 +654,6 @@ namespace AgencyDispatchFramework.NativeUI
                 // Close menu
                 AllMenus.CloseAllMenus();
 
-                // @todo
-                CallSign.TryParse("1L-18", out CallSign callSign);
-
                 // Create the settings struct
                 var settings = new SimulationSettings()
                 {
@@ -666,7 +668,7 @@ namespace AgencyDispatchFramework.NativeUI
                     RandomWeather = RandomWeatherBox.Checked,
                     RealisticWeather = RealisticWeatherBox.Checked,
                     SelectedWeather = (Weather)WeatherMenuItem.SelectedValue,
-                    SetCallSign = callSign
+                    Beat = (int)BeatMenuButton.SelectedValue
                 };
 
                 // Being simulation
@@ -695,6 +697,50 @@ namespace AgencyDispatchFramework.NativeUI
                     $"~y~Please check your Game.log for errors."
                 );
             }
+        }
+
+        private void UpdateCallSignOptions()
+        {
+            // Disable all buttons to prevent race conditions
+            SupervisorBox.Enabled = false;
+            DistrictSelectMenuItem.Enabled = false;
+            RoleSelectMenuItem.Enabled = false;
+
+            // Grab district and unit type
+            var district = (District)DistrictSelectMenuItem.SelectedValue;
+            var unitType = (UnitType)RoleSelectMenuItem.SelectedValue;
+
+            // Switch based off of call sign style
+            if (AgencyCallSignStyle == CallSignStyle.LAPD)
+            {
+                // Reset
+                DivisionMenuButton.Collection.Clear();
+                DivisionMenuButton.Collection.Add(district.Index, district.Index.ToString());
+
+                // Reset
+                UnitTypeMenuButton.Collection.Clear();
+                UnitTypeMenuButton.Collection.Add(LAPDCallSignGenerator.GetUnitTypeChar(unitType));
+            }
+
+            // If we can keep this beat, we will try
+            int oldValue = (int)BeatMenuButton.SelectedValue;
+
+            // Clear old
+            BeatMenuButton.Collection.Clear();
+
+            // Update range
+            var availableBeats = district.CallSignGenerator.GetAvailableBeats(unitType, SupervisorBox.Checked);
+            foreach (int beat in availableBeats.OrderBy(x => x))
+            {
+                BeatMenuButton.Collection.Add(beat, beat.ToString());
+                if (beat == oldValue)
+                    BeatMenuButton.Index = BeatMenuButton.Collection.Count - 1;
+            }
+
+            // Re-enable all buttons to prevent race conditions
+            SupervisorBox.Enabled = true;
+            DistrictSelectMenuItem.Enabled = true;
+            RoleSelectMenuItem.Enabled = true;
         }
     }
 }

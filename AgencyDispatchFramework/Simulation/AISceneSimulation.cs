@@ -12,7 +12,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <summary>
         /// Gets or sets the see active <see cref="Event"/>
         /// </summary>
-        protected ActiveEvent ActiveCall { get; set; }
+        protected ActiveEvent Event { get; set; }
 
         /// <summary>
         /// Indicates whether or this <see cref="AISceneSimulation"/> is currently running
@@ -23,9 +23,9 @@ namespace AgencyDispatchFramework.Simulation
         /// Creates a new instance
         /// </summary>
         /// <param name="call"></param>
-        public AISceneSimulation(ActiveEvent call)
+        public AISceneSimulation(Scripting.ActiveEvent call)
         {
-            ActiveCall = call;
+            Event = call;
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace AgencyDispatchFramework.Simulation
         /// <returns></returns>
         public bool IsPlayerInRange(Vector3 playerLocation)
         {
-            return playerLocation.DistanceTo(ActiveCall.Location.Position) < 50f;
+            return playerLocation.DistanceTo(Event.Location.Position) < 50f;
         }
 
         public virtual void Begin()

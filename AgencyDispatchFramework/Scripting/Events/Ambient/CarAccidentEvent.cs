@@ -8,9 +8,16 @@ namespace AgencyDispatchFramework.Scripting.Events
 {
     internal class CarAccidentEvent : AmbientEvent
     {
+        public override string Name => "ADF.CarAccident";
+
         public override void Process()
         {
-            throw new NotImplementedException();
+            
+        }
+
+        public override void End()
+        {
+
         }
     }
 }

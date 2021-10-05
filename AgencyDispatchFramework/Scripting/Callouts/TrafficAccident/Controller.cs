@@ -1,4 +1,5 @@
-﻿using AgencyDispatchFramework.Game.Locations;
+﻿using AgencyDispatchFramework.Dispatching;
+using AgencyDispatchFramework.Game.Locations;
 using LSPD_First_Response.Mod.Callouts;
 using System;
 
@@ -20,6 +21,10 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
         /// </summary>
         public RoadShoulder Location { get; protected set; }
 
+        public override string Name => ScriptInfo.Name;
+
+        public override PriorityCall Call { get; protected set; }
+
         /// <summary>
         /// Stores the current randomized scenario
         /// </summary>
@@ -35,8 +40,8 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
         public override bool OnBeforeCalloutDisplayed()
         {
             // Grab the priority call dispatched to player
-            ActiveEvent call = Dispatch.RequestPlayerCallInfo(this);
-            if (call == null)
+            Call = Dispatch.RequestPlayerCallInfo(this);
+            if (Call == null)
             {
                 Log.Error("AgencyCallout.TrafficAccident: This is awkward... No PriorityCall of this type for player");
                 return false;
@@ -45,15 +50,14 @@ namespace AgencyDispatchFramework.Scripting.Callouts.TrafficAccident
             try
             {
                 // Store data
-                Event = call;
-                Location = (RoadShoulder)call.Location;
+                Location = (RoadShoulder)Call.EventHandle.Location;
 
                 // Create scenario class handler
                 Scenario = CreateScenarioInstance();
 
                 // Show are blip and message
                 ShowCalloutAreaBlipBeforeAccepting(Location.Position, 40f);
-                CalloutMessage = call.ScenarioMeta.CADEventText;
+                CalloutMessage = Call.EventHandle.ScenarioMeta.CADEventText;
                 CalloutPosition = Location.Position;
             }
             catch (Exception e)

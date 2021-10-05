@@ -38,7 +38,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// <summary>
         /// Gets the <see cref="Event"/>
         /// </summary>
-        public ActiveEvent Call { get; private set; }
+        public PriorityCall Call { get; private set; }
 
         /// <summary>
         /// Gets or sets the address of this call
@@ -59,16 +59,16 @@ namespace AgencyDispatchFramework.NativeUI
         /// Creates a new instance of <see cref="PriorityCallTabItem"/>
         /// </summary>
         /// <param name="call"></param>
-        public PriorityCallTabItem(ActiveEvent call) : base(call.ScenarioMeta.CADEventText)
+        public PriorityCallTabItem(PriorityCall call) : base(call.EventHandle.ScenarioMeta.CADEventText)
         {
             Call = call;
-            Address = Call.Location.GetAddress();
+            Address = Call.EventHandle.Location.GetAddress();
 
             if (String.IsNullOrWhiteSpace(Address))
-                Address = World.GetStreetName(Call.Location.Position);
+                Address = World.GetStreetName(Call.EventHandle.Location.Position);
 
             // @todo replace with Tokenizer
-            Description = Call.Description.Text.ToUpperInvariant().Replace("$LOCATION$", Address);
+            Description = Call.EventHandle.Description.Text.ToUpperInvariant().Replace("$LOCATION$", Address);
         }
 
         /// <summary>
@@ -101,13 +101,13 @@ namespace AgencyDispatchFramework.NativeUI
 
             // Draw 911 icon
             ResRectangle.Draw(this.SafeSize.AddPoints(new Point(col1p, headerY)), new Size(148, 148), Color.FromArgb(150, Color.Black));
-            Sprite.Draw(Call.ScenarioMeta.CADSpriteName, Call.ScenarioMeta.CADSpriteTextureDict, this.SafeSize.AddPoints(new Point(col1p + 10, headerY + 10)), new Size(128, 128), 0.0f, Color.White, true);
+            Sprite.Draw(Call.EventHandle.ScenarioMeta.CADSpriteName, Call.EventHandle.ScenarioMeta.CADSpriteTextureDict, this.SafeSize.AddPoints(new Point(col1p + 10, headerY + 10)), new Size(128, 128), 0.0f, Color.White, true);
 
             // Add callout call ID
             var headerLoc = SafeSize.AddPoints(new Point(col2p, headerY));
             var valueLoc = SafeSize.AddPoints(new Point(col2p, valueY));
             ResText.Draw("~b~Event ID", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~SA-{Call.EventId}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~SA-{Call.CallId}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // Add call date
             headerLoc = SafeSize.AddPoints(new Point(col3p, headerY));
@@ -116,7 +116,7 @@ namespace AgencyDispatchFramework.NativeUI
             ResText.Draw($"~w~{Call.Created}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // Add call source
-            var source = Enum.GetName(typeof(EventSource), Call.ScenarioMeta.Source);
+            var source = Enum.GetName(typeof(EventSource), Call.EventHandle.ScenarioMeta.Source);
             headerLoc = SafeSize.AddPoints(new Point(col4p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col4p, valueY));
             ResText.Draw("~b~Call Source", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
@@ -133,13 +133,13 @@ namespace AgencyDispatchFramework.NativeUI
             headerLoc = SafeSize.AddPoints(new Point(col2p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col2p, valueY));
             ResText.Draw("~b~Incident", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{Call.ScenarioMeta.CADEventText}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{Call.EventHandle.ScenarioMeta.CADEventText}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // Add Priority
             headerLoc = SafeSize.AddPoints(new Point(col4p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col4p, valueY));
             ResText.Draw("~b~Priority", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{GetPriorityText(Call.CurrentPriority)}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{GetPriorityText(Call.Priority)}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // ===
             // 3rd Row
@@ -158,13 +158,13 @@ namespace AgencyDispatchFramework.NativeUI
             headerLoc = SafeSize.AddPoints(new Point(col3p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col3p, valueY));
             ResText.Draw("~y~Zone", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{Call.Location.Zone.ScriptName}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{Call.EventHandle.Location.Zone.ScriptName}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // Add callout postal
             headerLoc = SafeSize.AddPoints(new Point(col4p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col4p, valueY));
             ResText.Draw("~y~Postal", headerLoc, HeaderTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, a, true, true, new Size(250, 0));
-            ResText.Draw($"~w~{Call.Location.Postal.Code}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
+            ResText.Draw($"~w~{Call.EventHandle.Location.Postal.Code}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // ===
             // 4th Row
@@ -186,7 +186,7 @@ namespace AgencyDispatchFramework.NativeUI
             ResText.Draw($"~w~{Call.PrimaryOfficer?.CallSign.Value ?? "None"}", valueLoc, ValueTextWeight, Color.FromArgb(alpha, Color.White), Common.EFont.ChaletComprimeCologne, false);
 
             // add Agency
-            var zone = WorldZone.GetZoneByName(Call.Location.Zone.ScriptName);
+            var zone = WorldZone.GetZoneByName(Call.EventHandle.Location.Zone.ScriptName);
             var agency = Call.PrimaryOfficer != null ? Call.PrimaryOfficer.Agency.ScriptName : zone.GetPoliceAgencies()[0].ScriptName;
             headerLoc = SafeSize.AddPoints(new Point(col3p, headerY));
             valueLoc = SafeSize.AddPoints(new Point(col3p, valueY));
@@ -219,7 +219,7 @@ namespace AgencyDispatchFramework.NativeUI
         /// </summary>
         /// <param name="priority"></param>
         /// <returns></returns>-
-        private static string GetPriorityText(EventPriority priority)
+        private static string GetPriorityText(CallPriority priority)
         {
             switch ((int)priority)
             {
@@ -253,7 +253,7 @@ namespace AgencyDispatchFramework.NativeUI
 
         public override int GetHashCode()
         {
-            return Call.EventId.GetHashCode();
+            return Call.CallId.GetHashCode();
         }
 
         public override bool Equals(object obj)
@@ -264,7 +264,7 @@ namespace AgencyDispatchFramework.NativeUI
         public bool Equals(PriorityCallTabItem other)
         {
             if (other == null) return false;
-            return other.Call.EventId == Call.EventId;
+            return other.Call.CallId == Call.CallId;
         }
     }
 }
